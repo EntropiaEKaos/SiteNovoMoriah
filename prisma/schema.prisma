@@ -114,6 +114,7 @@ model ChannelBlock {
   endsAt        DateTime
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+
   @@unique([integrationId, externalUid])
   @@index([startsAt, endsAt])
 }
