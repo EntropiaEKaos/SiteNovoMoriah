@@ -44,14 +44,14 @@ model Promotion {
 }
 
 model Media {
-  id          String   @id @default(cuid())
-  url         String
-  alt         String?
-  storageKey  String?  @unique
-  mimeType    String?
-  sizeBytes   Int?
-  provider    String   @default("EXTERNAL")
-  createdAt   DateTime @default(now())
+  id         String   @id @default(cuid())
+  url        String
+  alt        String?
+  storageKey String?  @unique
+  mimeType   String?
+  sizeBytes  Int?
+  provider   String   @default("EXTERNAL")
+  createdAt  DateTime @default(now())
 }
 
 model BookingLead {
