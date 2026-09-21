@@ -87,3 +87,29 @@ model BlogPost {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
+
+model ChannelIntegration {
+  id          String   @id @default(cuid())
+  provider    String
+  name        String
+  importUrl   String?
+  exportToken String?  @unique
+  active      Boolean  @default(true)
+  lastSyncAt  DateTime?
+  lastError   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model ChannelBlock {
+  id            String   @id @default(cuid())
+  integrationId String
+  externalUid   String
+  summary       String?
+  startsAt      DateTime
+  endsAt        DateTime
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  @@unique([integrationId, externalUid])
+  @@index([startsAt, endsAt])
+}
