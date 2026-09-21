@@ -1,7 +1,133 @@
-generator client { provider = "prisma-client-js" }
-datasource db { provider = "postgresql" url = env("DATABASE_URL") }
-model SiteSettings { id String @id @default("main") siteName String @default("Pousada Moriah") tagline String @default("Seu lugar perto de tudo. Do seu jeito.") whatsapp String? instagram String? address String? updatedAt DateTime @updatedAt }
-model Accommodation { id String @id @default(cuid()) name String description String type String priceCents Int? capacity Int @default(2) active Boolean @default(true) featured Boolean @default(false) coverImage String? createdAt DateTime @default(now()) updatedAt DateTime @updatedAt }
-model Promotion { id String @id @default(cuid()) title String description String? coupon String? startsAt DateTime? endsAt DateTime? active Boolean @default(true) createdAt DateTime @default(now()) updatedAt DateTime @updatedAt }
-model Media { id String @id @default(cuid()) url String alt String? createdAt DateTime @default(now()) }
-model BookingLead { id String @id @default(cuid()) name String email String? phone String checkIn DateTime? checkOut DateTime? guests Int @default(1) message String? status String @default("NEW") createdAt DateTime @default(now()) }
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model SiteSettings {
+  id        String   @id @default("main")
+  siteName  String   @default("Pousada Moriah")
+  tagline   String   @default("Seu lugar perto de tudo. Do seu jeito.")
+  whatsapp  String?
+  instagram String?
+  address   String?
+  updatedAt DateTime @updatedAt
+}
+
+model Accommodation {
+  id                  String               @id @default(cuid())
+  name                String
+  description         String
+  type                String
+  priceCents          Int?
+  capacity            Int                  @default(2)
+  active              Boolean              @default(true)
+  featured            Boolean              @default(false)
+  coverImage          String?
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  bookingLeads        BookingLead[]
+  channelIntegrations ChannelIntegration[]
+}
+
+model Promotion {
+  id          String    @id @default(cuid())
+  title       String
+  description String?
+  coupon      String?
+  startsAt    DateTime?
+  endsAt      DateTime?
+  active      Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Media {
+  id         String   @id @default(cuid())
+  url        String
+  alt        String?
+  storageKey String?  @unique
+  mimeType   String?
+  sizeBytes  Int?
+  provider   String   @default("EXTERNAL")
+  createdAt  DateTime @default(now())
+}
+
+model BookingLead {
+  id              String         @id @default(cuid())
+  accommodationId String?
+  accommodation   Accommodation? @relation(fields: [accommodationId], references: [id], onDelete: SetNull)
+  name            String
+  email           String?
+  phone           String
+  checkIn         DateTime?
+  checkOut        DateTime?
+  guests          Int            @default(1)
+  message         String?
+  status          String         @default("NEW")
+  createdAt       DateTime       @default(now())
+
+  @@index([accommodationId])
+}
+
+model IntegrationSettings {
+  id                        String   @id @default("main")
+  firebaseApiKey            String?
+  firebaseAuthDomain        String?
+  firebaseProjectId         String?
+  firebaseStorageBucket     String?
+  firebaseMessagingSenderId String?
+  firebaseAppId             String?
+  firebaseVapidKey          String?
+  updatedAt                 DateTime @updatedAt
+}
+
+model BlogPost {
+  id          String    @id @default(cuid())
+  title       String
+  slug        String    @unique
+  excerpt     String?
+  content     String
+  coverImage  String?
+  published   Boolean   @default(false)
+  publishedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model ChannelIntegration {
+  id              String         @id @default(cuid())
+  accommodationId String?
+  accommodation   Accommodation? @relation(fields: [accommodationId], references: [id], onDelete: SetNull)
+  blocks          ChannelBlock[]
+  provider        String
+  name            String
+  importUrl       String?
+  exportToken     String?        @unique
+  active          Boolean        @default(true)
+  lastSyncAt      DateTime?
+  lastError       String?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  @@index([accommodationId])
+}
+
+model ChannelBlock {
+  id            String             @id @default(cuid())
+  integrationId String
+  integration   ChannelIntegration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+  externalUid   String
+  summary       String?
+  startsAt      DateTime
+  endsAt        DateTime
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+
+  @@unique([integrationId, externalUid])
+  @@index([startsAt, endsAt])
+  @@index([integrationId])
+}

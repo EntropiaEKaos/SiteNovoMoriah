@@ -1,0 +1,1 @@
+import type {MetadataRoute} from "next";export default function manifest():MetadataRoute.Manifest{return{name:"Pousada Moriah",short_name:"Moriah",description:"Pousada & Hostel em Praia Grande",start_url:"/",display:"standalone",background_color:"#ffffff",theme_color:"#ffd400",icons:[{src:"/icon.svg",sizes:"any",type:"image/svg+xml"}]}}

@@ -1,0 +1,1 @@
+export default function Page(){return <main style={{padding:"50px 6vw",maxWidth:900}}><small>MORIAH CMS / SEGURANÇA</small><h1 style={{fontSize:48}}>OTP / Firebase Auth</h1><p>Base reservada para autenticação Firebase. E-mail/social pode usar a faixa sem custo aplicável; OTP por SMS exige faturamento Blaze e é cobrado por SMS.</p></main>}
