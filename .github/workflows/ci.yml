@@ -12,7 +12,8 @@ jobs:
         with:
           node-version: 22
       - run: npm install
-      - run: npx prisma format --check
+      - run: npx prisma format
+      - run: git diff --exit-code -- prisma/schema.prisma
       - run: npx prisma validate
         env:
           DATABASE_URL: postgresql://placeholder:placeholder@localhost:5432/moriah
