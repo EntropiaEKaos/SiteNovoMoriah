@@ -21,3 +21,5 @@ npm run dev
 
 ## Regra de release
 CI verde comprova schema, geração Prisma, TypeScript e build. Produção só é considerada validada depois dos testes no Vercel e serviços externos reais.
+
+<!-- build diagnostic trigger -->
