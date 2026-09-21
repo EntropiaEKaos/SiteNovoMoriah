@@ -5,3 +5,15 @@ model Accommodation { id String @id @default(cuid()) name String description Str
 model Promotion { id String @id @default(cuid()) title String description String? coupon String? startsAt DateTime? endsAt DateTime? active Boolean @default(true) createdAt DateTime @default(now()) updatedAt DateTime @updatedAt }
 model Media { id String @id @default(cuid()) url String alt String? createdAt DateTime @default(now()) }
 model BookingLead { id String @id @default(cuid()) name String email String? phone String checkIn DateTime? checkOut DateTime? guests Int @default(1) message String? status String @default("NEW") createdAt DateTime @default(now()) }
+
+model IntegrationSettings {
+  id String @id @default("main")
+  firebaseApiKey String?
+  firebaseAuthDomain String?
+  firebaseProjectId String?
+  firebaseStorageBucket String?
+  firebaseMessagingSenderId String?
+  firebaseAppId String?
+  firebaseVapidKey String?
+  updatedAt DateTime @updatedAt
+}
