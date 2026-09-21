@@ -1,0 +1,1 @@
+export default function Page(){return <main style={{padding:"50px 6vw"}}><small>MORIAH CMS / MARKETING</small><h1 style={{fontSize:48}}>Promoções</h1><button style={{background:"#ffd400",border:0,padding:"14px 20px",fontWeight:800}}>+ Nova promoção</button><p>Crie campanhas, cupons, períodos promocionais e destaques que poderão aparecer automaticamente no site.</p></main>}
