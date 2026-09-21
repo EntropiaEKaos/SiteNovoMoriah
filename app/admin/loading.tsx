@@ -1,0 +1,1 @@
+export default function AdminLoading(){return <div style={{minHeight:"100vh",display:"grid",placeItems:"center",background:"#111",color:"#fff"}}><div style={{textAlign:"center"}}><b style={{fontSize:42,letterSpacing:4}}>M<span style={{color:"#ffd400"}}>.</span></b><p style={{letterSpacing:3,fontSize:11}}>CARREGANDO CMS</p></div></div>}
