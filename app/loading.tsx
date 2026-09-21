@@ -1,0 +1,1 @@
+export default function Loading(){return <div className="loading"><div className="loaderMark">M<span>.</span></div><div className="loaderLine"/></div>}
