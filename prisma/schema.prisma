@@ -29,6 +29,8 @@ model Accommodation {
   coverImage  String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  bookingLeads BookingLead[]
+  channelIntegrations ChannelIntegration[]
 }
 
 model Promotion {
@@ -56,6 +58,8 @@ model Media {
 
 model BookingLead {
   id        String    @id @default(cuid())
+  accommodationId String?
+  accommodation Accommodation? @relation(fields: [accommodationId], references: [id], onDelete: SetNull)
   name      String
   email     String?
   phone     String
@@ -94,6 +98,9 @@ model BlogPost {
 
 model ChannelIntegration {
   id          String    @id @default(cuid())
+  accommodationId String?
+  accommodation Accommodation? @relation(fields: [accommodationId], references: [id], onDelete: SetNull)
+  blocks ChannelBlock[]
   provider    String
   name        String
   importUrl   String?
@@ -108,6 +115,7 @@ model ChannelIntegration {
 model ChannelBlock {
   id            String   @id @default(cuid())
   integrationId String
+  integration ChannelIntegration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
   externalUid   String
   summary       String?
   startsAt      DateTime
@@ -117,4 +125,5 @@ model ChannelBlock {
 
   @@unique([integrationId, externalUid])
   @@index([startsAt, endsAt])
+  @@index([integrationId])
 }
