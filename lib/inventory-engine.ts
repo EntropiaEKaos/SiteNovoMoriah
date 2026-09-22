@@ -19,7 +19,7 @@ export async function getAvailableAccommodations(checkIn:Date,checkOut:Date,gues
  const ids=rooms.map(r=>r.id);
  const [external,internal]=await Promise.all([
   prisma.channelBlock.findMany({where:{startsAt:{lt:checkOut},endsAt:{gt:checkIn},integration:{accommodationId:{in:ids},active:true}},select:{integration:{select:{accommodationId:true}}}}),
-  prisma.bookingLead.findMany({where:{accommodationId:{in:ids},status:"CONFIRMED",checkIn:{lt:checkOut},checkOut:{gt:checkIn}},select:{accommodationId:true}})
+  prisma.bookingLead.findMany({where:{accommodationId:{in:ids},status:{in:["CONFIRMED","CHECKED_IN"]},checkIn:{lt:checkOut},checkOut:{gt:checkIn}},select:{accommodationId:true}})
  ]);
  const blocked=new Set<string>();external.forEach(x=>{if(x.integration.accommodationId)blocked.add(x.integration.accommodationId)});internal.forEach(x=>{if(x.accommodationId)blocked.add(x.accommodationId)});
  return rooms.filter(room=>!blocked.has(room.id));
