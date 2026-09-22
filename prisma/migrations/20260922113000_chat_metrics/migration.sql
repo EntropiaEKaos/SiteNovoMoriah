@@ -1,0 +1,2 @@
+CREATE TABLE "ChatMetric" ("id" TEXT NOT NULL, "kind" TEXT NOT NULL, "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, CONSTRAINT "ChatMetric_pkey" PRIMARY KEY ("id"));
+CREATE INDEX "ChatMetric_kind_createdAt_idx" ON "ChatMetric"("kind","createdAt");
