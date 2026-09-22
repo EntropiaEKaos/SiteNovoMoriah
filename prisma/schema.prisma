@@ -147,6 +147,11 @@ model ChannelIntegration {
   lastSuccessAt   DateTime?
   syncStatus      String         @default("IDLE")
   lastError       String?
+  etag            String?
+  lastModified    String?
+  consecutiveFailures Int @default(0)
+  nextSyncAt      DateTime?
+  syncDurationMs  Int?
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
 
