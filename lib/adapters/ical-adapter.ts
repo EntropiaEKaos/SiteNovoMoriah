@@ -1,6 +1,6 @@
 import ICAL from "ical.js";
-import type {ChannelAdapter,AdapterSyncResult} from "./channel-adapters";
-import {prisma} from "./prisma";
+import type {ChannelAdapter,AdapterSyncResult} from "../channel-adapters";
+import {prisma} from "../prisma";
 
 function safeCalendarUrl(value:string){
  const u=new URL(value);
