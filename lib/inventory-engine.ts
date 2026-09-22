@@ -7,7 +7,7 @@ export async function getInventoryConflicts(accommodationId:string,checkIn:Date,
  validRange(checkIn,checkOut);
  const [external,internal]=await Promise.all([
   prisma.channelBlock.findMany({where:{startsAt:{lt:checkOut},endsAt:{gt:checkIn},integration:{accommodationId,active:true}},select:{externalUid:true,startsAt:true,endsAt:true,integration:{select:{provider:true,integrationType:true}}}}),
-  prisma.bookingLead.findMany({where:{id:excludeBookingId?{not:excludeBookingId}:undefined,accommodationId,status:"CONFIRMED",checkIn:{lt:checkOut},checkOut:{gt:checkIn}},select:{id:true,checkIn:true,checkOut:true}})
+  prisma.bookingLead.findMany({where:{id:excludeBookingId?{not:excludeBookingId}:undefined,accommodationId,status:{in:["CONFIRMED","CHECKED_IN"]},checkIn:{lt:checkOut},checkOut:{gt:checkIn}},select:{id:true,checkIn:true,checkOut:true}})
  ]);
  return [...external.map(row=>({source:sourceOf(row.integration.integrationType),provider:row.integration.provider,reference:row.externalUid,startsAt:row.startsAt,endsAt:row.endsAt})),...internal.filter(row=>row.checkIn&&row.checkOut).map(row=>({source:"DIRECT" as const,provider:"MORIAH",reference:row.id,startsAt:row.checkIn!,endsAt:row.checkOut!}))];
 }
