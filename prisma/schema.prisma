@@ -443,19 +443,3 @@ model RestaurantRoomCharge {
 }
 
 
-model AdminUser {
-  id                 String   @id @default(cuid())
-  username           String   @unique
-  passwordHash       String
-  passwordSalt       String
-  role               String   @default("ADMIN")
-  active             Boolean  @default(true)
-  mustChangePassword Boolean  @default(true)
-  failedLoginCount   Int      @default(0)
-  lockedUntil        DateTime?
-  lastLoginAt        DateTime?
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
-
-  @@index([active, role])
-}
