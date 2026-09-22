@@ -156,6 +156,7 @@ model ChannelIntegration {
   updatedAt       DateTime       @updatedAt
 
   @@index([accommodationId])
+  @@index([nextSyncAt])
 }
 
 model InventoryHold {
