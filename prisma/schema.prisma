@@ -70,6 +70,12 @@ model BookingLead {
   guests          Int            @default(1)
   message         String?
   status          String         @default("NEW")
+  source          String         @default("SITE")
+  quotedTotalCents Int?
+  quotedCurrency  String?
+  quotedRatePlan  String?
+  quoteSnapshot   Json?
+  quotedAt        DateTime?
   createdAt       DateTime       @default(now())
 
   @@index([accommodationId])
