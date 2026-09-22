@@ -31,6 +31,7 @@ model Accommodation {
   updatedAt           DateTime             @updatedAt
   bookingLeads        BookingLead[]
   channelIntegrations ChannelIntegration[]
+  ratePlans           RatePlan[]
 }
 
 model Promotion {
@@ -116,6 +117,9 @@ model ChannelIntegration {
   exportToken     String?        @unique
   active          Boolean        @default(true)
   lastSyncAt      DateTime?
+  lastAttemptAt   DateTime?
+  lastSuccessAt   DateTime?
+  syncStatus      String         @default("IDLE")
   lastError       String?
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
@@ -137,6 +141,39 @@ model ChannelBlock {
   @@unique([integrationId, externalUid])
   @@index([startsAt, endsAt])
   @@index([integrationId])
+}
+
+model RatePlan {
+  id              String        @id @default(cuid())
+  accommodationId String
+  accommodation   Accommodation @relation(fields: [accommodationId], references: [id], onDelete: Cascade)
+  name            String
+  currency        String        @default("BRL")
+  basePriceCents  Int
+  minNights       Int           @default(1)
+  maxNights       Int?
+  active          Boolean       @default(true)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  overrides       RateOverride[]
+
+  @@index([accommodationId, active])
+}
+
+model RateOverride {
+  id             String   @id @default(cuid())
+  ratePlanId     String
+  ratePlan       RatePlan @relation(fields: [ratePlanId], references: [id], onDelete: Cascade)
+  startsAt       DateTime
+  endsAt         DateTime
+  priceCents     Int
+  minNights      Int?
+  closedToArrival Boolean @default(false)
+  closedToDeparture Boolean @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([ratePlanId, startsAt, endsAt])
 }
 
 model ChatMetric {
