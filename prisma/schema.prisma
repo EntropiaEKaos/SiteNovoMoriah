@@ -44,6 +44,11 @@ model Promotion {
   endsAt      DateTime?
   active      Boolean   @default(true)
   createdAt   DateTime  @default(now())
+  discountType  String?
+  discountValue Int?
+  minNights     Int?
+  accommodationId String?
+  stackable     Boolean @default(false)
   updatedAt   DateTime  @updatedAt
 }
 
