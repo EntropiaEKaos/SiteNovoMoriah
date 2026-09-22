@@ -32,6 +32,7 @@ model Accommodation {
   bookingLeads        BookingLead[]
   channelIntegrations ChannelIntegration[]
   ratePlans           RatePlan[]
+  rateRules           RateRule[]
 }
 
 model Promotion {
@@ -158,6 +159,27 @@ model RatePlan {
   overrides       RateOverride[]
 
   @@index([accommodationId, active])
+}
+
+model RateRule {
+  id              String        @id @default(cuid())
+  accommodationId String
+  accommodation   Accommodation @relation(fields: [accommodationId], references: [id], onDelete: Cascade)
+  name            String
+  adjustmentType  String        @default("PERCENT")
+  adjustmentValue Int
+  minOccupancyPct Int?
+  maxOccupancyPct Int?
+  daysBeforeMin   Int?
+  daysBeforeMax   Int?
+  startsAt        DateTime?
+  endsAt          DateTime?
+  active          Boolean       @default(true)
+  priority        Int           @default(100)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@index([accommodationId, active, priority])
 }
 
 model RateOverride {
