@@ -1,12 +1,14 @@
 import {prisma} from "./prisma";
 import {isAccommodationAvailable} from "./inventory-engine";
-import {icalChannelAdapter} from "./adapters/ical-adapter";
+import {getChannelAdapter,resolveAdapterKind} from "./channel-adapter-registry";
 
 export async function syncChannelIntegration(id:string){
  const row=await prisma.channelIntegration.findUnique({where:{id}});
- if(!row?.active||!row.importUrl||!row.accommodationId)throw new Error("Canal inativo, sem hospedagem ou sem URL de calendário.");
+ if(!row?.active||!row.accommodationId)throw new Error("Canal inativo ou sem hospedagem.");
  try{
-  const result=await icalChannelAdapter.sync({integrationId:id,accommodationId:row.accommodationId,provider:row.provider});
+  const kind=resolveAdapterKind(row.provider);
+  const adapter=getChannelAdapter(kind);
+  const result=await adapter.sync({integrationId:id,accommodationId:row.accommodationId,provider:row.provider});
   const seen=result.blocks.map(block=>block.externalUid);
   await prisma.$transaction(async tx=>{
    for(const block of result.blocks)await tx.channelBlock.upsert({where:{integrationId_externalUid:{integrationId:id,externalUid:block.externalUid}},create:{integrationId:id,...block},update:{summary:block.summary||null,startsAt:block.startsAt,endsAt:block.endsAt}});
