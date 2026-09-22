@@ -20,12 +20,12 @@ export async function createInventoryHold(accommodationId:string,checkIn:Date,ch
 }
 export async function releaseInventoryHold(token:string){if(token)await prisma.inventoryHold.deleteMany({where:{token}});}
 
-export async function consumeInventoryHold(token:string,accommodationId:string,checkIn:Date,checkOut:Date){
+export async function consumeInventoryHold(token:string,accommodationId:string,checkIn:Date,checkOut:Date,createBooking:(tx:Parameters<Parameters<typeof prisma.$transaction>[0]>[0])=>Promise<unknown>){
  valid(checkIn,checkOut);if(!token)throw new Error("Hold de disponibilidade ausente.");
  return prisma.$transaction(async tx=>{
   await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${accommodationId}))`;
   const hold=await tx.inventoryHold.findUnique({where:{token}});
   if(!hold||hold.accommodationId!==accommodationId||hold.expiresAt<=new Date()||hold.checkIn.getTime()!==checkIn.getTime()||hold.checkOut.getTime()!==checkOut.getTime())throw new Error("O período reservado temporariamente expirou. Consulte a disponibilidade novamente.");
-  await tx.inventoryHold.delete({where:{token}});return true;
+  await createBooking(tx);await tx.inventoryHold.delete({where:{token}});return true;
  });
 }
