@@ -4,7 +4,7 @@ import {createChannelIntegration,toggleChannelIntegration,deleteChannelIntegrati
 import {listChannelAdapterCapabilities} from "../../../lib/channel-adapter-registry";
 export const dynamic="force-dynamic";
 const labels:Record<string,string>={AIRBNB:"Airbnb",BOOKING:"Booking.com",ICAL:"Outro iCal/ICS"};
-function health(x:{active:boolean;lastSyncAt:Date|null;lastError:string|null}){if(!x.active)return ["Pausado","#777"];if(x.lastError)return ["Atenção","#b42318"];if(x.lastSyncAt)return ["Sincronizado","#067647"];return ["Aguardando sync","#b54708"];}
+function health(x:{active:boolean;syncStatus:string;lastError:string|null}){if(!x.active)return ["Pausado","#777"];if(x.syncStatus==="ERROR"||x.lastError)return ["Erro","#b42318"];if(x.syncStatus==="SYNCING")return ["Sincronizando","#175cd3"];if(x.syncStatus==="HEALTHY")return ["Saudável","#067647"];return ["Aguardando sync","#b54708"];}
 export default async function Page(){
  await requireAdmin();
  const [rows,rooms,blocks]=await Promise.all([
@@ -31,7 +31,7 @@ export default async function Page(){
   </form>
   <div style={{display:"grid",gap:12}}>{rows.map(x=>{const [status,color]=health(x);return <article key={x.id} style={{border:"1px solid #ddd",padding:20,borderRadius:14}}>
    <div style={{display:"flex",justifyContent:"space-between",gap:16,alignItems:"start",flexWrap:"wrap"}}><div><b style={{fontSize:19}}>{x.name}</b><p style={{margin:"6px 0"}}>{labels[x.provider]||x.provider} • {x.integrationType==="ICAL"?"iCal/ICS":x.integrationType.replaceAll("_"," ")} • {x.accommodation?.name||"Sem hospedagem"}</p></div><b style={{color}}>{status}</b></div>
-   <small>{x._count.blocks} bloqueio(s) • {x.lastSyncAt?"Última sincronização: "+x.lastSyncAt.toLocaleString("pt-BR"):"Ainda não sincronizado"}</small>
+   <small>{x._count.blocks} bloqueio(s) • {x.lastSuccessAt?"Último sucesso: "+x.lastSuccessAt.toLocaleString("pt-BR"):"Sem sincronização concluída"}{x.lastAttemptAt?" • Tentativa: "+x.lastAttemptAt.toLocaleString("pt-BR"):""}</small>
    {x.lastError?<p style={{color:"#b42318"}}>Último erro: {x.lastError}</p>:null}
    <div style={{display:"flex",gap:8,marginTop:12,flexWrap:"wrap"}}><form action={syncChannelNow}><input type="hidden" name="id" value={x.id}/><button>Sincronizar agora</button></form><form action={toggleChannelIntegration}><input type="hidden" name="id" value={x.id}/><button>{x.active?"Pausar":"Ativar"}</button></form><form action={deleteChannelIntegration}><input type="hidden" name="id" value={x.id}/><button>Excluir</button></form></div>
   </article>})}</div>
