@@ -302,6 +302,8 @@ model RestaurantProduct {
  updatedAt DateTime @updatedAt
  orderItems RestaurantOrderItem[]
  stockMovements RestaurantStockMovement[]
+ recipes RestaurantRecipeItem[]
+ modifierLinks RestaurantProductModifierGroup[]
  @@index([categoryId,active])
 }
 model RestaurantOrder {
