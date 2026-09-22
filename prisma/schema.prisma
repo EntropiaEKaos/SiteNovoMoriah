@@ -96,6 +96,7 @@ model BookingLead {
   createdAt       DateTime       @default(now())
 
   @@index([accommodationId])
+  @@index([guestId])
 }
 
 model IntegrationSettings {
@@ -266,6 +267,7 @@ model HousekeepingTask {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   @@index([scheduledFor,status])
+  @@index([bookingId])
 }
 model BookingAuditLog {
   id String @id @default(cuid())
