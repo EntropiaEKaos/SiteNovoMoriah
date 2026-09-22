@@ -34,7 +34,7 @@ export function getChannelAdapter(kind:ChannelAdapterKind):ChannelAdapter{
  return adapter;
 }
 
-export function resolveAdapterKind(provider:string,integrationType?:string|null):ChannelAdapterKind{
+export function resolveAdapterKind(integrationType?:string|null):ChannelAdapterKind{
  const explicit=String(integrationType||"").toUpperCase();
  if(explicit in registry)return explicit as ChannelAdapterKind;
  return "ICAL";
