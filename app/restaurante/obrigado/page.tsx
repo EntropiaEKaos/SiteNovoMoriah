@@ -1,0 +1,1 @@
+export default function Page(){return <main style={{padding:"15vh 6vw",textAlign:"center"}}><small>MORIAH FOOD</small><h1 style={{fontSize:58}}>Pedido recebido!</h1><p>A cozinha recebeu seu pedido. Você pode acompanhar a preparação com a equipe da pousada.</p><a href="/restaurante" style={{fontWeight:900}}>Voltar ao cardápio</a></main>}
