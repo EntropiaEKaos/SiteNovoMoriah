@@ -314,6 +314,7 @@ model RestaurantOrder {
  createdAt DateTime @default(now())
  updatedAt DateTime @updatedAt
  items RestaurantOrderItem[]
+ roomCharge RestaurantRoomCharge?
  @@index([status,createdAt])
  @@index([bookingId])
 }
@@ -328,6 +329,7 @@ model RestaurantOrderItem {
  unitCostCents Int?
  quantity Int
  totalCents Int
+ modifiers RestaurantOrderItemModifier[]
  @@index([orderId])
  @@index([productId])
 }
@@ -406,4 +408,25 @@ model RestaurantIngredientMovement {
  orderId String?
  createdAt DateTime @default(now())
  @@index([ingredientId,createdAt])
+}
+
+model RestaurantOrderItemModifier {
+ id String @id @default(cuid())
+ orderItemId String
+ orderItem RestaurantOrderItem @relation(fields:[orderItemId],references:[id],onDelete:Cascade)
+ optionId String
+ nameSnapshot String
+ priceCents Int
+ @@index([orderItemId])
+}
+model RestaurantRoomCharge {
+ id String @id @default(cuid())
+ orderId String @unique
+ order RestaurantOrder @relation(fields:[orderId],references:[id],onDelete:Cascade)
+ bookingId String
+ amountCents Int
+ status String @default("OPEN")
+ createdAt DateTime @default(now())
+ settledAt DateTime?
+ @@index([bookingId,status])
 }
