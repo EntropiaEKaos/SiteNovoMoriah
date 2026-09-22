@@ -271,3 +271,74 @@ model BookingAuditLog {
   createdAt DateTime @default(now())
   @@index([bookingId,createdAt])
 }
+
+model RestaurantCategory {
+ id String @id @default(cuid())
+ name String
+ sortOrder Int @default(0)
+ active Boolean @default(true)
+ products RestaurantProduct[]
+}
+model RestaurantProduct {
+ id String @id @default(cuid())
+ categoryId String
+ category RestaurantCategory @relation(fields:[categoryId],references:[id],onDelete:Restrict)
+ name String
+ description String?
+ imageUrl String?
+ priceCents Int
+ costCents Int?
+ sku String? @unique
+ active Boolean @default(true)
+ trackStock Boolean @default(true)
+ stockQty Int @default(0)
+ minStockQty Int @default(0)
+ createdAt DateTime @default(now())
+ updatedAt DateTime @updatedAt
+ orderItems RestaurantOrderItem[]
+ stockMovements RestaurantStockMovement[]
+ @@index([categoryId,active])
+}
+model RestaurantOrder {
+ id String @id @default(cuid())
+ bookingId String?
+ guestName String
+ roomLabel String?
+ phone String?
+ status String @default("NEW")
+ paymentMethod String @default("ROOM")
+ paymentStatus String @default("PENDING")
+ subtotalCents Int
+ totalCents Int
+ notes String?
+ createdAt DateTime @default(now())
+ updatedAt DateTime @updatedAt
+ items RestaurantOrderItem[]
+ @@index([status,createdAt])
+ @@index([bookingId])
+}
+model RestaurantOrderItem {
+ id String @id @default(cuid())
+ orderId String
+ order RestaurantOrder @relation(fields:[orderId],references:[id],onDelete:Cascade)
+ productId String
+ product RestaurantProduct @relation(fields:[productId],references:[id],onDelete:Restrict)
+ nameSnapshot String
+ unitPriceCents Int
+ unitCostCents Int?
+ quantity Int
+ totalCents Int
+ @@index([orderId])
+ @@index([productId])
+}
+model RestaurantStockMovement {
+ id String @id @default(cuid())
+ productId String
+ product RestaurantProduct @relation(fields:[productId],references:[id],onDelete:Cascade)
+ type String
+ quantity Int
+ reason String?
+ orderId String?
+ createdAt DateTime @default(now())
+ @@index([productId,createdAt])
+}
