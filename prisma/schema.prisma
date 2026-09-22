@@ -90,6 +90,9 @@ model BookingLead {
   restaurantAccessToken String? @unique
   payments        Payment[]
   auditLogs       BookingAuditLog[]
+  housekeepingTasks HousekeepingTask[]
+  restaurantOrders RestaurantOrder[]
+  restaurantRoomCharges RestaurantRoomCharge[]
   createdAt       DateTime       @default(now())
 
   @@index([accommodationId])
@@ -255,6 +258,7 @@ model HousekeepingTask {
   accommodationId String
   accommodation Accommodation @relation(fields:[accommodationId],references:[id],onDelete:Cascade)
   bookingId String?
+  booking BookingLead? @relation(fields:[bookingId],references:[id],onDelete:SetNull)
   type String @default("CLEANING")
   status String @default("PENDING")
   scheduledFor DateTime
@@ -303,6 +307,7 @@ model RestaurantProduct {
 model RestaurantOrder {
  id String @id @default(cuid())
  bookingId String?
+ booking BookingLead? @relation(fields:[bookingId],references:[id],onDelete:SetNull)
  guestName String
  roomLabel String?
  phone String?
@@ -425,6 +430,7 @@ model RestaurantRoomCharge {
  orderId String @unique
  order RestaurantOrder @relation(fields:[orderId],references:[id],onDelete:Cascade)
  bookingId String
+ booking BookingLead @relation(fields:[bookingId],references:[id],onDelete:Cascade)
  amountCents Int
  status String @default("OPEN")
  createdAt DateTime @default(now())
