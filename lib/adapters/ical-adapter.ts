@@ -1,6 +1,6 @@
 import ICAL from "ical.js";
 import type {ChannelAdapter,AdapterSyncResult} from "../channel-adapters";
-import {prisma} from "../prisma";import {lookup} from "node:dns/promises";import {isIP} from "node:net";
+import {prisma} from "../prisma";import {lookup} from "node:dns/promises";
 
 function privateIp(ip:string){if(ip.includes(":"))return ip==="::1"||ip.toLowerCase().startsWith("fc")||ip.toLowerCase().startsWith("fd")||ip.toLowerCase().startsWith("fe80:");const p=ip.split(".").map(Number);return p[0]===10||p[0]===127||p[0]===0||(p[0]===169&&p[1]===254)||(p[0]===172&&p[1]>=16&&p[1]<=31)||(p[0]===192&&p[1]===168)||(p[0]===100&&p[1]>=64&&p[1]<=127)}
 async function assertPublicHost(host:string){if(host==="metadata.google.internal"||host.endsWith(".internal"))throw new Error("Host de calendário inválido.");const rows=await lookup(host,{all:true});if(!rows.length||rows.some(x=>privateIp(x.address)))throw new Error("O calendário não pode apontar para rede privada.");}
