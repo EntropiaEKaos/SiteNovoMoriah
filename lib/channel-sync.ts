@@ -24,6 +24,19 @@ export async function syncChannelIntegration(id:string){
  }
 }
 
+export async function syncAccommodationChannels(accommodationId:string){
+ const channels=await prisma.channelIntegration.findMany({where:{accommodationId,active:true},select:{id:true}});
+ const results=await Promise.allSettled(channels.map(x=>syncChannelIntegration(x.id)));
+ const failures=results.filter((x):x is PromiseRejectedResult=>x.status==="rejected");
+ return {channels:channels.length,failures:failures.length};
+}
+
+export async function criticalAvailabilityCheck(accommodationId:string,checkIn:Date,checkOut:Date){
+ const sync=await syncAccommodationChannels(accommodationId);
+ if(sync.failures)throw new Error("Não foi possível atualizar todos os canais. Tente novamente em instantes.");
+ return !(await isAccommodationAvailable(accommodationId,checkIn,checkOut));
+}
+
 export async function hasAvailabilityConflict(accommodationId:string,checkIn:Date,checkOut:Date){
  return !(await isAccommodationAvailable(accommodationId,checkIn,checkOut));
 }
