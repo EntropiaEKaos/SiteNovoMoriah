@@ -87,6 +87,7 @@ model BookingLead {
   checkedInAt     DateTime?
   checkedOutAt    DateTime?
   noShowAt        DateTime?
+  restaurantAccessToken String? @unique
   payments        Payment[]
   auditLogs       BookingAuditLog[]
   createdAt       DateTime       @default(now())
