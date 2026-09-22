@@ -342,3 +342,68 @@ model RestaurantStockMovement {
  createdAt DateTime @default(now())
  @@index([productId,createdAt])
 }
+
+model RestaurantSettings {
+ id String @id @default("main")
+ openTime String @default("07:00")
+ closeTime String @default("22:00")
+ acceptingOrders Boolean @default(true)
+ roomChargeEnabled Boolean @default(true)
+ updatedAt DateTime @updatedAt
+}
+model RestaurantModifierGroup {
+ id String @id @default(cuid())
+ name String
+ required Boolean @default(false)
+ minSelect Int @default(0)
+ maxSelect Int @default(1)
+ active Boolean @default(true)
+ options RestaurantModifierOption[]
+ products RestaurantProductModifierGroup[]
+}
+model RestaurantModifierOption {
+ id String @id @default(cuid())
+ groupId String
+ group RestaurantModifierGroup @relation(fields:[groupId],references:[id],onDelete:Cascade)
+ name String
+ priceCents Int @default(0)
+ active Boolean @default(true)
+}
+model RestaurantProductModifierGroup {
+ productId String
+ groupId String
+ product RestaurantProduct @relation(fields:[productId],references:[id],onDelete:Cascade)
+ group RestaurantModifierGroup @relation(fields:[groupId],references:[id],onDelete:Cascade)
+ @@id([productId,groupId])
+}
+model RestaurantIngredient {
+ id String @id @default(cuid())
+ name String
+ unit String
+ stockQty Float @default(0)
+ minStockQty Float @default(0)
+ costPerUnitCents Int @default(0)
+ active Boolean @default(true)
+ recipes RestaurantRecipeItem[]
+ movements RestaurantIngredientMovement[]
+ @@index([active,name])
+}
+model RestaurantRecipeItem {
+ productId String
+ ingredientId String
+ quantity Float
+ product RestaurantProduct @relation(fields:[productId],references:[id],onDelete:Cascade)
+ ingredient RestaurantIngredient @relation(fields:[ingredientId],references:[id],onDelete:Restrict)
+ @@id([productId,ingredientId])
+}
+model RestaurantIngredientMovement {
+ id String @id @default(cuid())
+ ingredientId String
+ ingredient RestaurantIngredient @relation(fields:[ingredientId],references:[id],onDelete:Cascade)
+ type String
+ quantity Float
+ reason String?
+ orderId String?
+ createdAt DateTime @default(now())
+ @@index([ingredientId,createdAt])
+}
