@@ -6,7 +6,7 @@ export async function getOccupancyMetrics(start:Date,end:Date){
  if(!rooms.length)return {occupancyPct:0,occupiedRoomNights:0,availableRoomNights:0,rooms:0};
  const totalNights=nights(start,end);const availableRoomNights=rooms.length*totalNights;
  const [bookings,blocks]=await Promise.all([
-  prisma.bookingLead.findMany({where:{status:"CONFIRMED",accommodationId:{in:rooms.map(r=>r.id)},checkIn:{lt:end},checkOut:{gt:start}},select:{accommodationId:true,checkIn:true,checkOut:true}}),
+  prisma.bookingLead.findMany({where:{status:{in:["CONFIRMED","CHECKED_IN"]},accommodationId:{in:rooms.map(r=>r.id)},checkIn:{lt:end},checkOut:{gt:start}},select:{accommodationId:true,checkIn:true,checkOut:true}}),
   prisma.channelBlock.findMany({where:{startsAt:{lt:end},endsAt:{gt:start},integration:{active:true,accommodationId:{in:rooms.map(r=>r.id)}}},select:{startsAt:true,endsAt:true,integration:{select:{accommodationId:true}}}})
  ]);
  const occupied=new Set<string>();
