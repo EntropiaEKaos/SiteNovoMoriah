@@ -78,6 +78,7 @@ model BookingLead {
   message         String?
   status          String         @default("NEW")
   source          String         @default("SITE")
+  publicRequestToken String?      @unique
   quotedTotalCents Int?
   quotedCurrency  String?
   quotedRatePlan  String?
