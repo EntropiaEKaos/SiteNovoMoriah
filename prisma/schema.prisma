@@ -137,3 +137,10 @@ model ChannelBlock {
   @@index([startsAt, endsAt])
   @@index([integrationId])
 }
+
+model ChatMetric {
+  id        String   @id @default(cuid())
+  kind      String
+  createdAt DateTime @default(now())
+  @@index([kind, createdAt])
+}
