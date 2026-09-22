@@ -110,6 +110,7 @@ model ChannelIntegration {
   accommodation   Accommodation? @relation(fields: [accommodationId], references: [id], onDelete: SetNull)
   blocks          ChannelBlock[]
   provider        String
+  integrationType String         @default("ICAL")
   name            String
   importUrl       String?
   exportToken     String?        @unique
