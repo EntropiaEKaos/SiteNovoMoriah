@@ -7,7 +7,7 @@ export async function syncChannelIntegration(id:string){
  if(!row?.active||!row.accommodationId)throw new Error("Canal inativo ou sem hospedagem.");
  await prisma.channelIntegration.update({where:{id},data:{lastAttemptAt:new Date(),syncStatus:"SYNCING"}});
  try{
-  const kind=resolveAdapterKind(row.provider,row.integrationType);
+  const kind=resolveAdapterKind(row.integrationType);
   const adapter=getChannelAdapter(kind);
   const result=await adapter.sync({integrationId:id,accommodationId:row.accommodationId,provider:row.provider});
   const seen=result.blocks.map(block=>block.externalUid);
