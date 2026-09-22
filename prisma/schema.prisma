@@ -33,6 +33,7 @@ model Accommodation {
   channelIntegrations ChannelIntegration[]
   ratePlans           RatePlan[]
   rateRules           RateRule[]
+  housekeepingTasks   HousekeepingTask[]
 }
 
 model Promotion {
@@ -81,6 +82,13 @@ model BookingLead {
   quotedRatePlan  String?
   quoteSnapshot   Json?
   quotedAt        DateTime?
+  guestId         String?
+  guest           Guest?         @relation(fields: [guestId], references: [id], onDelete: SetNull)
+  checkedInAt     DateTime?
+  checkedOutAt    DateTime?
+  noShowAt        DateTime?
+  payments        Payment[]
+  auditLogs       BookingAuditLog[]
   createdAt       DateTime       @default(now())
 
   @@index([accommodationId])
@@ -214,4 +222,52 @@ model ChatMetric {
   kind      String
   createdAt DateTime @default(now())
   @@index([kind, createdAt])
+}
+
+model Guest {
+  id String @id @default(cuid())
+  name String
+  email String?
+  phone String
+  document String?
+  notes String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  bookings BookingLead[]
+  @@index([phone])
+}
+model Payment {
+  id String @id @default(cuid())
+  bookingId String
+  booking BookingLead @relation(fields:[bookingId],references:[id],onDelete:Cascade)
+  amountCents Int
+  currency String @default("BRL")
+  method String
+  status String @default("PAID")
+  reference String?
+  paidAt DateTime @default(now())
+  createdAt DateTime @default(now())
+  @@index([bookingId,status])
+}
+model HousekeepingTask {
+  id String @id @default(cuid())
+  accommodationId String
+  accommodation Accommodation @relation(fields:[accommodationId],references:[id],onDelete:Cascade)
+  bookingId String?
+  type String @default("CLEANING")
+  status String @default("PENDING")
+  scheduledFor DateTime
+  notes String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([scheduledFor,status])
+}
+model BookingAuditLog {
+  id String @id @default(cuid())
+  bookingId String
+  booking BookingLead @relation(fields:[bookingId],references:[id],onDelete:Cascade)
+  action String
+  details Json?
+  createdAt DateTime @default(now())
+  @@index([bookingId,createdAt])
 }
