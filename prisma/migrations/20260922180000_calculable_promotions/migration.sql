@@ -1,0 +1,1 @@
+ALTER TABLE "Promotion" ADD COLUMN "discountType" TEXT, ADD COLUMN "discountValue" INTEGER, ADD COLUMN "minNights" INTEGER, ADD COLUMN "accommodationId" TEXT, ADD COLUMN "stackable" BOOLEAN NOT NULL DEFAULT false;

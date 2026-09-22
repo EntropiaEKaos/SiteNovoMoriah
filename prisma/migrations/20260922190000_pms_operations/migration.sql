@@ -1,0 +1,13 @@
+ALTER TABLE "BookingLead" ADD COLUMN "guestId" TEXT, ADD COLUMN "checkedInAt" TIMESTAMP(3), ADD COLUMN "checkedOutAt" TIMESTAMP(3), ADD COLUMN "noShowAt" TIMESTAMP(3);
+CREATE TABLE "Guest" ("id" TEXT NOT NULL,"name" TEXT NOT NULL,"email" TEXT,"phone" TEXT NOT NULL,"document" TEXT,"notes" TEXT,"createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,"updatedAt" TIMESTAMP(3) NOT NULL,CONSTRAINT "Guest_pkey" PRIMARY KEY ("id"));
+CREATE INDEX "Guest_phone_idx" ON "Guest"("phone");
+CREATE TABLE "Payment" ("id" TEXT NOT NULL,"bookingId" TEXT NOT NULL,"amountCents" INTEGER NOT NULL,"currency" TEXT NOT NULL DEFAULT 'BRL',"method" TEXT NOT NULL,"status" TEXT NOT NULL DEFAULT 'PAID',"reference" TEXT,"paidAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,"createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,CONSTRAINT "Payment_pkey" PRIMARY KEY ("id"));
+CREATE INDEX "Payment_bookingId_status_idx" ON "Payment"("bookingId","status");
+CREATE TABLE "HousekeepingTask" ("id" TEXT NOT NULL,"accommodationId" TEXT NOT NULL,"bookingId" TEXT,"type" TEXT NOT NULL DEFAULT 'CLEANING',"status" TEXT NOT NULL DEFAULT 'PENDING',"scheduledFor" TIMESTAMP(3) NOT NULL,"notes" TEXT,"createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,"updatedAt" TIMESTAMP(3) NOT NULL,CONSTRAINT "HousekeepingTask_pkey" PRIMARY KEY ("id"));
+CREATE INDEX "HousekeepingTask_scheduledFor_status_idx" ON "HousekeepingTask"("scheduledFor","status");
+CREATE TABLE "BookingAuditLog" ("id" TEXT NOT NULL,"bookingId" TEXT NOT NULL,"action" TEXT NOT NULL,"details" JSONB,"createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,CONSTRAINT "BookingAuditLog_pkey" PRIMARY KEY ("id"));
+CREATE INDEX "BookingAuditLog_bookingId_createdAt_idx" ON "BookingAuditLog"("bookingId","createdAt");
+ALTER TABLE "BookingLead" ADD CONSTRAINT "BookingLead_guestId_fkey" FOREIGN KEY ("guestId") REFERENCES "Guest"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "Payment" ADD CONSTRAINT "Payment_bookingId_fkey" FOREIGN KEY ("bookingId") REFERENCES "BookingLead"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "HousekeepingTask" ADD CONSTRAINT "HousekeepingTask_accommodationId_fkey" FOREIGN KEY ("accommodationId") REFERENCES "Accommodation"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "BookingAuditLog" ADD CONSTRAINT "BookingAuditLog_bookingId_fkey" FOREIGN KEY ("bookingId") REFERENCES "BookingLead"("id") ON DELETE CASCADE ON UPDATE CASCADE;

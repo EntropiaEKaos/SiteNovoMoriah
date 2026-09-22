@@ -31,6 +31,10 @@ model Accommodation {
   updatedAt           DateTime             @updatedAt
   bookingLeads        BookingLead[]
   channelIntegrations ChannelIntegration[]
+  ratePlans           RatePlan[]
+  rateRules           RateRule[]
+  housekeepingTasks   HousekeepingTask[]
+  inventoryHolds      InventoryHold[]
 }
 
 model Promotion {
@@ -42,6 +46,11 @@ model Promotion {
   endsAt      DateTime?
   active      Boolean   @default(true)
   createdAt   DateTime  @default(now())
+  discountType  String?
+  discountValue Int?
+  minNights     Int?
+  accommodationId String?
+  stackable     Boolean @default(false)
   updatedAt   DateTime  @updatedAt
 }
 
@@ -68,9 +77,28 @@ model BookingLead {
   guests          Int            @default(1)
   message         String?
   status          String         @default("NEW")
+  source          String         @default("SITE")
+  publicRequestToken String?      @unique
+  quotedTotalCents Int?
+  quotedCurrency  String?
+  quotedRatePlan  String?
+  quoteSnapshot   Json?
+  quotedAt        DateTime?
+  guestId         String?
+  guest           Guest?         @relation(fields: [guestId], references: [id], onDelete: SetNull)
+  checkedInAt     DateTime?
+  checkedOutAt    DateTime?
+  noShowAt        DateTime?
+  restaurantAccessToken String? @unique
+  payments        Payment[]
+  auditLogs       BookingAuditLog[]
+  housekeepingTasks HousekeepingTask[]
+  restaurantOrders RestaurantOrder[]
+  restaurantRoomCharges RestaurantRoomCharge[]
   createdAt       DateTime       @default(now())
 
   @@index([accommodationId])
+  @@index([guestId])
 }
 
 model IntegrationSettings {
@@ -110,16 +138,40 @@ model ChannelIntegration {
   accommodation   Accommodation? @relation(fields: [accommodationId], references: [id], onDelete: SetNull)
   blocks          ChannelBlock[]
   provider        String
+  integrationType String         @default("ICAL")
   name            String
   importUrl       String?
   exportToken     String?        @unique
   active          Boolean        @default(true)
   lastSyncAt      DateTime?
+  lastAttemptAt   DateTime?
+  lastSuccessAt   DateTime?
+  syncStatus      String         @default("IDLE")
   lastError       String?
+  etag            String?
+  lastModified    String?
+  consecutiveFailures Int @default(0)
+  nextSyncAt      DateTime?
+  syncDurationMs  Int?
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
 
   @@index([accommodationId])
+  @@index([nextSyncAt])
+}
+
+model InventoryHold {
+  id              String        @id @default(cuid())
+  accommodationId String
+  accommodation   Accommodation @relation(fields: [accommodationId], references: [id], onDelete: Cascade)
+  checkIn         DateTime
+  checkOut        DateTime
+  token           String        @unique
+  expiresAt       DateTime
+  createdAt       DateTime      @default(now())
+
+  @@index([accommodationId, checkIn, checkOut])
+  @@index([expiresAt])
 }
 
 model ChannelBlock {
@@ -138,9 +190,276 @@ model ChannelBlock {
   @@index([integrationId])
 }
 
+model RatePlan {
+  id              String        @id @default(cuid())
+  accommodationId String
+  accommodation   Accommodation @relation(fields: [accommodationId], references: [id], onDelete: Cascade)
+  name            String
+  currency        String        @default("BRL")
+  basePriceCents  Int
+  minNights       Int           @default(1)
+  maxNights       Int?
+  active          Boolean       @default(true)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  overrides       RateOverride[]
+
+  @@index([accommodationId, active])
+}
+
+model RateRule {
+  id              String        @id @default(cuid())
+  accommodationId String
+  accommodation   Accommodation @relation(fields: [accommodationId], references: [id], onDelete: Cascade)
+  name            String
+  adjustmentType  String        @default("PERCENT")
+  adjustmentValue Int
+  minOccupancyPct Int?
+  maxOccupancyPct Int?
+  daysBeforeMin   Int?
+  daysBeforeMax   Int?
+  startsAt        DateTime?
+  endsAt          DateTime?
+  active          Boolean       @default(true)
+  priority        Int           @default(100)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@index([accommodationId, active, priority])
+}
+
+model RateOverride {
+  id             String   @id @default(cuid())
+  ratePlanId     String
+  ratePlan       RatePlan @relation(fields: [ratePlanId], references: [id], onDelete: Cascade)
+  startsAt       DateTime
+  endsAt         DateTime
+  priceCents     Int
+  minNights      Int?
+  closedToArrival Boolean @default(false)
+  closedToDeparture Boolean @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([ratePlanId, startsAt, endsAt])
+}
+
 model ChatMetric {
   id        String   @id @default(cuid())
   kind      String
   createdAt DateTime @default(now())
   @@index([kind, createdAt])
+}
+
+model Guest {
+  id String @id @default(cuid())
+  name String
+  email String?
+  phone String
+  document String?
+  notes String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  bookings BookingLead[]
+  @@index([phone])
+}
+model Payment {
+  id String @id @default(cuid())
+  bookingId String
+  booking BookingLead @relation(fields:[bookingId],references:[id],onDelete:Cascade)
+  amountCents Int
+  currency String @default("BRL")
+  method String
+  status String @default("PAID")
+  reference String?
+  paidAt DateTime @default(now())
+  createdAt DateTime @default(now())
+  @@index([bookingId,status])
+}
+model HousekeepingTask {
+  id String @id @default(cuid())
+  accommodationId String
+  accommodation Accommodation @relation(fields:[accommodationId],references:[id],onDelete:Cascade)
+  bookingId String?
+  booking BookingLead? @relation(fields:[bookingId],references:[id],onDelete:SetNull)
+  type String @default("CLEANING")
+  status String @default("PENDING")
+  scheduledFor DateTime
+  notes String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([scheduledFor,status])
+  @@index([bookingId])
+}
+model BookingAuditLog {
+  id String @id @default(cuid())
+  bookingId String
+  booking BookingLead @relation(fields:[bookingId],references:[id],onDelete:Cascade)
+  action String
+  details Json?
+  createdAt DateTime @default(now())
+  @@index([bookingId,createdAt])
+}
+
+model RestaurantCategory {
+ id String @id @default(cuid())
+ name String
+ sortOrder Int @default(0)
+ active Boolean @default(true)
+ products RestaurantProduct[]
+}
+model RestaurantProduct {
+ id String @id @default(cuid())
+ categoryId String
+ category RestaurantCategory @relation(fields:[categoryId],references:[id],onDelete:Restrict)
+ name String
+ description String?
+ imageUrl String?
+ priceCents Int
+ costCents Int?
+ sku String? @unique
+ active Boolean @default(true)
+ trackStock Boolean @default(true)
+ stockQty Int @default(0)
+ minStockQty Int @default(0)
+ createdAt DateTime @default(now())
+ updatedAt DateTime @updatedAt
+ orderItems RestaurantOrderItem[]
+ stockMovements RestaurantStockMovement[]
+ recipes RestaurantRecipeItem[]
+ modifierLinks RestaurantProductModifierGroup[]
+ @@index([categoryId,active])
+}
+model RestaurantOrder {
+ id String @id @default(cuid())
+ bookingId String?
+ booking BookingLead? @relation(fields:[bookingId],references:[id],onDelete:SetNull)
+ guestName String
+ roomLabel String?
+ phone String?
+ status String @default("NEW")
+ paymentMethod String @default("ROOM")
+ paymentStatus String @default("PENDING")
+ subtotalCents Int
+ totalCents Int
+ notes String?
+ createdAt DateTime @default(now())
+ updatedAt DateTime @updatedAt
+ items RestaurantOrderItem[]
+ roomCharge RestaurantRoomCharge?
+ @@index([status,createdAt])
+ @@index([bookingId])
+}
+model RestaurantOrderItem {
+ id String @id @default(cuid())
+ orderId String
+ order RestaurantOrder @relation(fields:[orderId],references:[id],onDelete:Cascade)
+ productId String
+ product RestaurantProduct @relation(fields:[productId],references:[id],onDelete:Restrict)
+ nameSnapshot String
+ unitPriceCents Int
+ unitCostCents Int?
+ quantity Int
+ totalCents Int
+ modifiers RestaurantOrderItemModifier[]
+ @@index([orderId])
+ @@index([productId])
+}
+model RestaurantStockMovement {
+ id String @id @default(cuid())
+ productId String
+ product RestaurantProduct @relation(fields:[productId],references:[id],onDelete:Cascade)
+ type String
+ quantity Int
+ reason String?
+ orderId String?
+ createdAt DateTime @default(now())
+ @@index([productId,createdAt])
+}
+
+model RestaurantSettings {
+ id String @id @default("main")
+ openTime String @default("07:00")
+ closeTime String @default("22:00")
+ acceptingOrders Boolean @default(true)
+ roomChargeEnabled Boolean @default(true)
+ updatedAt DateTime @updatedAt
+}
+model RestaurantModifierGroup {
+ id String @id @default(cuid())
+ name String
+ required Boolean @default(false)
+ minSelect Int @default(0)
+ maxSelect Int @default(1)
+ active Boolean @default(true)
+ options RestaurantModifierOption[]
+ products RestaurantProductModifierGroup[]
+}
+model RestaurantModifierOption {
+ id String @id @default(cuid())
+ groupId String
+ group RestaurantModifierGroup @relation(fields:[groupId],references:[id],onDelete:Cascade)
+ name String
+ priceCents Int @default(0)
+ active Boolean @default(true)
+}
+model RestaurantProductModifierGroup {
+ productId String
+ groupId String
+ product RestaurantProduct @relation(fields:[productId],references:[id],onDelete:Cascade)
+ group RestaurantModifierGroup @relation(fields:[groupId],references:[id],onDelete:Cascade)
+ @@id([productId,groupId])
+}
+model RestaurantIngredient {
+ id String @id @default(cuid())
+ name String
+ unit String
+ stockQty Float @default(0)
+ minStockQty Float @default(0)
+ costPerUnitCents Int @default(0)
+ active Boolean @default(true)
+ recipes RestaurantRecipeItem[]
+ movements RestaurantIngredientMovement[]
+ @@index([active,name])
+}
+model RestaurantRecipeItem {
+ productId String
+ ingredientId String
+ quantity Float
+ product RestaurantProduct @relation(fields:[productId],references:[id],onDelete:Cascade)
+ ingredient RestaurantIngredient @relation(fields:[ingredientId],references:[id],onDelete:Restrict)
+ @@id([productId,ingredientId])
+}
+model RestaurantIngredientMovement {
+ id String @id @default(cuid())
+ ingredientId String
+ ingredient RestaurantIngredient @relation(fields:[ingredientId],references:[id],onDelete:Cascade)
+ type String
+ quantity Float
+ reason String?
+ orderId String?
+ createdAt DateTime @default(now())
+ @@index([ingredientId,createdAt])
+}
+
+model RestaurantOrderItemModifier {
+ id String @id @default(cuid())
+ orderItemId String
+ orderItem RestaurantOrderItem @relation(fields:[orderItemId],references:[id],onDelete:Cascade)
+ optionId String
+ nameSnapshot String
+ priceCents Int
+ @@index([orderItemId])
+}
+model RestaurantRoomCharge {
+ id String @id @default(cuid())
+ orderId String @unique
+ order RestaurantOrder @relation(fields:[orderId],references:[id],onDelete:Cascade)
+ bookingId String
+ booking BookingLead @relation(fields:[bookingId],references:[id],onDelete:Cascade)
+ amountCents Int
+ status String @default("OPEN")
+ createdAt DateTime @default(now())
+ settledAt DateTime?
+ @@index([bookingId,status])
 }
