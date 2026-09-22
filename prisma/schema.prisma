@@ -441,5 +441,3 @@ model RestaurantRoomCharge {
  settledAt DateTime?
  @@index([bookingId,status])
 }
-
-
