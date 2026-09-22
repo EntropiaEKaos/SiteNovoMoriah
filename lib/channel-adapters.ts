@@ -1,6 +1,6 @@
 export type ChannelAdapterKind="ICAL"|"BOOKING_API"|"AIRBNB_API"|"EXPEDIA_API"|"OTHER_API";
 export type AdapterBlock={externalUid:string;summary?:string|null;startsAt:Date;endsAt:Date};
-export type AdapterSyncResult={blocks:AdapterBlock[];syncedAt:Date};
+export type AdapterSyncResult={blocks:AdapterBlock[];syncedAt:Date;notModified?:boolean;etag?:string|null;lastModified?:string|null};
 export type AdapterContext={integrationId:string;accommodationId:string;provider:string};
 
 export interface ChannelAdapter{
