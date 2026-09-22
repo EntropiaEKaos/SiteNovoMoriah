@@ -1,0 +1,1 @@
+ALTER TABLE "BookingLead" ADD COLUMN "restaurantAccessToken" TEXT; CREATE UNIQUE INDEX "BookingLead_restaurantAccessToken_key" ON "BookingLead"("restaurantAccessToken");
