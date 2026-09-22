@@ -82,6 +82,12 @@ model IntegrationSettings {
   firebaseMessagingSenderId String?
   firebaseAppId             String?
   firebaseVapidKey          String?
+  chatEnabled               Boolean  @default(true)
+  chatName                  String   @default("Moriah Assistente")
+  chatWelcome               String   @default("Olá! Sou o assistente virtual da Moriah. Como posso ajudar com sua hospedagem?")
+  chatInstructions          String?
+  groqModel                 String   @default("llama-3.1-8b-instant")
+  groqTemperature           Float    @default(0.2)
   updatedAt                 DateTime @updatedAt
 }
 
