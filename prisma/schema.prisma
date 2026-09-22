@@ -34,6 +34,7 @@ model Accommodation {
   ratePlans           RatePlan[]
   rateRules           RateRule[]
   housekeepingTasks   HousekeepingTask[]
+  inventoryHolds      InventoryHold[]
 }
 
 model Promotion {
@@ -150,6 +151,20 @@ model ChannelIntegration {
   updatedAt       DateTime       @updatedAt
 
   @@index([accommodationId])
+}
+
+model InventoryHold {
+  id              String        @id @default(cuid())
+  accommodationId String
+  accommodation   Accommodation @relation(fields: [accommodationId], references: [id], onDelete: Cascade)
+  checkIn         DateTime
+  checkOut        DateTime
+  token           String        @unique
+  expiresAt       DateTime
+  createdAt       DateTime      @default(now())
+
+  @@index([accommodationId, checkIn, checkOut])
+  @@index([expiresAt])
 }
 
 model ChannelBlock {
