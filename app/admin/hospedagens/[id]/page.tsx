@@ -1,1 +1,32 @@
-import {notFound} from "next/navigation";import MediaPicker from "../../components/media-picker";import {prisma} from "../../../../lib/prisma";import {updateAccommodation} from "../../actions";export const dynamic="force-dynamic";export default async function Page({params}:{params:Promise<{id:string}>}){const {id}=await params;const [room,media]=await Promise.all([prisma.accommodation.findUnique({where:{id}}),prisma.media.findMany({orderBy:{createdAt:"desc"}})]);if(!room)notFound();return <main style={{padding:"50px 6vw",maxWidth:900}}><small>MORIAH CMS / HOSPEDAGENS</small><h1 style={{fontSize:48}}>Editar hospedagem</h1><form action={updateAccommodation} style={{display:"grid",gap:16}}><input type="hidden" name="id" value={room.id}/><input name="name" defaultValue={room.name} required style={{padding:14}}/><textarea name="description" defaultValue={room.description} required rows={6} style={{padding:14}}/><select name="type" defaultValue={room.type} style={{padding:14}}><option>POUSADA</option><option>HOSTEL</option><option>GRUPO</option></select><input name="capacity" type="number" min="1" defaultValue={room.capacity} style={{padding:14}}/><input name="price" inputMode="decimal" defaultValue={room.priceCents==null?"":(room.priceCents/100).toFixed(2)} placeholder="Preço por diária" style={{padding:14}}/><MediaPicker name="coverImage" media={media} defaultValue={room.coverImage||""}/><label><input name="featured" type="checkbox" defaultChecked={room.featured}/> Destacar no site</label><button style={{padding:16,border:0,background:"#ffd400",fontWeight:800}}>Salvar alterações</button></form></main>}
+import Link from "next/link";
+import {notFound} from "next/navigation";
+import {prisma} from "../../../../lib/prisma";
+import {updateAccommodation} from "../../actions";
+import AccommodationForm from "../accommodation-form";
+
+export const dynamic="force-dynamic";
+
+export default async function Page({params}:{params:Promise<{id:string}>}){
+  const {id}=await params;
+  const [room,media]=await Promise.all([
+    prisma.accommodation.findUnique({where:{id}}),
+    prisma.media.findMany({orderBy:{createdAt:"desc"},take:200})
+  ]);
+  if(!room)notFound();
+
+  return <main className="adminPage">
+    <section className="adminPageHero">
+      <div>
+        <small>MORIAH CMS / HOSPEDAGENS</small>
+        <h1>Editar hospedagem</h1>
+        <p>{room.name} • ajuste dados comerciais, operação, comodidades e imagens sem perder o histórico da unidade.</p>
+      </div>
+      <div className="adminPageHeroActions">
+        <Link className="adminSecondaryAction" href="/admin/hospedagens">← Voltar</Link>
+        <Link className="adminSecondaryAction" href="/admin/galeria">Gerenciar imagens →</Link>
+      </div>
+    </section>
+
+    <AccommodationForm action={updateAccommodation} media={media} room={room}/>
+  </main>;
+}
