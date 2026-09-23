@@ -1,1 +1,25 @@
-import Link from "next/link";import {getAdminSession} from "../../lib/admin-auth";import {logoutAdmin} from "./login/actions";export default async function AdminLayout({children}:{children:React.ReactNode}){const session=await getAdminSession();return <div>{session&&<div style={{background:"#111",color:"#fff",padding:"12px 5vw",display:"flex",gap:20,alignItems:"center",flexWrap:"wrap"}}><b>MORIAH <span style={{color:"#ffd400"}}>CMS</span></b><Link href="/admin">Dashboard</Link><Link href="/admin/hospedagens">Hospedagens</Link><Link href="/admin/reservas">Reservas</Link><Link href="/admin/pms" style={{color:"#ffd400",fontWeight:900}}>PMS</Link><Link href="/admin/tarifas">Tarifas</Link><Link href="/admin/promocoes">Promoções</Link><Link href="/admin/restaurante" style={{color:"#ffd400",fontWeight:900}}>Restaurante</Link><Link href="/admin/galeria">Galeria</Link><Link href="/admin/blog">Blog</Link><Link href="/admin/configuracoes">Configurações</Link><Link href="/admin/integracoes">Integrações</Link><Link href="/admin/canais">Canais</Link>{session?.role==="SUPERADMIN"&&<Link href="/admin/usuarios" style={{color:"#ffd400",fontWeight:900}}>Super Admin</Link>}<Link href="/" style={{marginLeft:"auto",color:"#ffd400"}}>Ver site</Link><form action={logoutAdmin}><button style={{background:"transparent",color:"#fff",border:"1px solid #555",padding:8}}>Sair</button></form></div>}{children}</div>}
+import Link from "next/link";
+import {getAdminSession} from "../../lib/admin-auth";
+import {logoutAdmin} from "./login/actions";
+
+const primary=[
+  ["Visão geral","/admin"],["Hospedagens","/admin/hospedagens"],["Reservas","/admin/reservas"],["PMS","/admin/pms"],
+  ["Tarifas","/admin/tarifas"],["Promoções","/admin/promocoes"],["Restaurante","/admin/restaurante"],["Galeria","/admin/galeria"],
+  ["Blog","/admin/blog"],["Integrações","/admin/integracoes"],["Canais","/admin/canais"],["Configurações","/admin/configuracoes"]
+] as const;
+
+export default async function AdminLayout({children}:{children:React.ReactNode}){
+  const session=await getAdminSession();
+  if(!session)return <div>{children}</div>;
+  return <div className="adminApp">
+    <aside className="adminSidebar">
+      <div className="adminBrand"><span className="adminBrandMark">M</span><div><b>MORIAH</b><small>COMMAND CENTER</small></div></div>
+      <nav className="adminNav">{primary.map(([label,href])=><Link key={href} href={href}>{label}<span>↗</span></Link>)}
+        {session.role==="SUPERADMIN"&&<Link className="adminSuper" href="/admin/usuarios">Super Admin <span>◆</span></Link>}
+      </nav>
+      <div className="adminProfile"><div className="adminAvatar">{session.username.slice(0,1).toUpperCase()}</div><div><strong>{session.username}</strong><small>{session.role}</small></div></div>
+      <div className="adminSideActions"><Link href="/">Ver site ↗</Link><form action={logoutAdmin}><button>Sair</button></form></div>
+    </aside>
+    <div className="adminWorkspace"><header className="adminTopbar"><div><span className="adminLiveDot"/> Operação Moriah</div><small>CMS • PMS • CHANNEL • FOOD</small></header>{children}</div>
+  </div>;
+}
