@@ -20,3 +20,444 @@ body{background:linear-gradient(180deg,#fff 0,#fffdf5 100%)}.nav{box-shadow:0 8p
 
 /* Booking journey + PMS */
 .bookingPanelV2{position:relative;overflow:hidden}.bookingPanelV2:before{content:"BOOK DIRECT";position:absolute;right:-12px;top:12px;font-size:54px;font-weight:950;letter-spacing:-3px;color:#11104;pointer-events:none}.bookingPanelV2 .bookingPanelHead{align-items:flex-start}.bookingPanelV2 .bookingPanelHead>div{display:grid;gap:5px}.bookingPanelV2 .bookingPanelHead small{font-size:8px;font-weight:950;letter-spacing:1.7px;color:#999}.bookingFormV2{position:relative}.bookingFormV2>select{grid-column:1/-1;font-weight:800;background:#f8f7f2}.quoteLoading{padding:14px 0;font-size:12px;font-weight:800;color:#777}.quoteCard{margin-top:20px;background:#111;color:#fff;padding:25px;display:flex;justify-content:space-between;align-items:center;gap:25px;border-left:7px solid var(--y)}.quoteCard small{color:#999;font-size:8px;font-weight:900;letter-spacing:1.5px}.quoteCard h3{font-size:34px;color:var(--y);margin:7px 0 0;letter-spacing:-1.5px}.quoteCard p{margin:0;text-align:right;font-weight:800}.quoteCard p span{color:#999;font-size:11px;font-weight:400}.pmsWorkspace{display:grid;grid-template-columns:minmax(0,2fr) minmax(280px,.8fr);gap:16px;align-items:start}.pmsBookingList{display:grid;gap:9px}.pmsBookingCard{background:#fff;padding:24px;border:1px solid #dedbd2;border-left:4px solid transparent;transition:.18s}.pmsBookingCard:hover{border-left-color:var(--y);box-shadow:5px 5px 0 #e7e2d4}.pmsBookingCard h2{font-size:25px;letter-spacing:-1px}.pmsBookingCard button,.pmsBookingCard input,.pmsBookingCard select{padding:9px;border:1px solid #ccc;background:#fff}.pmsBookingCard button{cursor:pointer;font-weight:800}.pmsHousekeeping{background:#111;color:#fff;padding:28px;position:sticky;top:76px}.pmsHousekeeping>small{color:var(--y);font-size:8px;font-weight:900;letter-spacing:1.5px}.pmsHousekeeping h2{font-size:28px;letter-spacing:-1px}.pmsHousekeeping select{padding:8px;background:#222;color:#fff;border:1px solid #444}.pmsHousekeeping button{border:0;padding:9px;font-weight:900}@media(max-width:900px){.pmsWorkspace{grid-template-columns:1fr}.pmsHousekeeping{position:relative;top:auto}}@media(max-width:600px){.quoteCard{align-items:flex-start;flex-direction:column}.quoteCard p{text-align:left}.bookingPanelV2:before{display:none}}
+
+
+/* Moriah Visual Final 3.0 */
+:root{
+  --admin-bg:#f2f0e8;
+  --admin-panel:#ffffff;
+  --admin-line:#ded9ca;
+  --admin-muted:#777167;
+  --admin-dark:#0d0d0d;
+  --admin-soft:#ebe7da;
+}
+
+/* Admin navigation system */
+.adminSidebar{width:280px;padding:24px 18px 20px}
+.adminWorkspace{margin-left:280px}
+.adminBrand{padding:0 10px 20px}
+.adminNav{display:block;margin:18px 0 12px;overflow-y:auto;overflow-x:hidden;padding-right:4px}
+.adminNavSection{padding:10px 0 12px;border-bottom:1px solid #202020}
+.adminNavSection:last-child{border-bottom:0}
+.adminNavLabel{padding:0 11px 7px;color:#5f5f5f;font-size:8px;font-weight:950;letter-spacing:1.7px}
+.adminNavItems{display:grid;gap:2px}
+.adminNavLink,.adminNav .adminNavLink{
+  display:grid;
+  grid-template-columns:18px 1fr auto;
+  align-items:center;
+  gap:9px;
+  min-height:37px;
+  padding:9px 11px;
+  color:#aaa;
+  border:0;
+  border-left:2px solid transparent;
+  border-radius:0;
+  font-size:12px;
+  transition:.16s ease;
+}
+.adminNavLink>b{font-size:10px;opacity:0;color:var(--y)}
+.adminNavLink:hover,.adminNav .adminNavLink:hover{
+  padding-left:14px;
+  background:#171717;
+  color:#fff;
+  border-left-color:#555;
+}
+.adminNavLink:hover>b{opacity:1}
+.adminNavLink.isActive,.adminNav .adminNavLink.isActive{
+  background:#1b1b1b;
+  color:#fff;
+  border-left-color:var(--y);
+}
+.adminNavLink.isActive svg{color:var(--y)}
+.adminNavLink.isActive>b{opacity:1}
+.adminNavSuperSection{margin-top:4px}
+.adminNav .adminSuper{color:#f1d200}
+.adminTopbarStatus{display:flex;align-items:center}
+.adminTopbarMeta{display:flex;align-items:center;gap:12px}
+.adminTopbarMeta>span{
+  padding:5px 7px;
+  background:#111;
+  color:var(--y);
+  font-size:7px;
+  letter-spacing:1.2px;
+}
+.adminTopbarMeta small{font-size:8px}
+
+/* Global admin surface normalization */
+.adminWorkspace{background:var(--admin-bg)}
+.adminWorkspace>main{
+  min-height:calc(100vh - 58px);
+}
+.adminWorkspace main:not(.adminDashboard):not(.opsPage):not(.integrationAdmin){
+  background:var(--admin-bg);
+}
+.adminWorkspace main input:not([type="checkbox"]):not([type="radio"]),
+.adminWorkspace main select,
+.adminWorkspace main textarea{
+  min-height:42px;
+  border:1px solid #cfc9b9!important;
+  border-radius:0!important;
+  background:#fff;
+  color:#111;
+  font:inherit;
+  outline:none;
+  transition:border-color .16s ease,box-shadow .16s ease,background .16s ease;
+}
+.adminWorkspace main textarea{min-height:100px}
+.adminWorkspace main input:not([type="checkbox"]):not([type="radio"]):focus,
+.adminWorkspace main select:focus,
+.adminWorkspace main textarea:focus{
+  border-color:#111!important;
+  box-shadow:0 0 0 3px #ffd40040;
+}
+.adminWorkspace main button{
+  min-height:38px;
+  border-radius:0!important;
+  cursor:pointer;
+  font-weight:800;
+  transition:transform .15s ease,background .15s ease,color .15s ease,box-shadow .15s ease;
+}
+.adminWorkspace main button:hover:not(:disabled){
+  transform:translateY(-1px);
+}
+.adminWorkspace main button:disabled{opacity:.48;cursor:not-allowed}
+.adminWorkspace main form{accent-color:#111}
+.adminWorkspace main article{
+  transition:border-color .16s ease,box-shadow .16s ease,transform .16s ease;
+}
+.adminWorkspace main h1,.adminWorkspace main h2,.adminWorkspace main h3{text-wrap:balance}
+.adminWorkspace main>small{
+  font-size:9px;
+  font-weight:950;
+  letter-spacing:1.8px;
+  color:#8b8578;
+}
+.adminWorkspace main>h1{
+  letter-spacing:-2.8px;
+}
+.adminWorkspace main table{
+  width:100%;
+  border-collapse:collapse;
+  background:#fff;
+}
+.adminWorkspace main th{
+  text-align:left;
+  font-size:9px;
+  letter-spacing:1px;
+  color:#817b70;
+  background:#f4f1e8;
+}
+.adminWorkspace main th,.adminWorkspace main td{
+  padding:12px;
+  border-bottom:1px solid #e6e1d5;
+}
+.adminWorkspace main a:focus-visible,
+.adminWorkspace main button:focus-visible,
+.adminSidebar a:focus-visible{
+  outline:3px solid var(--y);
+  outline-offset:2px;
+}
+
+/* Public secondary pages */
+.publicSubpage{
+  min-height:100vh;
+  background:linear-gradient(180deg,#fff 0,#f6f3ea 100%);
+  color:#111;
+}
+.publicSubNav{
+  height:74px;
+  padding:0 6vw;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:22px;
+  border-bottom:1px solid #dedbd2;
+  background:#fffffff2;
+  position:sticky;
+  top:0;
+  z-index:30;
+  backdrop-filter:blur(14px);
+}
+.publicSubNav>b{font-size:20px;letter-spacing:2px}
+.publicSubNav>b span{color:var(--y)}
+.publicSubNav>div{display:flex;align-items:center;gap:18px;font-size:12px;font-weight:800}
+.publicSubNav a:hover{opacity:.58}
+.publicSubNav .publicPrimary{
+  background:#111;
+  color:#fff;
+  padding:11px 15px;
+}
+.publicHero{
+  max-width:1500px;
+  margin:auto;
+  padding:86px max(6vw,calc((100vw - 1500px)/2)) 48px;
+}
+.publicHero small{
+  font-size:9px;
+  letter-spacing:2px;
+  font-weight:950;
+}
+.publicHero h1{
+  font-size:clamp(54px,7vw,104px);
+  line-height:.9;
+  letter-spacing:-5px;
+  margin:15px 0 24px;
+}
+.publicHero p{
+  max-width:680px;
+  color:#6f6b63;
+  line-height:1.7;
+  font-size:16px;
+}
+.publicHeroMeta{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  margin-top:24px;
+}
+.publicHeroMeta span{
+  padding:8px 10px;
+  border:1px solid #d8d2c4;
+  background:#fff;
+  font-size:10px;
+  font-weight:850;
+  letter-spacing:.7px;
+}
+
+/* Food */
+.foodShell{
+  max-width:1500px;
+  margin:auto;
+  padding:0 max(6vw,calc((100vw - 1500px)/2)) 100px;
+}
+.foodLayout{
+  display:grid;
+  grid-template-columns:minmax(0,2fr) minmax(300px,.8fr);
+  gap:18px;
+  align-items:start;
+}
+.foodMenuGrid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(270px,1fr));
+  gap:12px;
+}
+.foodCard{
+  background:#fff;
+  border:1px solid #ded9ca;
+  padding:22px;
+  min-height:260px;
+  position:relative;
+}
+.foodCard:hover{border-color:#111;box-shadow:7px 7px 0 #e8e2d2}
+.foodCard>small{font-size:8px;font-weight:950;letter-spacing:1.4px;color:#8c8679}
+.foodCard h2{font-size:25px;letter-spacing:-1px;margin:9px 0}
+.foodCard>p{color:#6b675f;line-height:1.55;min-height:45px}
+.foodPrice{font-size:24px}
+.foodModifier{
+  margin-top:14px;
+  padding-top:12px;
+  border-top:1px solid #ece7dc;
+  display:grid;
+  gap:6px;
+}
+.foodModifier>small{color:#8d887e}
+.foodModifier label{display:flex;gap:8px;align-items:flex-start;font-size:12px}
+.foodQty{display:flex;gap:10px;align-items:center;margin-top:17px}
+.foodQty button{
+  width:38px;
+  height:38px;
+  border:1px solid #111;
+  background:#fff;
+  font-size:18px;
+}
+.foodQty button:hover:not(:disabled){background:var(--y)}
+.foodCart{
+  background:#111;
+  color:#fff;
+  padding:26px;
+  position:sticky;
+  top:92px;
+  box-shadow:8px 8px 0 var(--y);
+}
+.foodCart>small{color:#888;font-size:8px;font-weight:950;letter-spacing:1.5px}
+.foodCart h2{font-size:38px;color:var(--y);letter-spacing:-2px}
+.foodCart form{display:grid;gap:9px}
+.foodCart input,.foodCart select,.foodCart textarea{
+  padding:12px;
+  border:1px solid #3d3d3d;
+  background:#1d1d1d;
+  color:#fff;
+}
+.foodCart button{
+  background:var(--y);
+  border:0;
+  padding:14px;
+  font-weight:900;
+}
+.foodCart p{font-size:11px;color:#888;line-height:1.5}
+
+/* Blog */
+.blogIndex{
+  max-width:1500px;
+  margin:auto;
+  padding:0 max(6vw,calc((100vw - 1500px)/2)) 100px;
+}
+.blogGrid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:14px;
+}
+.blogCard{
+  background:#fff;
+  border:1px solid #ded9ca;
+  overflow:hidden;
+  min-height:390px;
+}
+.blogCard:hover{transform:translateY(-4px);box-shadow:8px 8px 0 var(--y);border-color:#111}
+.blogCard img{width:100%;height:230px;object-fit:cover;display:block}
+.blogCardBody{padding:22px}
+.blogCardBody small{font-size:8px;font-weight:950;letter-spacing:1.3px;color:#8d887d}
+.blogCardBody h2{font-size:27px;letter-spacing:-1px;margin:10px 0}
+.blogCardBody p{color:#6b675f;line-height:1.6}
+.blogCardBody a{display:inline-block;margin-top:8px;border-bottom:2px solid var(--y);font-weight:900;font-size:12px}
+.blogEmpty{
+  border:1px dashed #bbb4a6;
+  padding:70px 30px;
+  background:#faf8f2;
+  text-align:center;
+}
+.blogArticle{
+  max-width:930px;
+  margin:auto;
+  padding:72px 30px 110px;
+}
+.blogArticleBack{
+  display:inline-block;
+  margin-bottom:38px;
+  font-size:12px;
+  font-weight:900;
+  border-bottom:2px solid var(--y);
+}
+.blogArticle img{
+  width:100%;
+  max-height:520px;
+  object-fit:cover;
+  margin-bottom:38px;
+}
+.blogArticle small{font-size:9px;font-weight:950;letter-spacing:1.7px;color:#8d887d}
+.blogArticle h1{
+  font-size:clamp(46px,6.5vw,82px);
+  letter-spacing:-4px;
+  line-height:.95;
+  margin:15px 0 24px;
+}
+.blogArticleLead{font-size:20px;color:#6e6960;line-height:1.55}
+.blogArticleContent{
+  margin-top:42px;
+  white-space:pre-wrap;
+  line-height:1.85;
+  font-size:17px;
+  color:#2a2926;
+}
+
+/* Accessibility & responsive polish */
+@media(max-width:1100px){
+  .adminSidebar{width:230px}
+  .adminWorkspace{margin-left:230px}
+  .foodLayout{grid-template-columns:1fr}
+  .foodCart{position:relative;top:auto}
+  .blogGrid{grid-template-columns:1fr 1fr}
+}
+@media(max-width:760px){
+  .adminSidebar{
+    position:relative;
+    width:auto;
+    inset:auto;
+    padding:14px 14px 12px;
+  }
+  .adminWorkspace{margin-left:0}
+  .adminBrand{padding:0 4px 12px}
+  .adminNav{
+    display:flex;
+    gap:12px;
+    overflow-x:auto;
+    margin:8px 0 0;
+    padding:0 0 5px;
+  }
+  .adminNavSection{
+    border:0;
+    padding:0;
+    min-width:max-content;
+  }
+  .adminNavLabel{display:none}
+  .adminNavItems{display:flex}
+  .adminNavLink,.adminNav .adminNavLink{
+    grid-template-columns:16px auto;
+    min-height:35px;
+    padding:8px 10px;
+    border-left:0;
+    border-bottom:2px solid transparent;
+  }
+  .adminNavLink>b{display:none}
+  .adminNavLink:hover,.adminNav .adminNavLink:hover{
+    padding-left:10px;
+    border-left:0;
+    border-bottom-color:#555;
+  }
+  .adminNavLink.isActive,.adminNav .adminNavLink.isActive{
+    border-left:0;
+    border-bottom-color:var(--y);
+  }
+  .adminTopbar{height:52px;padding:0 5vw}
+  .adminTopbarMeta small{display:none}
+  .publicSubNav{padding:0 5vw}
+  .publicSubNav>div a:not(.publicPrimary){display:none}
+  .publicHero{padding:62px 6vw 36px}
+  .publicHero h1{letter-spacing:-3px}
+  .foodShell,.blogIndex{padding-left:6vw;padding-right:6vw}
+  .blogGrid{grid-template-columns:1fr}
+}
+@media(max-width:480px){
+  .adminTopbarMeta>span{display:none}
+  .publicHero h1{font-size:52px}
+  .foodMenuGrid{grid-template-columns:1fr}
+  .blogArticle{padding:55px 20px 80px}
+  .blogArticle h1{letter-spacing:-2px}
+}
+
+
+/* Legacy admin pages normalized into Command Center */
+.adminWorkspace main:not(.adminDashboard):not(.opsPage):not(.integrationAdmin){
+  padding:52px 4vw 90px!important;
+  max-width:1500px!important;
+  margin:0 auto!important;
+}
+.adminWorkspace main:not(.adminDashboard):not(.opsPage):not(.integrationAdmin)>h1{
+  font-size:clamp(42px,5.5vw,72px)!important;
+  line-height:.95!important;
+  margin:12px 0 24px!important;
+}
+.adminWorkspace main:not(.adminDashboard):not(.opsPage):not(.integrationAdmin)>p{
+  max-width:760px;
+  color:var(--admin-muted);
+  line-height:1.65;
+}
+.adminWorkspace main:not(.adminDashboard):not(.opsPage):not(.integrationAdmin) article,
+.adminWorkspace main:not(.adminDashboard):not(.opsPage):not(.integrationAdmin) section{
+  border-radius:0!important;
+}
+.adminWorkspace main:not(.adminDashboard):not(.opsPage):not(.integrationAdmin) article{
+  border-color:var(--admin-line)!important;
+}
+.adminWorkspace main:not(.adminDashboard):not(.opsPage):not(.integrationAdmin) article:hover{
+  border-color:#111!important;
+}
+.adminWorkspace main:not(.adminDashboard):not(.opsPage):not(.integrationAdmin) a[style*="background:#ffd400"],
+.adminWorkspace main:not(.adminDashboard):not(.opsPage):not(.integrationAdmin) a[style*="background: #ffd400"]{
+  box-shadow:4px 4px 0 #111;
+}
+@media(max-width:760px){
+  .adminWorkspace main:not(.adminDashboard):not(.opsPage):not(.integrationAdmin){
+    padding:36px 5vw 70px!important;
+  }
+}

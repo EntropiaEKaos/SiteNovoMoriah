@@ -1,1 +1,24 @@
-import {notFound} from "next/navigation";import {prisma} from "../../../lib/prisma";export const dynamic="force-dynamic";export default async function Page({params}:{params:Promise<{slug:string}>}){const {slug}=await params;const p=await prisma.blogPost.findUnique({where:{slug}});if(!p?.published)notFound();return <main style={{maxWidth:850,margin:"0 auto",padding:"7vw 30px"}}>{p.coverImage&&<img src={p.coverImage} alt="" style={{width:"100%",maxHeight:480,objectFit:"cover"}}/>}<small>POUSADA MORIAH / BLOG</small><h1 style={{fontSize:"clamp(42px,7vw,72px)"}}>{p.title}</h1>{p.excerpt&&<p style={{fontSize:21,color:"#666"}}>{p.excerpt}</p>}<article style={{whiteSpace:"pre-wrap",lineHeight:1.8,fontSize:18}}>{p.content}</article></main>}
+import Link from "next/link";
+import {notFound} from "next/navigation";
+import {prisma} from "../../../lib/prisma";
+import PublicSubNav from "../../public-sub-nav";
+
+export const dynamic="force-dynamic";
+
+export default async function Page({params}:{params:Promise<{slug:string}>}){
+  const {slug}=await params;
+  const post=await prisma.blogPost.findUnique({where:{slug}});
+  if(!post?.published)notFound();
+
+  return <main className="publicSubpage">
+    <PublicSubNav/>
+    <article className="blogArticle">
+      <Link className="blogArticleBack" href="/blog">← Voltar ao Journal</Link>
+      {post.coverImage&&<img src={post.coverImage} alt={post.title}/>}
+      <small>POUSADA MORIAH / JOURNAL</small>
+      <h1>{post.title}</h1>
+      {post.excerpt&&<p className="blogArticleLead">{post.excerpt}</p>}
+      <div className="blogArticleContent">{post.content}</div>
+    </article>
+  </main>;
+}
