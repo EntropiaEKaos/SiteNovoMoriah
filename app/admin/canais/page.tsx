@@ -2,38 +2,125 @@ import {prisma} from "../../../lib/prisma";
 import {requireAdmin} from "../../../lib/admin-auth";
 import {createChannelIntegration,toggleChannelIntegration,deleteChannelIntegration,syncChannelNow} from "../actions";
 import {listChannelAdapterCapabilities} from "../../../lib/channel-adapter-registry";
+
 export const dynamic="force-dynamic";
+
 const labels:Record<string,string>={AIRBNB:"Airbnb",BOOKING:"Booking.com",ICAL:"Outro iCal/ICS"};
-function health(x:{active:boolean;syncStatus:string;lastError:string|null;lastSuccessAt:Date|null}){if(!x.active)return ["Pausado","#777"];if(x.syncStatus==="ERROR"||x.lastError)return ["Erro","#b42318"];if(x.syncStatus==="SYNCING")return ["Sincronizando","#175cd3"];if(x.lastSuccessAt&&Date.now()-x.lastSuccessAt.getTime()>30*60_000)return ["Atrasado","#b54708"];if(x.syncStatus==="HEALTHY")return ["Saudável","#067647"];return ["Aguardando sync","#b54708"];}
+
+function health(x:{active:boolean;syncStatus:string;lastError:string|null;lastSuccessAt:Date|null}){
+  if(!x.active)return ["Pausado","warn"] as const;
+  if(x.syncStatus==="ERROR"||x.lastError)return ["Erro","bad"] as const;
+  if(x.syncStatus==="SYNCING")return ["Sincronizando","warn"] as const;
+  if(x.lastSuccessAt&&Date.now()-x.lastSuccessAt.getTime()>30*60_000)return ["Atrasado","warn"] as const;
+  if(x.syncStatus==="HEALTHY")return ["Saudável","ok"] as const;
+  return ["Aguardando sync","warn"] as const;
+}
+
 export default async function Page(){
- await requireAdmin();
- const [rows,rooms,blocks]=await Promise.all([
-  prisma.channelIntegration.findMany({include:{accommodation:true,_count:{select:{blocks:true}}},orderBy:{createdAt:"desc"}}),
-  prisma.accommodation.findMany({where:{active:true},orderBy:{name:"asc"}}),
-  prisma.channelBlock.count()
- ]);
- const active=rows.filter(x=>x.active).length, errors=rows.filter(x=>x.lastError).length;
- const adapters=listChannelAdapterCapabilities();
- return <main style={{padding:"50px 6vw",maxWidth:1180,margin:"0 auto"}}>
-  <small>MORIAH CMS / INVENTORY ENGINE</small><h1 style={{fontSize:48,marginBottom:8}}>Central de Canais 2.0</h1>
-  <p>O iCal continua ativo como primeiro adapter do inventário central. Conectores oficiais poderão entrar depois sem substituir os calendários existentes.</p>
-  <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(170px,1fr))",gap:12,margin:"28px 0"}}>
-   {[["Conexões",rows.length],["Ativas",active],["Bloqueios importados",blocks],["Com atenção",errors]].map(([k,v])=><div key={String(k)} style={{border:"1px solid #ddd",borderRadius:14,padding:18}}><small>{k}</small><div style={{fontSize:30,fontWeight:900}}>{v}</div></div>)}
-  </div>
-  <p><a href="/admin/canais/calendario">Abrir calendário unificado →</a></p>
-  <section style={{margin:"28px 0"}}><h2>Adapters do inventário</h2><div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(190px,1fr))",gap:10}}>{adapters.map(a=><div key={a.kind} style={{border:"1px solid #ddd",borderRadius:12,padding:14}}><b>{a.label}</b><p style={{margin:"8px 0",fontWeight:800,color:a.implemented?"#067647":"#777"}}>{a.implemented?"Disponível":"Preparado / não conectado"}</p><small>{a.supportsImport?"Importa disponibilidade":"Importação pendente"} • {a.supportsExport?"Exporta calendário":"Exportação pendente"}{a.supportsRates?" • Tarifas":""}{a.supportsReservations?" • Reservas":""}</small></div>)}</div></section>
-  <form action={createChannelIntegration} style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,margin:"30px 0",padding:20,border:"1px solid #ddd",borderRadius:14}}>
-   <select name="provider" required style={{padding:14}}><option value="AIRBNB">Airbnb via iCal</option><option value="BOOKING">Booking.com via iCal</option><option value="ICAL">Outro iCal/ICS</option></select>
-   <input name="name" required placeholder="Nome da conexão" style={{padding:14}}/>
-   <select name="accommodationId" required style={{padding:14,gridColumn:"1/-1"}}><option value="">Hospedagem vinculada</option>{rooms.map(r=><option key={r.id} value={r.id}>{r.name}</option>)}</select>
-   <input name="importUrl" type="url" required placeholder="URL HTTPS do calendário iCal/ICS" style={{padding:14,gridColumn:"1/-1"}}/>
-   <button style={{background:"#ffd400",border:0,padding:15,fontWeight:800,borderRadius:10}}>Adicionar adapter iCal</button>
-  </form>
-  <div style={{display:"grid",gap:12}}>{rows.map(x=>{const [status,color]=health(x);return <article key={x.id} style={{border:"1px solid #ddd",padding:20,borderRadius:14}}>
-   <div style={{display:"flex",justifyContent:"space-between",gap:16,alignItems:"start",flexWrap:"wrap"}}><div><b style={{fontSize:19}}>{x.name}</b><p style={{margin:"6px 0"}}>{labels[x.provider]||x.provider} • {x.integrationType==="ICAL"?"iCal/ICS":x.integrationType.replaceAll("_"," ")} • {x.accommodation?.name||"Sem hospedagem"}</p></div><b style={{color}}>{status}</b></div>
-   <small>{x._count.blocks} bloqueio(s) • {x.lastSuccessAt?"Último sucesso: "+x.lastSuccessAt.toLocaleString("pt-BR"):"Sem sincronização concluída"}{x.lastAttemptAt?" • Tentativa: "+x.lastAttemptAt.toLocaleString("pt-BR"):""}{x.nextSyncAt?" • Próximo sync: "+x.nextSyncAt.toLocaleString("pt-BR"):""}{x.syncDurationMs!=null?" • "+x.syncDurationMs+" ms":""}{x.consecutiveFailures?" • Falhas seguidas: "+x.consecutiveFailures:""}</small>
-   {x.lastError?<p style={{color:"#b42318"}}>Último erro: {x.lastError}</p>:null}
-   <div style={{display:"flex",gap:8,marginTop:12,flexWrap:"wrap"}}><form action={syncChannelNow}><input type="hidden" name="id" value={x.id}/><button>Sincronizar agora</button></form><form action={toggleChannelIntegration}><input type="hidden" name="id" value={x.id}/><button>{x.active?"Pausar":"Ativar"}</button></form><form action={deleteChannelIntegration}><input type="hidden" name="id" value={x.id}/><button>Excluir</button></form></div>
-  </article>})}</div>
- </main>
+  await requireAdmin();
+  const [rows,rooms,blocks]=await Promise.all([
+    prisma.channelIntegration.findMany({
+      include:{accommodation:true,_count:{select:{blocks:true}}},
+      orderBy:{createdAt:"desc"}
+    }),
+    prisma.accommodation.findMany({where:{active:true},orderBy:{name:"asc"}}),
+    prisma.channelBlock.count()
+  ]);
+
+  const active=rows.filter(x=>x.active).length;
+  const errors=rows.filter(x=>x.lastError).length;
+  const adapters=listChannelAdapterCapabilities();
+
+  return <main className="adminPage">
+    <section className="adminPageHero">
+      <div>
+        <small>MORIAH CMS / INVENTORY ENGINE</small>
+        <h1>Canais</h1>
+        <p>Sincronize disponibilidade via iCal/ICS e acompanhe a saúde das conexões. APIs oficiais continuam separadas até entrarem em produção.</p>
+      </div>
+      <div className="adminPageHeroActions">
+        <a className="adminSecondaryAction" href="/admin/canais/calendario">Calendário unificado →</a>
+      </div>
+    </section>
+
+    <section className="adminMetricStrip">
+      <div><small>Conexões</small><strong>{rows.length}</strong></div>
+      <div><small>Ativas</small><strong>{active}</strong></div>
+      <div><small>Bloqueios importados</small><strong>{blocks}</strong></div>
+      <div><small>Com atenção</small><strong>{errors}</strong></div>
+    </section>
+
+    <section className="adminTwoCol" style={{marginBottom:20}}>
+      <article className="adminSectionCard">
+        <h2>Novo adapter iCal</h2>
+        <p>Use a URL HTTPS do calendário exportado pelo canal para bloquear datas automaticamente.</p>
+        <form action={createChannelIntegration} className="adminFormGrid">
+          <label>Canal
+            <select name="provider" required>
+              <option value="AIRBNB">Airbnb via iCal</option>
+              <option value="BOOKING">Booking.com via iCal</option>
+              <option value="ICAL">Outro iCal/ICS</option>
+            </select>
+          </label>
+          <label>Nome da conexão
+            <input name="name" required placeholder="Ex.: Booking Quarto 01"/>
+          </label>
+          <label className="span2">Hospedagem
+            <select name="accommodationId" required>
+              <option value="">Selecione</option>
+              {rooms.map(room=><option key={room.id} value={room.id}>{room.name}</option>)}
+            </select>
+          </label>
+          <label className="span2">URL do calendário
+            <input name="importUrl" type="url" required placeholder="https://...ics"/>
+          </label>
+          <button className="span2">Adicionar conexão</button>
+        </form>
+      </article>
+
+      <aside className="adminSectionCard">
+        <h2>Capacidades</h2>
+        <p>O painel diferencia o que já funciona do que está apenas preparado na arquitetura.</p>
+        <div className="adminStack">
+          {adapters.map(adapter=><div className="adminStatusLine" key={adapter.kind}>
+            <span>{adapter.label}</span>
+            <b className={"adminChip "+(adapter.implemented?"ok":"warn")}>{adapter.implemented?"DISPONÍVEL":"PREPARADO"}</b>
+          </div>)}
+        </div>
+      </aside>
+    </section>
+
+    {rows.length===0?<section className="adminEmptyState">
+      <strong>Nenhum canal conectado.</strong>
+      <p>Adicione o primeiro calendário iCal para começar a sincronização de inventário.</p>
+    </section>:<section className="adminStack">
+      {rows.map(channel=>{
+        const [status,statusClass]=health(channel);
+        return <article className="adminListCard" key={channel.id}>
+          <div className="adminListCardHead">
+            <div>
+              <small>{labels[channel.provider]||channel.provider}</small>
+              <h3>{channel.name}</h3>
+              <p>{channel.accommodation?.name||"Sem hospedagem"} • {channel.integrationType==="ICAL"?"iCal / ICS":channel.integrationType.replaceAll("_"," ")}</p>
+            </div>
+            <span className={"adminChip "+statusClass}>{status}</span>
+          </div>
+
+          <div className="adminMetaRow">
+            <span className="adminChip">{channel._count.blocks} bloqueio(s)</span>
+            {channel.lastSuccessAt&&<span className="adminChip">Sucesso {channel.lastSuccessAt.toLocaleString("pt-BR")}</span>}
+            {channel.syncDurationMs!=null&&<span className="adminChip">{channel.syncDurationMs} ms</span>}
+          </div>
+
+          {channel.lastError&&<div className="adminPageNote" style={{marginTop:14}}>Último erro: {channel.lastError}</div>}
+
+          <div className="adminInlineActions">
+            <form action={syncChannelNow}><input type="hidden" name="id" value={channel.id}/><button className="highlight">Sincronizar agora</button></form>
+            <form action={toggleChannelIntegration}><input type="hidden" name="id" value={channel.id}/><button>{channel.active?"Pausar":"Ativar"}</button></form>
+            <form action={deleteChannelIntegration}><input type="hidden" name="id" value={channel.id}/><button className="danger">Excluir</button></form>
+          </div>
+        </article>;
+      })}
+    </section>}
+  </main>;
 }
