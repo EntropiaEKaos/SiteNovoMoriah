@@ -30,7 +30,7 @@ export async function bootstrapSuperAdmin(formData:FormData){
   let admin:{id:string;username:string;role:string}|null=null;
   try{
     admin=await prisma.$transaction(async tx=>{
-      await tx.$queryRaw`SELECT pg_advisory_xact_lock(${BOOTSTRAP_LOCK})`;
+      await tx.$queryRaw`SELECT 1 AS "locked" FROM pg_advisory_xact_lock(${BOOTSTRAP_LOCK})`;
 
       const currentSuperAdmin=await tx.adminUser.findFirst({
         where:{role:"SUPERADMIN"},
@@ -88,7 +88,7 @@ export async function bootstrapSuperAdmin(formData:FormData){
       });
       return {id:created.id,username:created.username,role:created.role};
     });
-  }catch{redirect("/admin/setup?error=create")}
+  }catch(error){console.error("ADMIN_BOOTSTRAP_FAILED",error);redirect("/admin/setup?error=create")}
 
   if(!admin)redirect("/admin/setup?error=create");
   await createAdminSession(admin);
