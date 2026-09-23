@@ -749,3 +749,84 @@ body{background:linear-gradient(180deg,#fff 0,#fffdf5 100%)}.nav{box-shadow:0 8p
   .adminFormGrid,.adminFormGrid.cols3{grid-template-columns:1fr}
   .adminFormGrid .span2{grid-column:auto}
 }
+
+
+/* Reservation Map 2.0 */
+.reservationMap{display:grid;gap:16px}
+.reservationMapToolbar{
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  padding:14px;border:1px solid var(--admin-line);background:#fff
+}
+.reservationMapToolbar button,.reservationMapToolbar select{
+  min-height:38px;border:1px solid #bdb7aa;background:#fff;padding:8px 11px;font-weight:850
+}
+.reservationMapNav,.reservationMapViews,.reservationMapRange{display:flex;align-items:center;gap:7px}
+.reservationMapViews .isActive{background:#111;color:#fff;border-color:#111}
+.reservationMapRange{margin-right:auto}
+.reservationMapRange span{font-size:10px;color:#888}
+.reservationLegend{display:flex;gap:14px;flex-wrap:wrap;font-size:10px;font-weight:850}
+.reservationLegend span{display:flex;align-items:center;gap:6px}
+.reservationLegend i{width:12px;height:12px;display:inline-block;border:1px solid #111}
+.reservationLegend i.isConfirmed,.reservationMapEvent.isConfirmed{background:#ffd400}
+.reservationLegend i.isCheckedIn,.reservationMapEvent.isCheckedIn{background:#b7e4c7}
+.reservationLegend i.isChannel,.reservationMapEvent.isChannel{background:#dbeafe}
+.reservationLegend i.isHold,.reservationMapEvent.isHold{background:#f3e8ff}
+.reservationLegend i.isManual,.reservationMapEvent.isManual{background:#ffe4e6}
+.reservationMapScroll{
+  overflow:auto;border:1px solid var(--admin-line);background:#fff;max-width:100%
+}
+.reservationMapHeader,.reservationMapRow{
+  display:grid;min-width:max-content;position:relative
+}
+.reservationMapHeader{position:sticky;top:0;z-index:6;background:#f7f4ec}
+.reservationMapRoomHeader,.reservationMapRoom{
+  position:sticky;left:0;z-index:5;background:#111;color:#fff;border-right:1px solid #333
+}
+.reservationMapRoomHeader{
+  padding:13px 12px;font-size:9px;font-weight:950;letter-spacing:1.3px
+}
+.reservationMapDayHead{
+  min-width:44px;padding:7px 3px;text-align:center;border-right:1px solid #e6e1d5;border-bottom:1px solid #d9d4c8
+}
+.reservationMapDayHead small{display:block;font-size:8px;color:#888;text-transform:uppercase}
+.reservationMapDayHead b{font-size:14px}
+.reservationMapDayHead.isToday{background:#fff3a6}
+.reservationMapRow{
+  grid-template-rows:28px 28px;min-height:56px;border-bottom:1px solid #e8e3d8
+}
+.reservationMapRoom{
+  grid-row:1/3;padding:8px 11px;display:grid;align-content:center
+}
+.reservationMapRoom small{font-size:7px;letter-spacing:1px;color:#888}
+.reservationMapRoom strong{font-size:12px}
+.reservationMapRoom span{font-size:8px;color:#aaa}
+.reservationMapCell{
+  grid-row:1/3;border-right:1px solid #efebe2;background:#fff;min-width:44px
+}
+.reservationMapCell.isToday{background:#fffceb}
+.reservationMapEvent{
+  z-index:3;margin:3px 2px;padding:4px 6px;border:1px solid #111;overflow:hidden;text-align:left;
+  display:flex;align-items:center;justify-content:space-between;gap:8px;white-space:nowrap
+}
+.reservationMapEvent b{font-size:9px;overflow:hidden;text-overflow:ellipsis}
+.reservationMapEvent small{font-size:7px;opacity:.72}
+.reservationMapEvent:hover{filter:brightness(.96);transform:none!important}
+.reservationDetail{
+  border:1px solid #111;background:#fff;padding:22px;box-shadow:7px 7px 0 #e8e2d2
+}
+.reservationDetailHead{display:flex;justify-content:space-between;gap:20px;align-items:flex-start}
+.reservationDetailHead small{font-size:8px;font-weight:950;letter-spacing:1.2px}
+.reservationDetailHead h2{margin:5px 0;font-size:30px}
+.reservationDetailHead p{margin:0;color:#6f6a61}
+.reservationDetailGrid{
+  display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:18px 0
+}
+.reservationDetailGrid>div{padding:13px;background:#f5f2e9;border:1px solid #e3ded1}
+.reservationDetailGrid small{display:block;font-size:8px;color:#8a8477;font-weight:900}
+.reservationDetailGrid b{display:block;margin-top:5px;font-size:15px}
+.reservationDetail .danger{background:#111;color:#fff;border:0;padding:10px 14px;font-weight:900}
+@media(max-width:760px){
+  .reservationMapRange{width:100%;order:3}
+  .reservationMapMetrics{grid-template-columns:1fr 1fr}
+  .reservationDetailGrid{grid-template-columns:1fr 1fr}
+}
