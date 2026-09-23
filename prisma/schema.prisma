@@ -86,6 +86,7 @@ model Accommodation {
   rateRules           RateRule[]
   housekeepingTasks   HousekeepingTask[]
   inventoryHolds      InventoryHold[]
+  manualBlocks        ManualInventoryBlock[]
 }
 
 model Promotion {
@@ -223,6 +224,20 @@ model InventoryHold {
 
   @@index([accommodationId, checkIn, checkOut])
   @@index([expiresAt])
+}
+
+model ManualInventoryBlock {
+  id              String        @id @default(cuid())
+  accommodationId String
+  accommodation   Accommodation @relation(fields: [accommodationId], references: [id], onDelete: Cascade)
+  startsAt        DateTime
+  endsAt          DateTime
+  reason          String
+  notes           String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@index([accommodationId, startsAt, endsAt])
 }
 
 model ChannelBlock {

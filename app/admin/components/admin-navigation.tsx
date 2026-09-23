@@ -32,6 +32,7 @@ const sections=[
       ["Reservas","/admin/reservas",CalendarDays],
       ["Hóspedes","/admin/hospedes",Users],
       ["PMS / Front Desk","/admin/pms",BedDouble],
+      ["Mapa de Reservas","/admin/canais/calendario",CalendarDays],
       ["Hospedagens","/admin/hospedagens",BedDouble],
       ["Canais","/admin/canais",Plug]
     ]
