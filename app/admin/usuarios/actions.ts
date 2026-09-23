@@ -12,8 +12,10 @@ export async function createAdminUser(formData:FormData){
   if(!/^[a-z0-9._-]{3,40}$/.test(username))throw new Error("Usuário inválido.");
   if(!["ADMIN","SUPERADMIN"].includes(role))throw new Error("Perfil inválido.");
   const passwordHash=await hashAdminPassword(password);
-  await prisma.adminUser.create({data:{username,passwordHash,role,active:true}});
-  void actor;
+  await prisma.$transaction(async tx=>{
+    const created=await tx.adminUser.create({data:{username,passwordHash,role,active:true}});
+    await tx.adminAuditLog.create({data:{actorId:actor.userId,action:"ADMIN_USER_CREATED",targetType:"AdminUser",targetId:created.id,details:{username,role}}});
+  });
   revalidatePath("/admin/usuarios");
 }
 export async function toggleAdminUser(formData:FormData){
@@ -26,14 +28,23 @@ export async function toggleAdminUser(formData:FormData){
     const activeSupers=await prisma.adminUser.count({where:{role:"SUPERADMIN",active:true}});
     if(activeSupers<=1)throw new Error("O sistema precisa manter pelo menos um Super Admin ativo.");
   }
-  await prisma.adminUser.update({where:{id},data:{active:!target.active}});
+  const nextActive=!target.active;
+  await prisma.$transaction([
+    prisma.adminUser.update({where:{id},data:{active:nextActive}}),
+    prisma.adminAuditLog.create({data:{actorId:actor.userId,action:nextActive?"ADMIN_USER_ACTIVATED":"ADMIN_USER_DEACTIVATED",targetType:"AdminUser",targetId:id,details:{username:target.username}}})
+  ]);
   revalidatePath("/admin/usuarios");
 }
 export async function resetAdminPassword(formData:FormData){
-  await requireSuperAdmin();
+  const actor=await requireSuperAdmin();
   const id=String(formData.get("id")||"");
+  const target=await prisma.adminUser.findUnique({where:{id},select:{id:true,username:true}});
+  if(!target)throw new Error("Administrador não encontrado.");
   const password=String(formData.get("password")||"");
   const passwordHash=await hashAdminPassword(password);
-  await prisma.adminUser.update({where:{id},data:{passwordHash}});
+  await prisma.$transaction([
+    prisma.adminUser.update({where:{id},data:{passwordHash}}),
+    prisma.adminAuditLog.create({data:{actorId:actor.userId,action:"ADMIN_PASSWORD_RESET",targetType:"AdminUser",targetId:id,details:{username:target.username}}})
+  ]);
   revalidatePath("/admin/usuarios");
 }
