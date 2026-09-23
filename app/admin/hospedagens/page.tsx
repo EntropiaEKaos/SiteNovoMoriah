@@ -1,1 +1,71 @@
-import Link from "next/link";import {prisma} from "../../../lib/prisma";import {deleteAccommodation,toggleAccommodation} from "../actions";export const dynamic="force-dynamic";export default async function Page(){const rooms=await prisma.accommodation.findMany({orderBy:[{featured:"desc"},{createdAt:"desc"}]});return <main style={{padding:"50px 6vw"}}><small>MORIAH CMS / CONTEÚDO</small><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:20,flexWrap:"wrap"}}><h1 style={{fontSize:48}}>Hospedagens</h1><Link href="/admin/hospedagens/nova" style={{background:"#ffd400",padding:"14px 20px",fontWeight:800}}>+ Nova hospedagem</Link></div>{rooms.length===0?<div style={{padding:50,border:"1px dashed #bbb",textAlign:"center"}}><h2>Cadastre a primeira hospedagem</h2><p>Quartos, dormitórios e opções para grupos aparecerão aqui.</p></div>:<div style={{marginTop:30,display:"grid",gap:12}}>{rooms.map(r=><article key={r.id} style={{border:"1px solid #ddd",padding:22,display:"grid",gridTemplateColumns:"minmax(220px,2fr) 1fr 1fr auto",gap:18,alignItems:"center"}}><div><b style={{fontSize:19}}>{r.name}</b><p style={{color:"#666",marginBottom:0}}>{r.description}</p></div><span>{r.type}</span><span>{r.capacity} hóspedes<br/><small>{r.priceCents==null?"Preço sob consulta":(r.priceCents/100).toLocaleString("pt-BR",{style:"currency",currency:"BRL"})}</small></span><div style={{display:"flex",gap:8,flexWrap:"wrap"}}><Link href={"/admin/hospedagens/"+r.id} style={{padding:10,border:"1px solid #111",fontWeight:700,color:"#111",textDecoration:"none"}}>Editar</Link><form action={toggleAccommodation}><input type="hidden" name="id" value={r.id}/><button style={{padding:10,border:"1px solid #111",background:r.active?"#fff":"#ffd400",fontWeight:700}}>{r.active?"Desativar":"Ativar"}</button></form><form action={deleteAccommodation}><input type="hidden" name="id" value={r.id}/><button style={{padding:10,border:0,background:"#111",color:"#fff"}}>Excluir</button></form></div></article>)}</div>}</main>}
+import Link from "next/link";
+import {prisma} from "../../../lib/prisma";
+import {deleteAccommodation,toggleAccommodation} from "../actions";
+
+export const dynamic="force-dynamic";
+
+export default async function Page(){
+  const rooms=await prisma.accommodation.findMany({
+    orderBy:[{featured:"desc"},{createdAt:"desc"}]
+  });
+
+  const active=rooms.filter(room=>room.active).length;
+  const featured=rooms.filter(room=>room.featured).length;
+  const capacity=rooms.reduce((sum,room)=>sum+room.capacity,0);
+
+  return <main className="adminPage">
+    <section className="adminPageHero">
+      <div>
+        <small>MORIAH CMS / INVENTÁRIO</small>
+        <h1>Hospedagens</h1>
+        <p>Organize quartos, dormitórios e opções para grupos. O que estiver ativo alimenta o site, a reserva e o motor de disponibilidade.</p>
+      </div>
+      <div className="adminPageHeroActions">
+        <Link className="adminSecondaryAction" href="/reservar">Ver reserva ↗</Link>
+        <Link className="adminPrimaryAction" href="/admin/hospedagens/nova">+ Nova hospedagem</Link>
+      </div>
+    </section>
+
+    <section className="adminMetricStrip">
+      <div><small>Total</small><strong>{rooms.length}</strong></div>
+      <div><small>Ativas</small><strong>{active}</strong></div>
+      <div><small>Destaques</small><strong>{featured}</strong></div>
+      <div><small>Capacidade total</small><strong>{capacity}</strong></div>
+    </section>
+
+    {rooms.length===0?<section className="adminEmptyState">
+      <strong>Cadastre a primeira hospedagem.</strong>
+      <p>Depois disso ela poderá aparecer no site e no fluxo de reservas.</p>
+      <Link className="adminPrimaryAction" href="/admin/hospedagens/nova">Criar hospedagem</Link>
+    </section>:<section className="adminStack">
+      {rooms.map(room=><article className="adminListCard" key={room.id}>
+        <div className="adminListCardHead">
+          <div>
+            <small>{room.type}</small>
+            <h3>{room.name}</h3>
+            <p>{room.description||"Sem descrição cadastrada."}</p>
+          </div>
+          <b>{room.priceCents==null?"Sob consulta":(room.priceCents/100).toLocaleString("pt-BR",{style:"currency",currency:"BRL"})}</b>
+        </div>
+
+        <div className="adminMetaRow">
+          <span className={"adminChip "+(room.active?"ok":"warn")}>{room.active?"Ativa":"Desativada"}</span>
+          {room.featured&&<span className="adminChip">Destaque</span>}
+          <span className="adminChip">{room.capacity} hóspede(s)</span>
+        </div>
+
+        <div className="adminInlineActions">
+          <Link href={"/admin/hospedagens/"+room.id}>Editar</Link>
+          <form action={toggleAccommodation}>
+            <input type="hidden" name="id" value={room.id}/>
+            <button className={room.active?"":"highlight"}>{room.active?"Desativar":"Ativar"}</button>
+          </form>
+          <form action={deleteAccommodation}>
+            <input type="hidden" name="id" value={room.id}/>
+            <button className="danger">Excluir</button>
+          </form>
+        </div>
+      </article>)}
+    </section>}
+  </main>;
+}
