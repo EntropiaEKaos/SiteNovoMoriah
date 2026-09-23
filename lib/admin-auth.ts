@@ -2,6 +2,7 @@ import "server-only";
 import {createHmac,timingSafeEqual} from "node:crypto";
 import {cookies} from "next/headers";
 import {redirect} from "next/navigation";
+import {prisma} from "./prisma";
 
 const COOKIE="moriah_admin";
 const MAX_AGE=60*60*12;
@@ -26,8 +27,13 @@ export async function getAdminSession():Promise<AdminSession|null>{
     return {userId:data.userId,username:data.username,role:data.role,expires:Number(data.expires)};
   }catch{return null}
 }
-export async function isAdmin(){return Boolean(await getAdminSession())}
-export async function requireAdmin(){const session=await getAdminSession();if(!session)redirect("/admin/login");return session}
+export async function isAdmin(){const session=await getAdminSession();if(!session)return false;const user=await prisma.adminUser.findUnique({where:{id:session.userId},select:{active:true}});return Boolean(user?.active)}
+export async function requireAdmin(){
+  const session=await getAdminSession();if(!session)redirect("/admin/login");
+  const user=await prisma.adminUser.findUnique({where:{id:session.userId},select:{username:true,role:true,active:true}});
+  if(!user?.active)redirect("/admin/login");
+  return {...session,username:user.username,role:user.role};
+}
 export async function requireSuperAdmin(){const session=await requireAdmin();if(session.role!=="SUPERADMIN")redirect("/admin");return session}
 export async function createAdminSession(user:{id:string;username:string;role:string}){
   if(!secret())throw new Error("SESSION_SECRET não configurado.");
