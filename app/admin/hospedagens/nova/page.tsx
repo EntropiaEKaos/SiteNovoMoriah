@@ -1,1 +1,29 @@
-import {createAccommodation} from "../../actions";import {prisma} from "../../../../lib/prisma";import MediaPicker from "../../components/media-picker";export const dynamic="force-dynamic";export default async function Page(){const media=await prisma.media.findMany({orderBy:{createdAt:"desc"}});{return <main style={{padding:"50px 6vw",maxWidth:850}}><small>MORIAH CMS / HOSPEDAGENS</small><h1 style={{fontSize:48}}>Nova hospedagem</h1><form action={createAccommodation} style={{display:"grid",gap:18}}><input name="name" required placeholder="Nome" style={{padding:14}}/><textarea name="description" required placeholder="Descrição" rows={5} style={{padding:14}}/><select name="type" style={{padding:14}}><option>POUSADA</option><option>HOSTEL</option><option>GRUPO</option></select><input name="capacity" type="number" min="1" defaultValue="2" style={{padding:14}}/><MediaPicker name="coverImage" media={media}/><button style={{padding:16,border:0,background:"#ffd400",fontWeight:800}}>Salvar hospedagem</button></form></main>}}
+import Link from "next/link";
+import {prisma} from "../../../../lib/prisma";
+import {createAccommodation} from "../../actions";
+import AccommodationForm from "../accommodation-form";
+
+export const dynamic="force-dynamic";
+
+export default async function Page(){
+  const media=await prisma.media.findMany({
+    orderBy:{createdAt:"desc"},
+    take:200
+  });
+
+  return <main className="adminPage">
+    <section className="adminPageHero">
+      <div>
+        <small>MORIAH CMS / HOSPEDAGENS</small>
+        <h1>Nova hospedagem</h1>
+        <p>Cadastre a unidade com dados comerciais, capacidade, operação, comodidades e imagens.</p>
+      </div>
+      <div className="adminPageHeroActions">
+        <Link className="adminSecondaryAction" href="/admin/hospedagens">← Voltar</Link>
+        <Link className="adminSecondaryAction" href="/admin/galeria">Gerenciar imagens →</Link>
+      </div>
+    </section>
+
+    <AccommodationForm action={createAccommodation} media={media}/>
+  </main>;
+}
