@@ -64,6 +64,20 @@ model Accommodation {
   active              Boolean              @default(true)
   featured            Boolean              @default(false)
   coverImage          String?
+  galleryImages       String[]             @default([])
+  internalCode        String?              @unique
+  roomNumber          String?
+  floor               String?
+  maxAdults           Int                  @default(2)
+  maxChildren         Int                  @default(0)
+  beds                String?
+  bathrooms           Int                  @default(1)
+  areaSqm             Float?
+  amenities           String[]             @default([])
+  rules               String?
+  checkInTime         String               @default("14:00")
+  checkOutTime        String               @default("12:00")
+  internalNotes       String?
   createdAt           DateTime             @default(now())
   updatedAt           DateTime             @updatedAt
   bookingLeads        BookingLead[]

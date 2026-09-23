@@ -1,5 +1,87 @@
 "use server";import {deleteMediaObject} from "../../lib/media-storage";import {prisma} from "../../lib/prisma";import {revalidatePath} from "next/cache";import {redirect} from "next/navigation";import {requireAdmin} from "../../lib/admin-auth";import {criticalAvailabilityCheck,hasAvailabilityConflict,syncChannelIntegration} from "../../lib/channel-sync";import {quoteAccommodation} from "../../lib/rate-engine";import {createInventoryHold,consumeInventoryHold,releaseInventoryHold} from "../../lib/inventory-holds";
-export async function createAccommodation(formData:FormData){await requireAdmin();const coverImage=String(formData.get("coverImage")||"").trim()||null;const rawPrice=String(formData.get("price")||"").replace(",",".");const featured=formData.get("featured")==="on";const name=String(formData.get("name")||"").trim();const description=String(formData.get("description")||"").trim();const type=String(formData.get("type")||"POUSADA");const capacityRaw=Number(formData.get("capacity")||1);const priceRaw=rawPrice?Number(rawPrice):null;if(!Number.isFinite(capacityRaw)||capacityRaw<1||!Number.isInteger(capacityRaw))throw new Error("Capacidade inválida.");if(priceRaw!==null&&(!Number.isFinite(priceRaw)||priceRaw<0))throw new Error("Preço inválido.");const capacity=capacityRaw;const priceCents=priceRaw===null?null:Math.round(priceRaw*100);if(!name||!description)throw new Error("Nome e descrição são obrigatórios.");await prisma.accommodation.create({data:{name,description,type,capacity,priceCents,coverImage,featured,active:true}});revalidatePath("/admin/hospedagens");revalidatePath("/");}
+function readAccommodationForm(formData:FormData){
+  const text=(name:string,max=500)=>String(formData.get(name)||"").trim().slice(0,max);
+  const integer=(name:string,fallback:number,min:number,max:number)=>{
+    const raw=String(formData.get(name)||"").trim();
+    const value=raw===""?fallback:Number(raw);
+    if(!Number.isInteger(value)||value<min||value>max)throw new Error("Valor inválido em "+name+".");
+    return value;
+  };
+  const optionalNumber=(name:string)=>{
+    const raw=String(formData.get(name)||"").trim().replace(",",".");
+    if(!raw)return null;
+    const value=Number(raw);
+    if(!Number.isFinite(value)||value<=0)throw new Error("Valor numérico inválido em "+name+".");
+    return value;
+  };
+
+  const name=text("name",120);
+  const description=text("description",4000);
+  if(!name||!description)throw new Error("Nome e descrição são obrigatórios.");
+
+  const type=text("type",40)||"QUARTO";
+  const capacity=integer("capacity",2,1,50);
+  const maxAdults=integer("maxAdults",Math.min(2,capacity),1,50);
+  const maxChildren=integer("maxChildren",0,0,30);
+  const bathrooms=integer("bathrooms",1,0,10);
+
+  const rawPrice=String(formData.get("price")||"").trim().replace(",",".");
+  const priceRaw=rawPrice?Number(rawPrice):null;
+  if(priceRaw!==null&&(!Number.isFinite(priceRaw)||priceRaw<0))throw new Error("Preço inválido.");
+
+  const checkInTime=text("checkInTime",5)||"14:00";
+  const checkOutTime=text("checkOutTime",5)||"12:00";
+  if(!/^([01]\d|2[0-3]):[0-5]\d$/.test(checkInTime)||!/^([01]\d|2[0-3]):[0-5]\d$/.test(checkOutTime)){
+    throw new Error("Horário de check-in/check-out inválido.");
+  }
+
+  const internalCode=text("internalCode",40).toUpperCase()||null;
+  if(internalCode&&!/^[A-Z0-9._-]+$/.test(internalCode))throw new Error("Código interno inválido.");
+
+  const galleryImages=formData.getAll("galleryImages")
+    .map(value=>String(value).trim())
+    .filter(value=>/^https?:\/\//i.test(value))
+    .slice(0,20);
+
+  const amenities=formData.getAll("amenities")
+    .map(value=>String(value).trim().toUpperCase())
+    .filter(value=>/^[A-Z0-9_-]{2,40}$/.test(value))
+    .slice(0,30);
+
+  return {
+    name,
+    description,
+    type,
+    capacity,
+    priceCents:priceRaw===null?null:Math.round(priceRaw*100),
+    coverImage:text("coverImage",2000)||null,
+    galleryImages,
+    internalCode,
+    roomNumber:text("roomNumber",40)||null,
+    floor:text("floor",40)||null,
+    maxAdults,
+    maxChildren,
+    beds:text("beds",300)||null,
+    bathrooms,
+    areaSqm:optionalNumber("areaSqm"),
+    amenities,
+    rules:text("rules",3000)||null,
+    checkInTime,
+    checkOutTime,
+    internalNotes:text("internalNotes",3000)||null,
+    featured:formData.get("featured")==="on",
+    active:formData.get("active")==="on"
+  };
+}
+
+export async function createAccommodation(formData:FormData){
+  await requireAdmin();
+  const data=readAccommodationForm(formData);
+  await prisma.accommodation.create({data});
+  revalidatePath("/admin/hospedagens");
+  revalidatePath("/reservar");
+  revalidatePath("/");
+}
 export async function createPromotion(formData:FormData){await requireAdmin();const title=String(formData.get("title")||"").trim();const description=String(formData.get("description")||"").trim();const coupon=String(formData.get("coupon")||"").trim().toUpperCase()||null;const discountType=String(formData.get("discountType")||"").trim()||null;const raw=Number(String(formData.get("discountValue")||"").replace(",","."));const min=Number(formData.get("minNights")||0);const accommodationId=String(formData.get("accommodationId")||"").trim()||null;if(!title)throw new Error("Título obrigatório.");if(discountType&&!["PERCENT","FIXED"].includes(discountType))throw new Error("Tipo de desconto inválido.");if(discountType&&(!Number.isFinite(raw)||raw<=0||(discountType==="PERCENT"&&raw>100)))throw new Error("Valor de desconto inválido.");await prisma.promotion.create({data:{title,description:description||null,coupon,active:true,discountType,discountValue:discountType==="FIXED"?Math.round(raw*100):discountType?Math.round(raw):null,minNights:min>0?Math.floor(min):null,accommodationId,stackable:formData.get("stackable")==="on"}});revalidatePath("/admin/promocoes");revalidatePath("/");}
 export async function togglePromotion(formData:FormData){await requireAdmin();const id=String(formData.get("id")||"");const row=await prisma.promotion.findUnique({where:{id}});if(row){await prisma.promotion.update({where:{id},data:{active:!row.active}});revalidatePath("/admin/promocoes");revalidatePath("/");}}
 export async function deletePromotion(formData:FormData){await requireAdmin();const id=String(formData.get("id")||"");if(id){await prisma.promotion.delete({where:{id}});revalidatePath("/admin/promocoes");revalidatePath("/");}}
@@ -11,7 +93,17 @@ export async function setBookingStatus(formData:FormData){await requireAdmin();c
 export async function toggleAccommodation(formData:FormData){await requireAdmin();const id=String(formData.get("id")||"");const item=await prisma.accommodation.findUnique({where:{id}});if(item){await prisma.accommodation.update({where:{id},data:{active:!item.active}});revalidatePath("/admin/hospedagens");revalidatePath("/");}}
 export async function deleteAccommodation(formData:FormData){await requireAdmin();const id=String(formData.get("id")||"");if(id){await prisma.accommodation.delete({where:{id}});revalidatePath("/admin/hospedagens");revalidatePath("/");}}
 
-export async function updateAccommodation(formData:FormData){await requireAdmin();const id=String(formData.get("id")||"");const name=String(formData.get("name")||"").trim();const description=String(formData.get("description")||"").trim();const type=String(formData.get("type")||"POUSADA");const capacityRaw=Number(formData.get("capacity")||1);const rawPrice=String(formData.get("price")||"").replace(",",".");const priceRaw=rawPrice?Number(rawPrice):null;if(!Number.isFinite(capacityRaw)||capacityRaw<1||!Number.isInteger(capacityRaw))throw new Error("Capacidade inválida.");if(priceRaw!==null&&(!Number.isFinite(priceRaw)||priceRaw<0))throw new Error("Preço inválido.");const capacity=capacityRaw;const priceCents=priceRaw===null?null:Math.round(priceRaw*100);const coverImage=String(formData.get("coverImage")||"").trim()||null;const featured=formData.get("featured")==="on";if(!id||!name||!description)throw new Error("Dados obrigatórios ausentes.");await prisma.accommodation.update({where:{id},data:{name,description,type,capacity,priceCents,coverImage,featured}});revalidatePath("/admin/hospedagens");revalidatePath("/");}
+export async function updateAccommodation(formData:FormData){
+  await requireAdmin();
+  const id=String(formData.get("id")||"");
+  if(!id)throw new Error("Hospedagem inválida.");
+  const data=readAccommodationForm(formData);
+  await prisma.accommodation.update({where:{id},data});
+  revalidatePath("/admin/hospedagens");
+  revalidatePath("/admin/hospedagens/"+id);
+  revalidatePath("/reservar");
+  revalidatePath("/");
+}
 export async function addMedia(formData:FormData){await requireAdmin();const url=String(formData.get("url")||"").trim();const alt=String(formData.get("alt")||"").trim()||null;if(!url)throw new Error("URL da imagem obrigatória.");await prisma.media.create({data:{url,alt}});revalidatePath("/admin/galeria");revalidatePath("/admin/midia");}
 export async function deleteMedia(formData:FormData){await requireAdmin();const id=String(formData.get("id")||"");if(!id)return;const row=await prisma.media.findUnique({where:{id}});if(!row)return;if(row.storageKey){await deleteMediaObject(row.storageKey);}await prisma.media.delete({where:{id}});revalidatePath("/admin/galeria");revalidatePath("/admin/midia");}
 
@@ -38,7 +130,102 @@ export async function deleteRateOverride(formData:FormData){await requireAdmin()
 export async function createRateRule(formData:FormData){await requireAdmin();const accommodationId=String(formData.get("accommodationId")||""),name=String(formData.get("name")||"").trim(),adjustmentType=String(formData.get("adjustmentType")||"PERCENT"),raw=Number(formData.get("adjustmentValue")||0);if(!accommodationId||!name||!["PERCENT","FIXED"].includes(adjustmentType)||!Number.isFinite(raw))throw new Error("Regra dinâmica inválida.");const num=(key:string)=>{const v=String(formData.get(key)||"").trim();if(v==="")return null;const n=Number(v);if(!Number.isFinite(n))throw new Error("Valor numérico inválido.");return n};const minOcc=num("minOccupancyPct"),maxOcc=num("maxOccupancyPct"),minDays=num("daysBeforeMin"),maxDays=num("daysBeforeMax"),priority=num("priority")??100;if((minOcc!=null&&(minOcc<0||minOcc>100))||(maxOcc!=null&&(maxOcc<0||maxOcc>100))||(minOcc!=null&&maxOcc!=null&&minOcc>maxOcc)||(minDays!=null&&minDays<0)||(maxDays!=null&&maxDays<0)||(minDays!=null&&maxDays!=null&&minDays>maxDays))throw new Error("Faixas da regra dinâmica são inválidas.");const starts=String(formData.get("startsAt")||""),ends=String(formData.get("endsAt")||"");const startsAt=starts?new Date(starts+"T00:00:00Z"):null,endsAt=ends?new Date(ends+"T23:59:59Z"):null;if(startsAt&&endsAt&&startsAt>endsAt)throw new Error("Período da regra inválido.");await prisma.rateRule.create({data:{accommodationId,name,adjustmentType,adjustmentValue:adjustmentType==="FIXED"?Math.round(raw*100):Math.round(raw),minOccupancyPct:minOcc==null?null:Math.round(minOcc),maxOccupancyPct:maxOcc==null?null:Math.round(maxOcc),daysBeforeMin:minDays==null?null:Math.round(minDays),daysBeforeMax:maxDays==null?null:Math.round(maxDays),startsAt,endsAt,priority:Math.round(priority)}});revalidatePath("/admin/tarifas");}
 export async function deleteRateRule(formData:FormData){await requireAdmin();const id=String(formData.get("id")||"");if(id){await prisma.rateRule.delete({where:{id}});revalidatePath("/admin/tarifas");}}
 
-export async function pmsBookingAction(formData:FormData){await requireAdmin();const id=String(formData.get("id")||""),action=String(formData.get("action")||"");if(!id)throw new Error("Reserva inválida.");if(action==="CHECK_IN"){await prisma.$transaction(async tx=>{const claimed=await tx.bookingLead.updateMany({where:{id,status:"CONFIRMED",checkedInAt:null},data:{checkedInAt:new Date(),status:"CHECKED_IN",restaurantAccessToken:crypto.randomUUID()}});if(claimed.count!==1)throw new Error("Reserva não está disponível para check-in.");await tx.bookingAuditLog.create({data:{bookingId:id,action:"CHECK_IN"}})});}else if(action==="CHECK_OUT"){await prisma.$transaction(async tx=>{const open=await tx.restaurantRoomCharge.count({where:{bookingId:id,status:{in:["OPEN","SETTLING"]}}});if(open>0)throw new Error("Existe consumo do restaurante em aberto. Feche o consumo antes do check-out.");const booking=await tx.bookingLead.findUnique({where:{id},select:{accommodationId:true}});if(!booking)throw new Error("Reserva não encontrada.");const claimed=await tx.bookingLead.updateMany({where:{id,status:"CHECKED_IN",checkedOutAt:null},data:{checkedOutAt:new Date(),status:"CHECKED_OUT",restaurantAccessToken:null}});if(claimed.count!==1)throw new Error("Reserva não está disponível para check-out.");if(booking.accommodationId)await tx.housekeepingTask.create({data:{accommodationId:booking.accommodationId,bookingId:id,scheduledFor:new Date(),type:"CLEANING"}});await tx.bookingAuditLog.create({data:{bookingId:id,action:"CHECK_OUT"}})});}else if(action==="NO_SHOW"){await prisma.$transaction(async tx=>{const claimed=await tx.bookingLead.updateMany({where:{id,status:"CONFIRMED",checkedInAt:null,noShowAt:null},data:{noShowAt:new Date(),status:"NO_SHOW",restaurantAccessToken:null}});if(claimed.count!==1)throw new Error("Reserva não está disponível para no-show.");await tx.bookingAuditLog.create({data:{bookingId:id,action:"NO_SHOW"}})});}else throw new Error("Ação PMS inválida.");revalidatePath("/admin/reservas");revalidatePath("/admin/pms");}
+export async function pmsBookingAction(formData:FormData){
+  await requireAdmin();
+  const id=String(formData.get("id")||"");
+  const action=String(formData.get("action")||"");
+  if(!id)throw new Error("Reserva inválida.");
+
+  if(action==="CHECK_IN"){
+    await prisma.$transaction(async tx=>{
+      const claimed=await tx.bookingLead.updateMany({
+        where:{id,status:"CONFIRMED",checkedInAt:null},
+        data:{checkedInAt:new Date(),status:"CHECKED_IN",restaurantAccessToken:crypto.randomUUID()}
+      });
+      if(claimed.count!==1)throw new Error("Reserva não está disponível para check-in.");
+
+      const booking=await tx.bookingLead.findUnique({
+        where:{id},
+        select:{id:true,name:true,phone:true,email:true,guestId:true}
+      });
+      if(!booking)throw new Error("Reserva não encontrada após check-in.");
+
+      if(!booking.guestId){
+        let guest=await tx.guest.findFirst({
+          where:{name:booking.name,phone:booking.phone}
+        });
+        if(!guest){
+          guest=await tx.guest.create({
+            data:{
+              name:booking.name,
+              phone:booking.phone,
+              email:booking.email||null
+            }
+          });
+        }
+        await tx.bookingLead.update({
+          where:{id},
+          data:{guestId:guest.id}
+        });
+      }
+
+      await tx.bookingAuditLog.create({
+        data:{bookingId:id,action:"CHECK_IN"}
+      });
+    });
+  }else if(action==="CHECK_OUT"){
+    await prisma.$transaction(async tx=>{
+      const open=await tx.restaurantRoomCharge.count({
+        where:{bookingId:id,status:{in:["OPEN","SETTLING"]}}
+      });
+      if(open>0)throw new Error("Existe consumo do restaurante em aberto. Feche o consumo antes do check-out.");
+
+      const booking=await tx.bookingLead.findUnique({
+        where:{id},
+        select:{accommodationId:true}
+      });
+      if(!booking)throw new Error("Reserva não encontrada.");
+
+      const claimed=await tx.bookingLead.updateMany({
+        where:{id,status:"CHECKED_IN",checkedOutAt:null},
+        data:{checkedOutAt:new Date(),status:"CHECKED_OUT",restaurantAccessToken:null}
+      });
+      if(claimed.count!==1)throw new Error("Reserva não está disponível para check-out.");
+
+      if(booking.accommodationId){
+        await tx.housekeepingTask.create({
+          data:{
+            accommodationId:booking.accommodationId,
+            bookingId:id,
+            scheduledFor:new Date(),
+            type:"CLEANING"
+          }
+        });
+      }
+
+      await tx.bookingAuditLog.create({
+        data:{bookingId:id,action:"CHECK_OUT"}
+      });
+    });
+  }else if(action==="NO_SHOW"){
+    await prisma.$transaction(async tx=>{
+      const claimed=await tx.bookingLead.updateMany({
+        where:{id,status:"CONFIRMED",checkedInAt:null,noShowAt:null},
+        data:{noShowAt:new Date(),status:"NO_SHOW",restaurantAccessToken:null}
+      });
+      if(claimed.count!==1)throw new Error("Reserva não está disponível para no-show.");
+      await tx.bookingAuditLog.create({
+        data:{bookingId:id,action:"NO_SHOW"}
+      });
+    });
+  }else{
+    throw new Error("Ação PMS inválida.");
+  }
+
+  revalidatePath("/admin/reservas");
+  revalidatePath("/admin/pms");
+  revalidatePath("/admin/hospedes");
+}
 export async function settleRestaurantFolio(formData:FormData){await requireAdmin();const bookingId=String(formData.get("bookingId")||"");const method=String(formData.get("method")||"ROOM_SETTLEMENT");if(!bookingId||!["ROOM_SETTLEMENT","CASH","CARD","PIX","TRANSFER"].includes(method))throw new Error("Liquidação inválida.");await prisma.$transaction(async tx=>{const booking=await tx.bookingLead.findUnique({where:{id:bookingId},select:{id:true}});if(!booking)throw new Error("Hospedagem não encontrada.");const claimed=await tx.restaurantRoomCharge.updateMany({where:{bookingId,status:"OPEN"},data:{status:"SETTLING"}});if(claimed.count===0)return;const charges=await tx.restaurantRoomCharge.findMany({where:{bookingId,status:"SETTLING"}});const total=charges.reduce((s,x)=>s+x.amountCents,0);if(total<=0)throw new Error("Consumo inválido.");await tx.payment.create({data:{bookingId,amountCents:total,method,reference:"RESTAURANT_FOLIO"}});await tx.restaurantRoomCharge.updateMany({where:{bookingId,status:"SETTLING"},data:{status:"SETTLED",settledAt:new Date()}});await tx.restaurantOrder.updateMany({where:{bookingId,paymentMethod:"ROOM",paymentStatus:"ROOM_FOLIO"},data:{paymentStatus:"PAID"}});await tx.bookingAuditLog.create({data:{bookingId,action:"RESTAURANT_FOLIO_SETTLED",details:{amountCents:total,method,charges:claimed.count}}})});revalidatePath("/admin/pms");}
 export async function registerPayment(formData:FormData){await requireAdmin();const bookingId=String(formData.get("bookingId")||"");const amount=Number(String(formData.get("amount")||"").replace(",","."));const method=String(formData.get("method")||"OTHER");if(!bookingId||!Number.isFinite(amount)||amount<=0)throw new Error("Pagamento inválido.");await prisma.$transaction([prisma.payment.create({data:{bookingId,amountCents:Math.round(amount*100),method}}),prisma.bookingAuditLog.create({data:{bookingId,action:"PAYMENT",details:{amountCents:Math.round(amount*100),method}}})]);revalidatePath("/admin/pms");revalidatePath("/admin/reservas");}
 export async function updateHousekeeping(formData:FormData){await requireAdmin();const id=String(formData.get("id")||"");const status=String(formData.get("status")||"");if(!["PENDING","IN_PROGRESS","DONE"].includes(status))throw new Error("Status inválido.");await prisma.housekeepingTask.update({where:{id},data:{status}});revalidatePath("/admin/pms");}

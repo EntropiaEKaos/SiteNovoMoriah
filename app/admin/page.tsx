@@ -8,6 +8,7 @@ export default async function Admin(){
   const [
     rooms,
     bookings,
+    guests,
     media,
     posts,
     channels,
@@ -22,6 +23,7 @@ export default async function Admin(){
   ]=await Promise.all([
     prisma.accommodation.count(),
     prisma.bookingLead.count(),
+    prisma.guest.count(),
     prisma.media.count(),
     prisma.blogPost.count(),
     prisma.channelIntegration.count(),
@@ -42,6 +44,7 @@ export default async function Admin(){
   const modules=[
     ["Hospedagens",rooms,"/admin/hospedagens","Inventário"],
     ["Reservas",bookings,"/admin/reservas","Comercial"],
+    ["Hóspedes",guests,"/admin/hospedes","CRM"],
     ["PMS",housekeepingPending,"/admin/pms","Operação"],
     ["Moriah Food",foodOrders,"/admin/restaurante","Restaurante"],
     ["Mídia",media,"/admin/midia","Conteúdo"],
