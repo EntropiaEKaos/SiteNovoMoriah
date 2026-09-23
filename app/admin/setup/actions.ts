@@ -30,7 +30,7 @@ export async function bootstrapSuperAdmin(formData:FormData){
   try{
     admin=await prisma.$transaction(async tx=>{
       await tx.$queryRaw`SELECT pg_advisory_xact_lock(${BOOTSTRAP_LOCK})`;
-      if(await tx.adminUser.count())return null;
+      if(await tx.adminUser.count({where:{role:"SUPERADMIN"}}))return null;
       const created=await tx.adminUser.create({data:{username,passwordHash,role:"SUPERADMIN",active:true}});
       await tx.adminAuditLog.create({data:{actorId:created.id,action:"ADMIN_BOOTSTRAP",targetType:"AdminUser",targetId:created.id,details:{username:created.username}}});
       return {id:created.id,username:created.username,role:created.role};
