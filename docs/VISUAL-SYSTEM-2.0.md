@@ -28,10 +28,12 @@ A identidade usa preto, branco/off-white e amarelo Moriah como assinatura. O sit
 - Dashboard premium com KPIs, módulos, Revenue Command e atendimento.
 - Workspace de Reservas com métricas e pipeline visual.
 - Design system operacional reutilizável para próximas telas.
+- Jornada de reserva com apresentação premium de disponibilidade e tarifa.
+- PMS / Front Desk convertido para workspace operacional com KPIs e governança.
 
 ## Próximas telas
-1. Reserva pública e calendário.
-2. PMS / Front Desk e governança.
+1. ~~Reserva pública e calendário.~~ Implementado visualmente; pendente certificação em browser.
+2. ~~PMS / Front Desk e governança.~~ Implementado visualmente; pendente certificação em browser.
 3. Moriah Food: gestão, KDS e estoque.
 4. Hospedagens, tarifas e promoções.
 5. Galeria, blog e CMS.
@@ -46,6 +48,9 @@ A identidade usa preto, branco/off-white e amarelo Moriah como assinatura. O sit
 - `6f597429` — sistema visual público premium.
 - `273d134a` — workspace visual de Reservas.
 - `85c1a8d9` — estilos reutilizáveis das áreas operacionais.
+- `b36ddd28` — jornada de reserva e apresentação de tarifa.
+- `224a6e1a` — workspace visual do PMS / Front Desk.
+- `eb710451` — estilos premium compartilhados de reserva e PMS.
 
 ## Critério de aceite
 Antes do merge: Prisma validate/generate, TypeScript, build, workflows do PR e revisão dos diffs. Depois que o deploy Vercel estiver disponível: inspeção visual desktop/mobile, fluxos de reserva/admin e smoke tests de runtime. Produção só será declarada aprovada depois desses gates.
