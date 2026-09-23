@@ -1,1 +1,44 @@
-import {prisma} from "../../../lib/prisma";import {requireAdmin} from "../../../lib/admin-auth";export const dynamic="force-dynamic";export default async function Page(){await requireAdmin();const rows=await prisma.media.findMany({orderBy:{createdAt:"desc"},take:100});return <main style={{padding:"50px 6vw",maxWidth:1200}}><small>MORIAH CMS / MÍDIA</small><h1 style={{fontSize:48}}>Biblioteca de mídia</h1><p>Arquivos registrados no armazenamento do site. Novos uploads são enviados pelo seletor de mídia disponível nos formulários de hospedagens e blog.</p>{rows.length===0?<section style={{marginTop:28,padding:50,border:"1px dashed #bbb",textAlign:"center"}}><h2>Nenhuma mídia registrada</h2><p>Envie a primeira imagem por um formulário do CMS.</p></section>:<section style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(210px,1fr))",gap:16,marginTop:28}}>{rows.map(x=><article key={x.id} style={{background:"#fff",border:"1px solid #ddd",padding:12}}><img src={x.url} alt={x.alt||""} style={{width:"100%",height:150,objectFit:"cover",background:"#eee"}}/><b style={{display:"block",marginTop:10}}>{x.alt||"Imagem sem descrição"}</b><small>{x.provider}{x.sizeBytes?" • "+Math.round(x.sizeBytes/1024)+" KB":""}</small></article>)}</section>}</main>}
+import {prisma} from "../../../lib/prisma";
+import {requireAdmin} from "../../../lib/admin-auth";
+
+export const dynamic="force-dynamic";
+
+export default async function Page(){
+  await requireAdmin();
+  const rows=await prisma.media.findMany({orderBy:{createdAt:"desc"},take:100});
+  const s3=rows.filter(row=>row.provider==="S3").length;
+  const totalBytes=rows.reduce((sum,row)=>sum+(row.sizeBytes||0),0);
+
+  return <main className="adminPage">
+    <section className="adminPageHero">
+      <div>
+        <small>MORIAH CMS / BIBLIOTECA</small>
+        <h1>Mídia</h1>
+        <p>Biblioteca central dos arquivos registrados no site. Os uploads novos entram pelo fluxo protegido da Galeria e dos formulários do CMS.</p>
+      </div>
+      <div className="adminPageHeroActions">
+        <a className="adminPrimaryAction" href="/admin/galeria">Abrir Galeria</a>
+      </div>
+    </section>
+
+    <section className="adminMetricStrip">
+      <div><small>Arquivos</small><strong>{rows.length}</strong></div>
+      <div><small>No S3</small><strong>{s3}</strong></div>
+      <div><small>Tamanho visível</small><strong style={{fontSize:20}}>{(totalBytes/1024/1024).toLocaleString("pt-BR",{maximumFractionDigits:1})} MB</strong></div>
+      <div><small>Limite listado</small><strong>100</strong></div>
+    </section>
+
+    {rows.length===0?<section className="adminEmptyState">
+      <strong>Nenhuma mídia registrada.</strong>
+      <p>Envie a primeira imagem pela Galeria.</p>
+    </section>:<section className="adminImageGrid">
+      {rows.map(item=><article className="adminMediaCard" key={item.id}>
+        <img src={item.url} alt={item.alt||""}/>
+        <div className="adminMediaCardBody">
+          <b>{item.alt||"Imagem sem descrição"}</b>
+          <small>{item.provider}{item.sizeBytes?" • "+Math.round(item.sizeBytes/1024)+" KB":""}</small>
+        </div>
+      </article>)}
+    </section>}
+  </main>;
+}
