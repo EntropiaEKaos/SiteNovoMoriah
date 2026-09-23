@@ -30,6 +30,7 @@ const sections=[
     items:[
       ["Visão geral","/admin",LayoutDashboard],
       ["Reservas","/admin/reservas",CalendarDays],
+      ["Hóspedes","/admin/hospedes",Users],
       ["PMS / Front Desk","/admin/pms",BedDouble],
       ["Hospedagens","/admin/hospedagens",BedDouble],
       ["Canais","/admin/canais",Plug]
