@@ -41,9 +41,16 @@ export default async function Page(){
       {rooms.map(room=><article className="adminListCard" key={room.id}>
         <div className="adminListCardHead">
           <div>
-            <small>{room.type}</small>
+            <small>{room.type}{room.internalCode?" • "+room.internalCode:""}</small>
             <h3>{room.name}</h3>
             <p>{room.description||"Sem descrição cadastrada."}</p>
+            {(room.roomNumber||room.floor||room.beds)&&<p style={{marginTop:8,fontSize:12}}>
+              {room.roomNumber?"Unidade "+room.roomNumber:""}
+              {room.roomNumber&&room.floor?" • ":""}
+              {room.floor||""}
+              {(room.roomNumber||room.floor)&&room.beds?" • ":""}
+              {room.beds||""}
+            </p>}
           </div>
           <b>{room.priceCents==null?"Sob consulta":(room.priceCents/100).toLocaleString("pt-BR",{style:"currency",currency:"BRL"})}</b>
         </div>
@@ -52,6 +59,11 @@ export default async function Page(){
           <span className={"adminChip "+(room.active?"ok":"warn")}>{room.active?"Ativa":"Desativada"}</span>
           {room.featured&&<span className="adminChip">Destaque</span>}
           <span className="adminChip">{room.capacity} hóspede(s)</span>
+          <span className="adminChip">{room.maxAdults} adulto(s) + {room.maxChildren} criança(s)</span>
+          <span className="adminChip">{room.bathrooms} banheiro(s)</span>
+          {room.areaSqm&&<span className="adminChip">{room.areaSqm} m²</span>}
+          {room.amenities.slice(0,4).map(item=><span className="adminChip" key={item}>{item.replaceAll("_"," ")}</span>)}
+          {room.amenities.length>4&&<span className="adminChip">+{room.amenities.length-4}</span>}
         </div>
 
         <div className="adminInlineActions">
