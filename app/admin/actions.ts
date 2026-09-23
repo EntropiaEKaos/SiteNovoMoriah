@@ -130,7 +130,102 @@ export async function deleteRateOverride(formData:FormData){await requireAdmin()
 export async function createRateRule(formData:FormData){await requireAdmin();const accommodationId=String(formData.get("accommodationId")||""),name=String(formData.get("name")||"").trim(),adjustmentType=String(formData.get("adjustmentType")||"PERCENT"),raw=Number(formData.get("adjustmentValue")||0);if(!accommodationId||!name||!["PERCENT","FIXED"].includes(adjustmentType)||!Number.isFinite(raw))throw new Error("Regra dinâmica inválida.");const num=(key:string)=>{const v=String(formData.get(key)||"").trim();if(v==="")return null;const n=Number(v);if(!Number.isFinite(n))throw new Error("Valor numérico inválido.");return n};const minOcc=num("minOccupancyPct"),maxOcc=num("maxOccupancyPct"),minDays=num("daysBeforeMin"),maxDays=num("daysBeforeMax"),priority=num("priority")??100;if((minOcc!=null&&(minOcc<0||minOcc>100))||(maxOcc!=null&&(maxOcc<0||maxOcc>100))||(minOcc!=null&&maxOcc!=null&&minOcc>maxOcc)||(minDays!=null&&minDays<0)||(maxDays!=null&&maxDays<0)||(minDays!=null&&maxDays!=null&&minDays>maxDays))throw new Error("Faixas da regra dinâmica são inválidas.");const starts=String(formData.get("startsAt")||""),ends=String(formData.get("endsAt")||"");const startsAt=starts?new Date(starts+"T00:00:00Z"):null,endsAt=ends?new Date(ends+"T23:59:59Z"):null;if(startsAt&&endsAt&&startsAt>endsAt)throw new Error("Período da regra inválido.");await prisma.rateRule.create({data:{accommodationId,name,adjustmentType,adjustmentValue:adjustmentType==="FIXED"?Math.round(raw*100):Math.round(raw),minOccupancyPct:minOcc==null?null:Math.round(minOcc),maxOccupancyPct:maxOcc==null?null:Math.round(maxOcc),daysBeforeMin:minDays==null?null:Math.round(minDays),daysBeforeMax:maxDays==null?null:Math.round(maxDays),startsAt,endsAt,priority:Math.round(priority)}});revalidatePath("/admin/tarifas");}
 export async function deleteRateRule(formData:FormData){await requireAdmin();const id=String(formData.get("id")||"");if(id){await prisma.rateRule.delete({where:{id}});revalidatePath("/admin/tarifas");}}
 
-export async function pmsBookingAction(formData:FormData){await requireAdmin();const id=String(formData.get("id")||""),action=String(formData.get("action")||"");if(!id)throw new Error("Reserva inválida.");if(action==="CHECK_IN"){await prisma.$transaction(async tx=>{const claimed=await tx.bookingLead.updateMany({where:{id,status:"CONFIRMED",checkedInAt:null},data:{checkedInAt:new Date(),status:"CHECKED_IN",restaurantAccessToken:crypto.randomUUID()}});if(claimed.count!==1)throw new Error("Reserva não está disponível para check-in.");await tx.bookingAuditLog.create({data:{bookingId:id,action:"CHECK_IN"}})});}else if(action==="CHECK_OUT"){await prisma.$transaction(async tx=>{const open=await tx.restaurantRoomCharge.count({where:{bookingId:id,status:{in:["OPEN","SETTLING"]}}});if(open>0)throw new Error("Existe consumo do restaurante em aberto. Feche o consumo antes do check-out.");const booking=await tx.bookingLead.findUnique({where:{id},select:{accommodationId:true}});if(!booking)throw new Error("Reserva não encontrada.");const claimed=await tx.bookingLead.updateMany({where:{id,status:"CHECKED_IN",checkedOutAt:null},data:{checkedOutAt:new Date(),status:"CHECKED_OUT",restaurantAccessToken:null}});if(claimed.count!==1)throw new Error("Reserva não está disponível para check-out.");if(booking.accommodationId)await tx.housekeepingTask.create({data:{accommodationId:booking.accommodationId,bookingId:id,scheduledFor:new Date(),type:"CLEANING"}});await tx.bookingAuditLog.create({data:{bookingId:id,action:"CHECK_OUT"}})});}else if(action==="NO_SHOW"){await prisma.$transaction(async tx=>{const claimed=await tx.bookingLead.updateMany({where:{id,status:"CONFIRMED",checkedInAt:null,noShowAt:null},data:{noShowAt:new Date(),status:"NO_SHOW",restaurantAccessToken:null}});if(claimed.count!==1)throw new Error("Reserva não está disponível para no-show.");await tx.bookingAuditLog.create({data:{bookingId:id,action:"NO_SHOW"}})});}else throw new Error("Ação PMS inválida.");revalidatePath("/admin/reservas");revalidatePath("/admin/pms");}
+export async function pmsBookingAction(formData:FormData){
+  await requireAdmin();
+  const id=String(formData.get("id")||"");
+  const action=String(formData.get("action")||"");
+  if(!id)throw new Error("Reserva inválida.");
+
+  if(action==="CHECK_IN"){
+    await prisma.$transaction(async tx=>{
+      const claimed=await tx.bookingLead.updateMany({
+        where:{id,status:"CONFIRMED",checkedInAt:null},
+        data:{checkedInAt:new Date(),status:"CHECKED_IN",restaurantAccessToken:crypto.randomUUID()}
+      });
+      if(claimed.count!==1)throw new Error("Reserva não está disponível para check-in.");
+
+      const booking=await tx.bookingLead.findUnique({
+        where:{id},
+        select:{id:true,name:true,phone:true,email:true,guestId:true}
+      });
+      if(!booking)throw new Error("Reserva não encontrada após check-in.");
+
+      if(!booking.guestId){
+        let guest=await tx.guest.findFirst({
+          where:{name:booking.name,phone:booking.phone}
+        });
+        if(!guest){
+          guest=await tx.guest.create({
+            data:{
+              name:booking.name,
+              phone:booking.phone,
+              email:booking.email||null
+            }
+          });
+        }
+        await tx.bookingLead.update({
+          where:{id},
+          data:{guestId:guest.id}
+        });
+      }
+
+      await tx.bookingAuditLog.create({
+        data:{bookingId:id,action:"CHECK_IN"}
+      });
+    });
+  }else if(action==="CHECK_OUT"){
+    await prisma.$transaction(async tx=>{
+      const open=await tx.restaurantRoomCharge.count({
+        where:{bookingId:id,status:{in:["OPEN","SETTLING"]}}
+      });
+      if(open>0)throw new Error("Existe consumo do restaurante em aberto. Feche o consumo antes do check-out.");
+
+      const booking=await tx.bookingLead.findUnique({
+        where:{id},
+        select:{accommodationId:true}
+      });
+      if(!booking)throw new Error("Reserva não encontrada.");
+
+      const claimed=await tx.bookingLead.updateMany({
+        where:{id,status:"CHECKED_IN",checkedOutAt:null},
+        data:{checkedOutAt:new Date(),status:"CHECKED_OUT",restaurantAccessToken:null}
+      });
+      if(claimed.count!==1)throw new Error("Reserva não está disponível para check-out.");
+
+      if(booking.accommodationId){
+        await tx.housekeepingTask.create({
+          data:{
+            accommodationId:booking.accommodationId,
+            bookingId:id,
+            scheduledFor:new Date(),
+            type:"CLEANING"
+          }
+        });
+      }
+
+      await tx.bookingAuditLog.create({
+        data:{bookingId:id,action:"CHECK_OUT"}
+      });
+    });
+  }else if(action==="NO_SHOW"){
+    await prisma.$transaction(async tx=>{
+      const claimed=await tx.bookingLead.updateMany({
+        where:{id,status:"CONFIRMED",checkedInAt:null,noShowAt:null},
+        data:{noShowAt:new Date(),status:"NO_SHOW",restaurantAccessToken:null}
+      });
+      if(claimed.count!==1)throw new Error("Reserva não está disponível para no-show.");
+      await tx.bookingAuditLog.create({
+        data:{bookingId:id,action:"NO_SHOW"}
+      });
+    });
+  }else{
+    throw new Error("Ação PMS inválida.");
+  }
+
+  revalidatePath("/admin/reservas");
+  revalidatePath("/admin/pms");
+  revalidatePath("/admin/hospedes");
+}
 export async function settleRestaurantFolio(formData:FormData){await requireAdmin();const bookingId=String(formData.get("bookingId")||"");const method=String(formData.get("method")||"ROOM_SETTLEMENT");if(!bookingId||!["ROOM_SETTLEMENT","CASH","CARD","PIX","TRANSFER"].includes(method))throw new Error("Liquidação inválida.");await prisma.$transaction(async tx=>{const booking=await tx.bookingLead.findUnique({where:{id:bookingId},select:{id:true}});if(!booking)throw new Error("Hospedagem não encontrada.");const claimed=await tx.restaurantRoomCharge.updateMany({where:{bookingId,status:"OPEN"},data:{status:"SETTLING"}});if(claimed.count===0)return;const charges=await tx.restaurantRoomCharge.findMany({where:{bookingId,status:"SETTLING"}});const total=charges.reduce((s,x)=>s+x.amountCents,0);if(total<=0)throw new Error("Consumo inválido.");await tx.payment.create({data:{bookingId,amountCents:total,method,reference:"RESTAURANT_FOLIO"}});await tx.restaurantRoomCharge.updateMany({where:{bookingId,status:"SETTLING"},data:{status:"SETTLED",settledAt:new Date()}});await tx.restaurantOrder.updateMany({where:{bookingId,paymentMethod:"ROOM",paymentStatus:"ROOM_FOLIO"},data:{paymentStatus:"PAID"}});await tx.bookingAuditLog.create({data:{bookingId,action:"RESTAURANT_FOLIO_SETTLED",details:{amountCents:total,method,charges:claimed.count}}})});revalidatePath("/admin/pms");}
 export async function registerPayment(formData:FormData){await requireAdmin();const bookingId=String(formData.get("bookingId")||"");const amount=Number(String(formData.get("amount")||"").replace(",","."));const method=String(formData.get("method")||"OTHER");if(!bookingId||!Number.isFinite(amount)||amount<=0)throw new Error("Pagamento inválido.");await prisma.$transaction([prisma.payment.create({data:{bookingId,amountCents:Math.round(amount*100),method}}),prisma.bookingAuditLog.create({data:{bookingId,action:"PAYMENT",details:{amountCents:Math.round(amount*100),method}}})]);revalidatePath("/admin/pms");revalidatePath("/admin/reservas");}
 export async function updateHousekeeping(formData:FormData){await requireAdmin();const id=String(formData.get("id")||"");const status=String(formData.get("status")||"");if(!["PENDING","IN_PROGRESS","DONE"].includes(status))throw new Error("Status inválido.");await prisma.housekeepingTask.update({where:{id},data:{status}});revalidatePath("/admin/pms");}
