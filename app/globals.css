@@ -424,3 +424,40 @@ body{background:linear-gradient(180deg,#fff 0,#fffdf5 100%)}.nav{box-shadow:0 8p
   .blogArticle{padding:55px 20px 80px}
   .blogArticle h1{letter-spacing:-2px}
 }
+
+
+/* Legacy admin pages normalized into Command Center */
+.adminWorkspace main:not(.adminDashboard):not(.opsPage):not(.integrationAdmin){
+  padding:52px 4vw 90px!important;
+  max-width:1500px!important;
+  margin:0 auto!important;
+}
+.adminWorkspace main:not(.adminDashboard):not(.opsPage):not(.integrationAdmin)>h1{
+  font-size:clamp(42px,5.5vw,72px)!important;
+  line-height:.95!important;
+  margin:12px 0 24px!important;
+}
+.adminWorkspace main:not(.adminDashboard):not(.opsPage):not(.integrationAdmin)>p{
+  max-width:760px;
+  color:var(--admin-muted);
+  line-height:1.65;
+}
+.adminWorkspace main:not(.adminDashboard):not(.opsPage):not(.integrationAdmin) article,
+.adminWorkspace main:not(.adminDashboard):not(.opsPage):not(.integrationAdmin) section{
+  border-radius:0!important;
+}
+.adminWorkspace main:not(.adminDashboard):not(.opsPage):not(.integrationAdmin) article{
+  border-color:var(--admin-line)!important;
+}
+.adminWorkspace main:not(.adminDashboard):not(.opsPage):not(.integrationAdmin) article:hover{
+  border-color:#111!important;
+}
+.adminWorkspace main:not(.adminDashboard):not(.opsPage):not(.integrationAdmin) a[style*="background:#ffd400"],
+.adminWorkspace main:not(.adminDashboard):not(.opsPage):not(.integrationAdmin) a[style*="background: #ffd400"]{
+  box-shadow:4px 4px 0 #111;
+}
+@media(max-width:760px){
+  .adminWorkspace main:not(.adminDashboard):not(.opsPage):not(.integrationAdmin){
+    padding:36px 5vw 70px!important;
+  }
+}
