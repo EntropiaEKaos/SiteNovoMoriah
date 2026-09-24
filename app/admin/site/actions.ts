@@ -27,7 +27,8 @@ const LAYOUTS=["DEFAULT","SPLIT","CENTERED","WIDE","MOSAIC","CARDS"] as const;
 const ANIMATIONS=["NONE","FADE_UP","FADE","SLIDE_LEFT","SLIDE_RIGHT","ZOOM"] as const;
 const WIDTHS=["NARROW","NORMAL","WIDE","FULL"] as const;
 const RESERVED_SLUGS=new Set([
-  "admin","api","blog","reservar","restaurante","_next","favicon.ico"
+  "admin","api","blog","reservar","restaurante","_next","favicon.ico",
+  "robots.txt","sitemap.xml","manifest.webmanifest","sw.js","icon","apple-icon"
 ]);
 
 function text(formData:FormData,name:string,max:number){
@@ -36,7 +37,8 @@ function text(formData:FormData,name:string,max:number){
 
 function safeHref(value:string|null){
   if(!value)return null;
-  if(value.startsWith("/")||value.startsWith("#"))return value.slice(0,500);
+  if(value.startsWith("#"))return value.slice(0,500);
+  if(value.startsWith("/")&&!value.startsWith("//"))return value.slice(0,500);
   try{
     const url=new URL(value);
     if(!["http:","https:"].includes(url.protocol))return null;
