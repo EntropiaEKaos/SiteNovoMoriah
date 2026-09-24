@@ -24,7 +24,7 @@ const nextAction:Record<string,{status:string;label:string}>={
 export default async function Page(){
   await requireAdmin();
 
-  const [orders,settings]=await Promise.all([
+  const [orders,settings,pendingNotifications]=await Promise.all([
     prisma.restaurantOrder.findMany({
       where:{status:{in:["NEW","PREPARING","READY"]}},
       include:{
@@ -35,7 +35,10 @@ export default async function Page(){
       },
       orderBy:{createdAt:"asc"}
     }),
-    prisma.restaurantSettings.findUnique({where:{id:"main"}})
+    prisma.restaurantSettings.findUnique({where:{id:"main"}}),
+    prisma.notificationMessage.count({
+      where:{audience:"KITCHEN",channel:"IN_APP",status:"READY"}
+    })
   ]);
 
   const target=settings?.prepTargetMinutes||25;
@@ -71,7 +74,16 @@ export default async function Page(){
     <KdsAutoRefresh
       orderIds={orders.map(order=>order.id)}
       soundEnabled={settings?.kdsSoundEnabled!==false}
+      pendingNotifications={pendingNotifications}
     />
+
+    {pendingNotifications>0&&<section className="kdsNotificationBanner">
+      <div>
+        <small>COZINHA / ATENÇÃO</small>
+        <strong>{pendingNotifications} pedido(s) novo(s) aguardando início de preparo.</strong>
+      </div>
+      <span>O aviso é reconhecido automaticamente quando o preparo começa.</span>
+    </section>}
 
     {orders.length===0?<section className="adminEmptyState">
       <strong>Nenhum pedido na fila.</strong>
@@ -139,7 +151,8 @@ export default async function Page(){
                     <strong>{money(order.totalCents)}</strong>
                   </div>
                   <div className="adminInlineActions">
-                    <Link href={"/admin/restaurante/pedidos/"+order.id+"/comanda"} target="_blank">Imprimir ↗</Link>
+                    <Link href={"/admin/restaurante/pedidos/"+order.id+"/comanda"} target="_blank">Comanda ↗</Link>
+                    <Link href={"/admin/restaurante/pedidos/"+order.id+"/recibo"} target="_blank">Recibo ↗</Link>
                     {action&&<form action={setRestaurantOrderStatus}>
                       <input type="hidden" name="id" value={order.id}/>
                       <input type="hidden" name="status" value={action.status}/>
