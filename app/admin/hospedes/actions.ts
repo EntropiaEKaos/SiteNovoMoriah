@@ -6,16 +6,43 @@ import {requireAdmin} from "../../../lib/admin-auth";
 import {prisma} from "../../../lib/prisma";
 
 function readGuest(formData:FormData){
+  const value=(name:string,max:number)=>String(formData.get(name)||"").trim().slice(0,max)||null;
   const name=String(formData.get("name")||"").trim().slice(0,160);
   const phone=String(formData.get("phone")||"").trim().slice(0,60);
   const email=String(formData.get("email")||"").trim().toLowerCase().slice(0,200)||null;
-  const document=String(formData.get("document")||"").trim().slice(0,100)||null;
-  const notes=String(formData.get("notes")||"").trim().slice(0,4000)||null;
+  const document=value("document",100);
+  const documentType=value("documentType",40);
+  const birthDateRaw=String(formData.get("birthDate")||"").trim();
+  const birthDate=birthDateRaw?new Date(birthDateRaw+"T12:00:00Z"):null;
+  const nationality=value("nationality",100);
+  const address=value("address",240);
+  const city=value("city",120);
+  const state=value("state",80);
+  const postalCode=value("postalCode",30);
+  const preferences=value("preferences",4000);
+  const emergencyContact=value("emergencyContact",300);
+  const notes=value("notes",4000);
 
   if(!name||!phone)throw new Error("Nome e telefone/WhatsApp são obrigatórios.");
   if(email&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))throw new Error("E-mail inválido.");
+  if(birthDate&&Number.isNaN(birthDate.getTime()))throw new Error("Data de nascimento inválida.");
 
-  return {name,phone,email,document,notes};
+  return {
+    name,
+    phone,
+    email,
+    document,
+    documentType,
+    birthDate,
+    nationality,
+    address,
+    city,
+    state,
+    postalCode,
+    preferences,
+    emergencyContact,
+    notes
+  };
 }
 
 export async function createGuest(formData:FormData){
@@ -48,6 +75,7 @@ export async function updateGuest(formData:FormData){
   await prisma.guest.update({where:{id},data});
   revalidatePath("/admin/hospedes");
   revalidatePath("/admin/hospedes/"+id);
+  revalidatePath("/admin/reservas");
 }
 
 export async function linkGuestBooking(formData:FormData){
