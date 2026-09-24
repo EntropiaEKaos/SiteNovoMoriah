@@ -4102,3 +4102,14 @@ body{background:linear-gradient(180deg,#fff 0,#fffdf5 100%)}.nav{box-shadow:0 8p
   }
   .chatQuickPrompts button{text-align:left}
 }
+
+
+/* Reset legacy bubble selectors for Chat UX 7.2 rows */
+.chatMessages .chatMessageRow.assistant,
+.chatMessages .chatMessageRow.user{
+  align-self:stretch;
+  background:transparent;
+  border:0;
+  color:inherit;
+  padding:0;
+}
