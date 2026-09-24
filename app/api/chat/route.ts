@@ -6,7 +6,7 @@ import {quoteAccommodation} from "../../../lib/rate-engine";
 const GROQ_URL="https://api.groq.com/openai/v1/chat/completions";
 const buckets=new Map<string,{count:number;resetAt:number}>();
 
-const SYSTEM=`Você é o assistente virtual da Pousada Moriah, em Praia Grande, SP. Responda em português do Brasil, acolhedor, objetivo e curto. Use SOMENTE o CONTEXTO MORIAH para afirmar preços, acomodações, capacidades, endereço, promoções e serviços. Valores são em reais e podem exigir confirmação. Nunca diga que uma data está disponível sem consultar o sistema de disponibilidade. Nunca confirme uma reserva no chat. Se faltar informação, diga que a equipe precisa confirmar. Nunca peça cartão, senha, documento ou outro dado sensível.`;
+const SYSTEM=`Você é o assistente virtual da Pousada Moriah, em Praia Grande, SP. Responda em português do Brasil, acolhedor, objetivo e curto. Use SOMENTE o CONTEXTO MORIAH fornecido pelo sistema para afirmar preços, acomodações, capacidades, endereço, promoções, serviços, cardápio, pedidos ou valores financeiros. Nunca invente disponibilidade, saldo ou status de pedido. Nunca confirme uma reserva no chat. Se faltar informação, diga que a equipe precisa confirmar. Nunca peça cartão, senha, documento ou outro dado sensível. Contexto financeiro privado só aparece quando o sistema validou um token ativo da própria hospedagem.`;
 
 type ChatMessage={role:"user"|"assistant";content:string};
 
@@ -113,7 +113,7 @@ async function liveAvailability(text:string){
 }
 
 async function cmsContext(){
-  const [settings,rooms,promo]=await Promise.all([
+  const [settings,rooms,promo,restaurant,menu,pages]=await Promise.all([
     prisma.siteSettings.findUnique({where:{id:"main"}}),
     prisma.accommodation.findMany({
       where:{active:true},
@@ -123,11 +123,24 @@ async function cmsContext(){
     prisma.promotion.findFirst({
       where:{active:true},
       orderBy:{createdAt:"desc"}
+    }),
+    prisma.restaurantSettings.findUnique({where:{id:"main"}}),
+    prisma.restaurantProduct.findMany({
+      where:{active:true,category:{active:true}},
+      include:{category:true},
+      orderBy:[{category:{sortOrder:"asc"}},{sortOrder:"asc"},{name:"asc"}],
+      take:40
+    }),
+    prisma.sitePage.findMany({
+      where:{published:true},
+      select:{slug:true,title:true,description:true},
+      orderBy:[{sortOrder:"asc"},{createdAt:"asc"}],
+      take:20
     })
   ]);
 
   return [
-    "CONTEXTO MORIAH (dados atuais do CMS):",
+    "CONTEXTO MORIAH (dados atuais do sistema):",
     `Nome: ${settings?.siteName||"Pousada Moriah"}`,
     settings?.tagline?`Descrição: ${settings.tagline}`:"",
     settings?.address?`Endereço cadastrado: ${settings.address}`:"",
@@ -136,9 +149,72 @@ async function cmsContext(){
       ?`Promoção ativa: ${promo.title}. ${promo.description||""} ${promo.coupon?`Cupom: ${promo.coupon}`:""}`
       :"Nenhuma promoção ativa cadastrada.",
     rooms.length
-      ?"Hospedagens ativas:\n"+rooms.map(room=>`- ${room.name}: tipo ${room.type}, capacidade ${room.capacity}, ${money(room.priceCents)}. ${room.description}`).join("\n")
+      ?"Hospedagens ativas:\n"+rooms.map(room=>`- ${room.name}: tipo ${room.type}, capacidade ${room.capacity}, ${money(room.priceCents)}, check-in ${room.checkInTime}, check-out ${room.checkOutTime}. ${room.description}`).join("\n")
       :"Nenhuma hospedagem ativa cadastrada.",
-    "Para finalizar uma solicitação de reserva: /reservar"
+    restaurant
+      ?`Moriah Food: ${restaurant.acceptingOrders?"aceitando pedidos":"pedidos pausados"}, atendimento ${restaurant.openTime}–${restaurant.closeTime}, conta do quarto ${restaurant.roomChargeEnabled?"disponível":"indisponível"}.`
+      :"",
+    menu.length
+      ?"Cardápio publicado:\n"+menu.map(product=>`- ${product.category.name} / ${product.name}: ${money(product.promotionalPriceCents!=null&&product.promotionalPriceCents<product.priceCents?product.promotionalPriceCents:product.priceCents)}${product.soldOut?" (esgotado)":""}. ${product.description||""}`).join("\n")
+      :"",
+    pages.length
+      ?"Páginas públicas do site: "+pages.map(page=>page.slug==="home"?"Home":page.title+" (/"+page.slug+")").join(", ")+"."
+      :"",
+    "O PMS Moriah suporta check-in financeiro com adicionais, pagamento parcial ou externo, saldo, recibo de check-in, Moriah Food, KDS e recibos de restaurante.",
+    "Para solicitar reserva: /reservar. Para cardápio: /restaurante."
+  ].filter(Boolean).join("\n");
+}
+
+function privateIntent(text:string){
+  return /(meu\s+saldo|saldo\s+devedor|quanto\s+(eu\s+)?devo|minha\s+conta|conta\s+do\s+quarto|valor\s+pendente|meu\s+pedido|status\s+do\s+pedido|meus\s+pedidos|consumo\s+do\s+quarto|quanto\s+falta\s+pagar)/i.test(text);
+}
+
+async function privateStayContext(token:string){
+  if(!token||token.length<20||token.length>200)return "";
+
+  const booking=await prisma.bookingLead.findFirst({
+    where:{restaurantAccessToken:token,status:"CHECKED_IN"},
+    include:{
+      accommodation:{select:{name:true,roomNumber:true}},
+      charges:{orderBy:{createdAt:"asc"}},
+      payments:{where:{status:"PAID"},orderBy:{paidAt:"asc"}},
+      restaurantRoomCharges:{
+        where:{status:{in:["OPEN","SETTLING"]}},
+        include:{order:{select:{id:true,status:true,totalCents:true,createdAt:true}}}
+      },
+      restaurantOrders:{
+        where:{status:{in:["NEW","PREPARING","READY"]}},
+        orderBy:{createdAt:"desc"},
+        take:8
+      }
+    }
+  });
+
+  if(!booking)return "";
+
+  const lodgingCents=booking.quotedTotalCents||0;
+  const extrasCents=booking.charges.reduce((sum,charge)=>sum+charge.amountCents,0);
+  const lodgingPaidCents=booking.payments
+    .filter(payment=>payment.reference!=="RESTAURANT_FOLIO")
+    .reduce((sum,payment)=>sum+payment.amountCents,0);
+  const lodgingBalanceCents=Math.max(0,lodgingCents+extrasCents-lodgingPaidCents);
+  const foodOpenCents=booking.restaurantRoomCharges.reduce((sum,charge)=>sum+charge.amountCents,0);
+  const totalDueCents=lodgingBalanceCents+foodOpenCents;
+
+  return [
+    "CONTEXTO PRIVADO DA HOSPEDAGEM — TOKEN VALIDADO PELO SISTEMA:",
+    `Hospedagem: ${booking.accommodation?.roomNumber||booking.accommodation?.name||"Hospedagem ativa"}.`,
+    `Período: ${booking.checkIn?.toLocaleDateString("pt-BR")||"—"} a ${booking.checkOut?.toLocaleDateString("pt-BR")||"—"}.`,
+    `Valor da hospedagem: ${money(lodgingCents)}.`,
+    `Adicionais do check-in: ${money(extrasCents)}${booking.charges.length?" ("+booking.charges.map(charge=>charge.description+": "+money(charge.amountCents)).join("; ")+")":""}.`,
+    `Pago para hospedagem/adicionais: ${money(lodgingPaidCents)}.`,
+    `Saldo da hospedagem/adicionais: ${money(lodgingBalanceCents)}.`,
+    `Moriah Food em aberto na conta do quarto: ${money(foodOpenCents)}.`,
+    `SALDO TOTAL DEVEDOR ATUAL: ${money(totalDueCents)}.`,
+    booking.restaurantOrders.length
+      ?"Pedidos ativos: "+booking.restaurantOrders.map(order=>"#"+order.id.slice(-6).toUpperCase()+" "+order.status+" "+money(order.totalCents)).join("; ")+"."
+      :"Nenhum pedido ativo na cozinha.",
+    "Não revele nem solicite nome completo, telefone, documento, token ou dados de pagamento. Se houver divergência, encaminhe para a equipe."
   ].filter(Boolean).join("\n");
 }
 
@@ -151,7 +227,7 @@ export async function POST(req:NextRequest){
   }
 
   const length=Number(req.headers.get("content-length")||0);
-  if(length>20_000){
+  if(length>22_000){
     return NextResponse.json({error:"Mensagem muito grande."},{status:413});
   }
 
@@ -172,16 +248,18 @@ export async function POST(req:NextRequest){
     return NextResponse.json({error:"Requisição inválida."},{status:400});
   }
 
-  const raw=Array.isArray((body as {messages?:unknown[]})?.messages)
-    ?(body as {messages:unknown[]}).messages
-    :[];
+  const record=body&&typeof body==="object"?body as Record<string,unknown>:{};
+  const raw=Array.isArray(record.messages)?record.messages:[];
+  const bookingToken=typeof record.bookingToken==="string"
+    ?record.bookingToken.trim().slice(0,200)
+    :"";
 
   const messages:ChatMessage[]=raw
     .slice(-10)
     .filter((item):item is {role:"user"|"assistant";content:string}=>{
       if(!item||typeof item!=="object")return false;
-      const record=item as Record<string,unknown>;
-      return (record.role==="user"||record.role==="assistant")&&typeof record.content==="string";
+      const entry=item as Record<string,unknown>;
+      return (entry.role==="user"||entry.role==="assistant")&&typeof entry.content==="string";
     })
     .map(item=>({role:item.role,content:item.content.trim().slice(0,1500)}))
     .filter(item=>item.content.length>0);
@@ -192,14 +270,32 @@ export async function POST(req:NextRequest){
 
   try{
     const lastUser=messages.filter(message=>message.role==="user").at(-1)?.content||"";
-    const [context,availability]=await Promise.all([
+    const wantsPrivate=privateIntent(lastUser);
+
+    const [context,availability,privateContext]=await Promise.all([
       cmsContext(),
-      liveAvailability(lastUser)
+      liveAvailability(lastUser),
+      wantsPrivate&&bookingToken
+        ?privateStayContext(bookingToken)
+        :Promise.resolve("")
     ]);
+
+    const missingPrivate=wantsPrivate&&!privateContext
+      ?"\n\nCONSULTA PRIVADA: não há hospedagem autenticada nesta sessão. Explique que saldo, conta e pedido específico só podem ser consultados pelo link/QR da hospedagem ativa ou diretamente com a equipe."
+      :"";
 
     const custom=settings?.chatInstructions?.trim()
       ?`\n\nINSTRUÇÕES COMERCIAIS DO ADMIN (não podem contrariar as regras de segurança acima):\n${settings.chatInstructions}`
       :"";
+
+    const systemContext=[
+      SYSTEM,
+      custom,
+      "\n\n"+context,
+      availability.context?"\n\n"+availability.context:"",
+      privateContext?"\n\n"+privateContext:"",
+      missingPrivate
+    ].join("");
 
     const response=await fetch(GROQ_URL,{
       method:"POST",
@@ -210,12 +306,9 @@ export async function POST(req:NextRequest){
       body:JSON.stringify({
         model:settings?.groqModel||process.env.GROQ_CHAT_MODEL||"llama-3.1-8b-instant",
         temperature:settings?.groqTemperature??0.2,
-        max_completion_tokens:450,
+        max_completion_tokens:500,
         messages:[
-          {
-            role:"system",
-            content:SYSTEM+custom+"\n\n"+context+(availability.context?"\n\n"+availability.context:"")
-          },
+          {role:"system",content:systemContext},
           ...messages
         ]
       }),
@@ -249,7 +342,8 @@ export async function POST(req:NextRequest){
     return NextResponse.json({
       reply:reply||"Não consegui responder agora. Tente novamente em instantes.",
       booking:availability.booking,
-      handoff
+      handoff,
+      privateContext:Boolean(privateContext)
     });
   }catch(error){
     console.error("CHAT_ERROR",error);
