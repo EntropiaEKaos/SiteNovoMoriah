@@ -1,5 +1,5 @@
 import Link from "next/link";
-import {notFound} from "next/navigation";
+import {notFound,redirect} from "next/navigation";
 import {prisma} from "../../../../../lib/prisma";
 import {requireAdmin} from "../../../../../lib/admin-auth";
 import MediaPicker from "../../../components/media-picker";
@@ -44,7 +44,7 @@ export default async function EditSitePage({params}:{params:Promise<{id:string}>
     prisma.media.findMany({orderBy:{createdAt:"desc"},take:250})
   ]);
   if(!page)notFound();
-  if(page.slug==="home")return null;
+  if(page.slug==="home")redirect("/admin/site");
 
   const active=page.sections.filter(section=>section.active).length;
 
