@@ -10,7 +10,12 @@ const TYPES=[
   ["BLOG","Blog / Journal"],
   ["CTA","Chamada para reserva"],
   ["RICH_TEXT","Texto editorial"],
-  ["FOOD","Moriah Food"]
+  ["FOOD","Moriah Food"],
+  ["STATS","Números / indicadores"],
+  ["FAQ","Perguntas frequentes"],
+  ["TESTIMONIALS","Depoimentos"],
+  ["CONTACT","Contato"],
+  ["VIDEO","Vídeo"]
 ] as const;
 
 const THEMES=[
@@ -25,7 +30,24 @@ const LAYOUTS=[
   ["SPLIT","Dividido"],
   ["CENTERED","Centralizado"],
   ["WIDE","Amplo"],
-  ["MOSAIC","Mosaico"]
+  ["MOSAIC","Mosaico"],
+  ["CARDS","Cards"]
+] as const;
+
+const ANIMATIONS=[
+  ["NONE","Sem animação"],
+  ["FADE_UP","Subir suavemente"],
+  ["FADE","Fade"],
+  ["SLIDE_LEFT","Entrar pela esquerda"],
+  ["SLIDE_RIGHT","Entrar pela direita"],
+  ["ZOOM","Zoom suave"]
+] as const;
+
+const WIDTHS=[
+  ["NARROW","Estreito"],
+  ["NORMAL","Normal"],
+  ["WIDE","Amplo"],
+  ["FULL","Tela inteira"]
 ] as const;
 
 type SectionValue={
@@ -42,6 +64,17 @@ type SectionValue={
   ctaHref?:string|null;
   secondaryCtaLabel?:string|null;
   secondaryCtaHref?:string|null;
+  videoUrl?:string|null;
+  anchorId?:string|null;
+  backgroundImageUrl?:string|null;
+  backgroundColor?:string|null;
+  textColor?:string|null;
+  animation?:string;
+  animationDelay?:number;
+  paddingY?:number;
+  contentWidth?:string;
+  hideMobile?:boolean;
+  hideDesktop?:boolean;
   theme?:string;
   layout?:string;
   sortOrder?:number;
@@ -64,8 +97,11 @@ export default function SiteSectionForm({
     {section?.id&&<input type="hidden" name="id" value={section.id}/>}
 
     <section className="adminSectionCard">
-      <h2>Estrutura da seção</h2>
-      <p>Defina o bloco, sua posição e como ele se comporta na página.</p>
+      <div className="siteStudioSectionHead">
+        <div><small>01 / BLOCO</small><h2>Estrutura da seção</h2></div>
+        <span className="adminChip">Layout + publicação</span>
+      </div>
+      <p>Defina o tipo do bloco, posição, largura, tema e comportamento responsivo.</p>
       <div className="adminFormGrid cols3">
         <label>Tipo
           <select name="type" defaultValue={section?.type||"RICH_TEXT"}>
@@ -82,18 +118,34 @@ export default function SiteSectionForm({
             {LAYOUTS.map(([value,label])=><option key={value} value={value}>{label}</option>)}
           </select>
         </label>
+        <label>Largura de conteúdo
+          <select name="contentWidth" defaultValue={section?.contentWidth||"NORMAL"}>
+            {WIDTHS.map(([value,label])=><option key={value} value={value}>{label}</option>)}
+          </select>
+        </label>
         <label>Ordem
           <input name="sortOrder" type="number" min="0" max="9999" defaultValue={section?.sortOrder??100}/>
         </label>
+        <label>Âncora
+          <input name="anchorId" maxLength={80} defaultValue={section?.anchorId||""} placeholder="ex.: lazer"/>
+        </label>
         <label style={{display:"flex",alignItems:"center",gap:8}}>
           <span><input name="active" type="checkbox" defaultChecked={section?.active??true}/> Seção publicada</span>
+        </label>
+        <label style={{display:"flex",alignItems:"center",gap:8}}>
+          <span><input name="hideMobile" type="checkbox" defaultChecked={section?.hideMobile??false}/> Ocultar no celular</span>
+        </label>
+        <label style={{display:"flex",alignItems:"center",gap:8}}>
+          <span><input name="hideDesktop" type="checkbox" defaultChecked={section?.hideDesktop??false}/> Ocultar no desktop</span>
         </label>
       </div>
     </section>
 
     <section className="adminSectionCard">
-      <h2>Conteúdo</h2>
-      <p>Todos os campos são opcionais porque cada tipo de seção usa uma combinação diferente.</p>
+      <div className="siteStudioSectionHead">
+        <div><small>02 / CONTEÚDO</small><h2>Texto e narrativa</h2></div>
+      </div>
+      <p>Os campos se adaptam ao tipo de seção. Para FAQ use uma linha por item no formato <b>Pergunta | Resposta</b>. Para números use <b>Valor | Rótulo</b>. Para depoimentos use <b>Nome | Depoimento | Detalhe</b>.</p>
       <div className="adminFormGrid">
         <label>Eyebrow / categoria
           <input name="eyebrow" maxLength={120} defaultValue={section?.eyebrow||""} placeholder="Ex.: ESCOLHA SUA ESTADIA"/>
@@ -104,31 +156,93 @@ export default function SiteSectionForm({
         <label className="span2">Título
           <input name="title" maxLength={220} defaultValue={section?.title||""} placeholder="Título principal da seção"/>
         </label>
-        <label className="span2">Texto
-          <textarea name="body" rows={7} maxLength={6000} defaultValue={section?.body||""} placeholder="Texto editorial, descrição ou itens separados por quebra de linha."/>
+        <label className="span2">Texto / itens
+          <textarea name="body" rows={9} maxLength={8000} defaultValue={section?.body||""} placeholder={"Texto editorial ou itens por linha.\nFAQ: Pergunta | Resposta\nNúmeros: 24h | Atendimento"}/>
         </label>
       </div>
     </section>
 
-    <section className="adminSectionCard">
-      <h2>Imagem principal</h2>
-      <p>Hero, Moriah Food e seções editoriais podem usar uma imagem em destaque.</p>
-      <MediaPicker name="imageUrl" media={media} defaultValue={section?.imageUrl||""}/>
-      <label style={{display:"grid",gap:6,marginTop:12,fontSize:10,fontWeight:850}}>
-        Texto alternativo
-        <input name="imageAlt" maxLength={300} defaultValue={section?.imageAlt||""} placeholder="Descrição acessível da imagem"/>
-      </label>
+    <section className="adminTwoCol">
+      <article className="adminSectionCard">
+        <div className="siteStudioSectionHead">
+          <div><small>03 / MÍDIA</small><h2>Imagem principal</h2></div>
+        </div>
+        <MediaPicker name="imageUrl" media={media} defaultValue={section?.imageUrl||""}/>
+        <label style={{display:"grid",gap:6,marginTop:12,fontSize:10,fontWeight:850}}>
+          Texto alternativo
+          <input name="imageAlt" maxLength={300} defaultValue={section?.imageAlt||""} placeholder="Descrição acessível da imagem"/>
+        </label>
+      </article>
+
+      <article className="adminSectionCard">
+        <div className="siteStudioSectionHead">
+          <div><small>04 / FUNDO</small><h2>Direção visual</h2></div>
+        </div>
+        <MediaPicker name="backgroundImageUrl" media={media} defaultValue={section?.backgroundImageUrl||""}/>
+        <div className="adminFormGrid" style={{marginTop:12}}>
+          <label>Cor de fundo
+            <input name="backgroundColor" type="color" defaultValue={section?.backgroundColor||"#ffffff"}/>
+          </label>
+          <label>Cor do texto
+            <input name="textColor" type="color" defaultValue={section?.textColor||"#111111"}/>
+          </label>
+        </div>
+        <p className="adminHelp">As cores personalizadas sobrescrevem o tema somente nesta seção.</p>
+      </article>
     </section>
 
     <section className="adminSectionCard">
-      <h2>Galeria da seção</h2>
-      <p>Use para mosaicos, ambientes, detalhes ou qualquer seção com múltiplas imagens.</p>
-      <MediaMultiPicker name="mediaUrls" media={media} defaultValues={section?.mediaUrls||[]}/>
+      <div className="siteStudioSectionHead">
+        <div><small>05 / GALERIA</small><h2>Múltiplas imagens</h2></div>
+      </div>
+      <MediaMultiPicker name="mediaUrls" media={media} defaultValues={section?.mediaUrls||[]} label="MÍDIAS DA SEÇÃO"/>
+    </section>
+
+    <section className="adminTwoCol">
+      <article className="adminSectionCard">
+        <div className="siteStudioSectionHead">
+          <div><small>06 / MOVIMENTO</small><h2>Animação & ritmo</h2></div>
+        </div>
+        <div className="adminFormGrid">
+          <label>Animação
+            <select name="animation" defaultValue={section?.animation||"FADE_UP"}>
+              {ANIMATIONS.map(([value,label])=><option key={value} value={value}>{label}</option>)}
+            </select>
+          </label>
+          <label>Atraso
+            <select name="animationDelay" defaultValue={String(section?.animationDelay??0)}>
+              <option value="0">0 ms</option>
+              <option value="100">100 ms</option>
+              <option value="200">200 ms</option>
+              <option value="300">300 ms</option>
+              <option value="500">500 ms</option>
+              <option value="700">700 ms</option>
+            </select>
+          </label>
+          <label className="span2">Espaçamento vertical
+            <input name="paddingY" type="range" min="0" max="240" step="8" defaultValue={section?.paddingY??96}/>
+            <small>0–240 px</small>
+          </label>
+        </div>
+      </article>
+
+      <article className="adminSectionCard">
+        <div className="siteStudioSectionHead">
+          <div><small>07 / VÍDEO</small><h2>Conteúdo em movimento</h2></div>
+        </div>
+        <label style={{display:"grid",gap:6,fontSize:10,fontWeight:850}}>
+          URL do vídeo
+          <input name="videoUrl" type="url" maxLength={1200} defaultValue={section?.videoUrl||""} placeholder="https://youtube.com/watch?v=..."/>
+        </label>
+        <p className="adminHelp">O bloco Vídeo aceita YouTube/Vimeo ou um link HTTPS. Imagem principal funciona como capa.</p>
+      </article>
     </section>
 
     <section className="adminSectionCard">
-      <h2>Ações</h2>
-      <p>Configure até dois botões. Links internos podem usar caminhos como <b>/reservar</b> e âncoras como <b>#hospedagem</b>.</p>
+      <div className="siteStudioSectionHead">
+        <div><small>08 / AÇÕES</small><h2>Botões e navegação</h2></div>
+      </div>
+      <p>Links internos podem usar caminhos como <b>/reservar</b>, páginas criadas no Studio ou âncoras como <b>#hospedagem</b>.</p>
       <div className="adminFormGrid">
         <label>Botão principal
           <input name="ctaLabel" maxLength={80} defaultValue={section?.ctaLabel||""} placeholder="Reservar agora"/>
