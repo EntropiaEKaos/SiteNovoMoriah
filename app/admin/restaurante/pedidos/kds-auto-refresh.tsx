@@ -18,15 +18,48 @@ export default function KdsAutoRefresh({
   const [soundArmed,setSoundArmed]=useState(false);
   const [desktopSupported,setDesktopSupported]=useState(false);
   const [desktopArmed,setDesktopArmed]=useState(false);
+  const [online,setOnline]=useState(true);
+  const [lastSync,setLastSync]=useState<Date|null>(null);
 
   useEffect(()=>{
     const supported="Notification" in window;
     setDesktopSupported(supported);
     if(supported)setDesktopArmed(Notification.permission==="granted");
-  },[]);
+    setOnline(navigator.onLine);
+    setLastSync(new Date());
+
+    const onOnline=()=>{setOnline(true);setLastSync(new Date());router.refresh();};
+    const onOffline=()=>setOnline(false);
+    window.addEventListener("online",onOnline);
+    window.addEventListener("offline",onOffline);
+
+    try{
+      localStorage.setItem("moriah-kds-last-orders",JSON.stringify({
+        at:new Date().toISOString(),
+        orderIds
+      }));
+    }catch{}
+
+    return()=>{
+      window.removeEventListener("online",onOnline);
+      window.removeEventListener("offline",onOffline);
+    };
+  },[router]);
 
   useEffect(()=>{
-    const timer=window.setInterval(()=>router.refresh(),10000);
+    setLastSync(new Date());
+    try{
+      localStorage.setItem("moriah-kds-last-orders",JSON.stringify({
+        at:new Date().toISOString(),
+        orderIds
+      }));
+    }catch{}
+  },[orderIds]);
+
+  useEffect(()=>{
+    const timer=window.setInterval(()=>{
+      if(navigator.onLine)router.refresh();
+    },8000);
     return()=>window.clearInterval(timer);
   },[router]);
 
@@ -37,16 +70,16 @@ export default function KdsAutoRefresh({
       if(soundEnabled&&soundArmed&&audio.current){
         try{
           const ctx=audio.current;
-          [880,1040].forEach((frequency,index)=>{
+          [880,1040,1180].forEach((frequency,index)=>{
             const oscillator=ctx.createOscillator();
             const gain=ctx.createGain();
             oscillator.frequency.value=frequency;
-            gain.gain.setValueAtTime(.09,ctx.currentTime+index*.16);
-            gain.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+.14+index*.16);
+            gain.gain.setValueAtTime(.08,ctx.currentTime+index*.13);
+            gain.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+.11+index*.13);
             oscillator.connect(gain);
             gain.connect(ctx.destination);
-            oscillator.start(ctx.currentTime+index*.16);
-            oscillator.stop(ctx.currentTime+.15+index*.16);
+            oscillator.start(ctx.currentTime+index*.13);
+            oscillator.stop(ctx.currentTime+.12+index*.13);
           });
         }catch{}
       }
@@ -69,8 +102,8 @@ export default function KdsAutoRefresh({
         }catch{}
       }
 
-      document.title="("+incomingIds.length+") NOVO • Moriah Food KDS";
-      const reset=window.setTimeout(()=>{document.title="Moriah Food KDS";},12000);
+      document.title="("+incomingIds.length+") NOVO • Moriah Kitchen";
+      const reset=window.setTimeout(()=>{document.title="Moriah Kitchen";},12000);
       previous.current=new Set(orderIds);
       return()=>window.clearTimeout(reset);
     }
@@ -96,9 +129,22 @@ export default function KdsAutoRefresh({
     }catch{}
   }
 
-  return <div className="kdsLiveBar">
-    <span><i/> Atualização automática a cada 10s • {pendingNotifications} aviso(s) novo(s)</span>
+  async function fullscreen(){
+    try{
+      if(document.fullscreenElement)await document.exitFullscreen();
+      else await document.documentElement.requestFullscreen();
+    }catch{}
+  }
+
+  return <div className={"kdsLiveBar"+(online?"":" isOffline")}>
+    <span>
+      <i/>
+      {online?"Online • sincronização a cada 8s":"OFFLINE • mantendo a fila atual"}
+      {lastSync&&<small> • última leitura {lastSync.toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit",second:"2-digit"})}</small>}
+      <small> • {pendingNotifications} aviso(s)</small>
+    </span>
     <div className="kdsLiveActions">
+      <button type="button" onClick={fullscreen}>Tela cheia</button>
       {soundEnabled&&<button type="button" onClick={armSound}>
         {soundArmed?"Som ativo":"Ativar som"}
       </button>}
