@@ -56,7 +56,7 @@ export default async function PMS(){
   const inHouse=bookings.filter(booking=>booking.status==="CHECKED_IN").length;
   const openBalance=bookings.reduce((sum,booking)=>{
     const paid=booking.payments
-      .filter(payment=>payment.status==="PAID")
+      .filter(payment=>payment.status==="PAID"&&payment.reference!=="RESTAURANT_FOLIO")
       .reduce((value,payment)=>value+payment.amountCents,0);
     const charges=booking.charges.reduce((value,charge)=>value+charge.amountCents,0);
     return sum+Math.max(0,(booking.quotedTotalCents||0)+charges-paid);
@@ -89,7 +89,7 @@ export default async function PMS(){
           <p>Reservas confirmadas e hóspedes na casa aparecerão aqui.</p>
         </div>:bookings.map(booking=>{
           const paid=booking.payments
-            .filter(payment=>payment.status==="PAID")
+            .filter(payment=>payment.status==="PAID"&&payment.reference!=="RESTAURANT_FOLIO")
             .reduce((sum,payment)=>sum+payment.amountCents,0);
           const extras=booking.charges.reduce((sum,charge)=>sum+charge.amountCents,0);
           const lodgingTotal=booking.quotedTotalCents||0;
