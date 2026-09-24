@@ -605,7 +605,11 @@ export async function pmsBookingAction(formData:FormData){
 
       const booking=await tx.bookingLead.findUnique({
         where:{id},
-        select:{accommodationId:true}
+        select:{
+          accommodationId:true,
+          guests:true,
+          accommodation:{select:{sharedRoom:true}}
+        }
       });
       if(!booking)throw new Error("Reserva não encontrada.");
 
@@ -616,12 +620,34 @@ export async function pmsBookingAction(formData:FormData){
       if(claimed.count!==1)throw new Error("Reserva não está disponível para check-out.");
 
       if(booking.accommodationId){
+        let type="CLEANING";
+        let notes:string|null=null;
+
+        if(booking.accommodation?.sharedRoom){
+          const remaining=await tx.bookingLead.count({
+            where:{
+              id:{not:id},
+              accommodationId:booking.accommodationId,
+              status:"CHECKED_IN",
+              checkedOutAt:null
+            }
+          });
+
+          if(remaining>0){
+            type="BED_TURNOVER";
+            notes=`Quarto compartilhado: higienizar e liberar ${booking.guests} cama(s) sem fechar o dormitório.`;
+          }else{
+            notes="Quarto compartilhado sem outros hóspedes em casa: executar limpeza completa.";
+          }
+        }
+
         await tx.housekeepingTask.create({
           data:{
             accommodationId:booking.accommodationId,
             bookingId:id,
             scheduledFor:new Date(),
-            type:"CLEANING"
+            type,
+            notes
           }
         });
       }
