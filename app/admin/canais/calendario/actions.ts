@@ -1,6 +1,7 @@
 "use server";
 
 import {revalidatePath} from "next/cache";
+import type {Prisma} from "@prisma/client";
 import {requireAdmin} from "../../../../lib/admin-auth";
 import {prisma} from "../../../../lib/prisma";
 import {quoteAccommodation} from "../../../../lib/rate-engine";
@@ -19,7 +20,7 @@ function validRange(start:Date,end:Date){
 }
 
 async function assertInventoryFree(
-  tx:Parameters<Parameters<typeof prisma.$transaction>[0]>[0],
+  tx:Prisma.TransactionClient,
   accommodationId:string,
   start:Date,
   end:Date,
