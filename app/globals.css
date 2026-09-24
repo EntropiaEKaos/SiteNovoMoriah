@@ -2866,8 +2866,8 @@ body{background:linear-gradient(180deg,#fff 0,#fffdf5 100%)}.nav{box-shadow:0 8p
   --site-soft:#f4f7f8;
   --site-yellow:#ffc845;
   --site-line:#dce4e7;
-  background:#f4f7f8;
-  color:#1b252b;
+  background:var(--site-page-bg,#f4f7f8);
+  color:var(--site-text,#1b252b);
   overflow:visible;
 }
 .siteTopBarV6{
@@ -2901,7 +2901,7 @@ body{background:linear-gradient(180deg,#fff 0,#fffdf5 100%)}.nav{box-shadow:0 8p
   width:40px;
   height:40px;
   border-radius:11px;
-  background:var(--site-blue);
+  background:var(--site-button,var(--site-blue));
   color:#fff;
   box-shadow:none;
 }
@@ -2911,13 +2911,13 @@ body{background:linear-gradient(180deg,#fff 0,#fffdf5 100%)}.nav{box-shadow:0 8p
 .siteNavLinksV4 a{padding:26px 0}
 .siteNavLinksV4 a:after{
   bottom:18px;
-  background:var(--site-blue);
+  background:var(--site-button,var(--site-blue));
 }
 .siteBookV4{
   min-height:42px;
   padding:11px 16px;
   border-radius:10px;
-  background:var(--site-blue);
+  background:var(--site-button,var(--site-blue));
   color:#fff;
   box-shadow:none;
   font-size:11px;
@@ -2970,7 +2970,7 @@ body{background:linear-gradient(180deg,#fff 0,#fffdf5 100%)}.nav{box-shadow:0 8p
   min-height:46px;
   padding:12px 18px;
   border-radius:10px;
-  background:var(--site-blue);
+  background:var(--site-button,var(--site-blue));
   color:#fff;
   box-shadow:none;
 }
@@ -2979,7 +2979,7 @@ body{background:linear-gradient(180deg,#fff 0,#fffdf5 100%)}.nav{box-shadow:0 8p
   background:var(--site-blue-dark);
   box-shadow:0 10px 24px rgba(7,59,76,.2);
 }
-.siteTheme-yellow .sitePrimaryCta{background:var(--site-blue);color:#fff;box-shadow:none}
+.siteTheme-yellow .sitePrimaryCta{background:var(--site-button,var(--site-blue));color:#fff;box-shadow:none}
 .siteSecondaryCta{
   min-height:46px;
   padding:12px 14px;
@@ -3105,7 +3105,7 @@ body{background:linear-gradient(180deg,#fff 0,#fffdf5 100%)}.nav{box-shadow:0 8p
   justify-content:center;
   gap:8px;
   padding:0 20px;
-  background:var(--site-blue);
+  background:var(--site-button,var(--site-blue));
   color:#fff;
   font:inherit;
   font-size:12px;
@@ -3235,7 +3235,7 @@ body{background:linear-gradient(180deg,#fff 0,#fffdf5 100%)}.nav{box-shadow:0 8p
   gap:6px;
   padding:10px 13px;
   border-radius:9px;
-  background:var(--site-blue);
+  background:var(--site-button,var(--site-blue));
   color:#fff;
   font-size:10px;
   font-weight:900;
@@ -3454,7 +3454,7 @@ body{background:linear-gradient(180deg,#fff 0,#fffdf5 100%)}.nav{box-shadow:0 8p
 .roomBookingForm{display:grid;gap:10px;margin-top:18px}
 .roomBookingForm label{display:grid;gap:5px;font-size:10px;font-weight:850;color:#60747c}
 .roomBookingForm input{width:100%;padding:12px;border:1px solid #d7e1e4;border-radius:9px;background:#fff;font:inherit}
-.roomBookingForm button{min-height:46px;border:0;border-radius:10px;background:var(--site-blue);color:#fff;font-weight:900;cursor:pointer}
+.roomBookingForm button{min-height:46px;border:0;border-radius:10px;background:var(--site-button,var(--site-blue));color:#fff;font-weight:900;cursor:pointer}
 .adminPresenceBox{display:flex;align-items:center;gap:9px}
 .adminPresenceBox form{margin:0}
 .adminPresenceButton{border:1px solid #d4dde0;border-radius:999px;padding:7px 11px;background:#fff;font:inherit;font-size:10px;font-weight:900;cursor:pointer}
@@ -3468,4 +3468,32 @@ body{background:linear-gradient(180deg,#fff 0,#fffdf5 100%)}.nav{box-shadow:0 8p
   .roomDetailGrid{grid-template-columns:1fr}
   .roomBookingCard{position:relative;top:auto}
   .roomSpecGrid{grid-template-columns:1fr 1fr}
+}
+
+.siteBrandLogoV6{
+  width:auto;
+  max-width:150px;
+  height:42px;
+  object-fit:contain;
+  display:block;
+}
+.siteBrandLogoV6.isFooter{
+  max-width:170px;
+  height:54px;
+}
+.brandPreviewCard{
+  margin-top:18px;
+  border:2px solid;
+  border-radius:16px;
+  padding:22px;
+}
+.brandPreviewCard h3{margin:6px 0;font-size:26px}
+.brandPreviewCard p{margin:0 0 16px}
+.brandPreviewCard span{
+  display:inline-flex;
+  padding:10px 14px;
+  border-radius:9px;
+  color:#fff;
+  font-size:11px;
+  font-weight:900;
 }

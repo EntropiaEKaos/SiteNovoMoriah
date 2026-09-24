@@ -94,7 +94,54 @@ export async function createPromotion(formData:FormData){await requireAdmin();co
 export async function togglePromotion(formData:FormData){await requireAdmin();const id=String(formData.get("id")||"");const row=await prisma.promotion.findUnique({where:{id}});if(row){await prisma.promotion.update({where:{id},data:{active:!row.active}});revalidatePath("/admin/promocoes");revalidatePath("/");}}
 export async function deletePromotion(formData:FormData){await requireAdmin();const id=String(formData.get("id")||"");if(id){await prisma.promotion.delete({where:{id}});revalidatePath("/admin/promocoes");revalidatePath("/");}}
 
-export async function saveSettings(formData:FormData){await requireAdmin();await prisma.siteSettings.upsert({where:{id:"main"},create:{id:"main",siteName:String(formData.get("siteName")||"Pousada Moriah"),tagline:String(formData.get("tagline")||""),whatsapp:String(formData.get("whatsapp")||"")||null,instagram:String(formData.get("instagram")||"")||null,address:String(formData.get("address")||"")||null},update:{siteName:String(formData.get("siteName")||"Pousada Moriah"),tagline:String(formData.get("tagline")||""),whatsapp:String(formData.get("whatsapp")||"")||null,instagram:String(formData.get("instagram")||"")||null,address:String(formData.get("address")||"")||null}});revalidatePath("/admin/configuracoes");revalidatePath("/");}
+function safeBrandColor(value:FormDataEntryValue|null,fallback:string){
+  const color=String(value||"").trim();
+  return /^#[0-9a-f]{6}$/i.test(color)?color.toLowerCase():fallback;
+}
+function safeBrandMedia(value:FormDataEntryValue|null){
+  const url=String(value||"").trim();
+  if(!url)return null;
+  if(/^https:\/\//i.test(url)||url.startsWith("/api/media/"))return url.slice(0,2000);
+  throw new Error("Imagem de identidade inválida.");
+}
+
+export async function saveSettings(formData:FormData){
+  await requireAdmin();
+
+  const data={
+    siteName:String(formData.get("siteName")||"Pousada Moriah").trim().slice(0,120)||"Pousada Moriah",
+    tagline:String(formData.get("tagline")||"").trim().slice(0,240),
+    whatsapp:String(formData.get("whatsapp")||"").trim().slice(0,40)||null,
+    instagram:String(formData.get("instagram")||"").trim().slice(0,160)||null,
+    address:String(formData.get("address")||"").trim().slice(0,300)||null,
+    logoUrl:safeBrandMedia(formData.get("logoUrl")),
+    logoLightUrl:safeBrandMedia(formData.get("logoLightUrl")),
+    faviconUrl:safeBrandMedia(formData.get("faviconUrl")),
+    defaultBackgroundImageUrl:safeBrandMedia(formData.get("defaultBackgroundImageUrl")),
+    primaryColor:safeBrandColor(formData.get("primaryColor"),"#0b607a"),
+    secondaryColor:safeBrandColor(formData.get("secondaryColor"),"#073b4c"),
+    accentColor:safeBrandColor(formData.get("accentColor"),"#ffc845"),
+    backgroundColor:safeBrandColor(formData.get("backgroundColor"),"#f4f7f8"),
+    textColor:safeBrandColor(formData.get("textColor"),"#1b252b"),
+    buttonColor:safeBrandColor(formData.get("buttonColor"),"#0b607a")
+  };
+
+  try{
+    await prisma.siteSettings.upsert({
+      where:{id:"main"},
+      create:{id:"main",...data},
+      update:data
+    });
+  }catch(error){
+    console.error("SITE_SETTINGS_SAVE_FAILED",error);
+    throw new Error("Não foi possível salvar a identidade visual. Se estiver no Preview, aplique primeiro as migrations do Preview.");
+  }
+
+  revalidatePath("/admin/configuracoes");
+  revalidatePath("/");
+  revalidatePath("/reservar");
+}
+
 export async function createBookingLead(formData:FormData){
   const publicRequestToken=String(formData.get("publicRequestToken")||"").trim();
   if(!/^[0-9a-f-]{36}$/i.test(publicRequestToken))throw new Error("Identificador da solicitação inválido.");

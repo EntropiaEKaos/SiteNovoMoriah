@@ -128,7 +128,7 @@ export default function SiteBuilderRenderer({
   return <div className="siteBuilderPublic">
     {sections.map(section=>{
       if(section.type==="HERO"){
-        const image=section.imageUrl||fallbackHeroImage(rooms,media);
+        const image=section.imageUrl||settings?.defaultBackgroundImageUrl||fallbackHeroImage(rooms,media);
         const title=section.title||settings?.tagline||"Seu lugar perto de tudo. Do seu jeito.";
         const body=section.body||(
           promo

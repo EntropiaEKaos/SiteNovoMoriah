@@ -47,13 +47,23 @@ model AdminLoginAttempt {
 }
 
 model SiteSettings {
-  id        String   @id @default("main")
-  siteName  String   @default("Pousada Moriah")
-  tagline   String   @default("Seu lugar perto de tudo. Do seu jeito.")
-  whatsapp  String?
-  instagram String?
-  address   String?
-  updatedAt DateTime @updatedAt
+  id                        String   @id @default("main")
+  siteName                  String   @default("Pousada Moriah")
+  tagline                   String   @default("Seu lugar perto de tudo. Do seu jeito.")
+  whatsapp                  String?
+  instagram                 String?
+  address                   String?
+  logoUrl                   String?
+  logoLightUrl              String?
+  faviconUrl                String?
+  defaultBackgroundImageUrl String?
+  primaryColor              String   @default("#0b607a")
+  secondaryColor            String   @default("#073b4c")
+  accentColor               String   @default("#ffc845")
+  backgroundColor           String   @default("#f4f7f8")
+  textColor                 String   @default("#1b252b")
+  buttonColor               String   @default("#0b607a")
+  updatedAt                 DateTime @updatedAt
 }
 
 model SitePage {

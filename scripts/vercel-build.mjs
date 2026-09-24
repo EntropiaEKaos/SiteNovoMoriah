@@ -8,24 +8,40 @@ function run(command,args,env=process.env){
 
 const npx=process.platform==="win32"?"npx.cmd":"npx";
 const vercelEnv=process.env.VERCEL_ENV||"local";
+const previewMigrations=vercelEnv==="preview"&&process.env.RUN_PREVIEW_MIGRATIONS==="1";
+const shouldMigrate=vercelEnv==="production"||previewMigrations;
 
 console.log(`Moriah Vercel build environment: ${vercelEnv}`);
 
 run(npx,["prisma","generate"]);
 
-if(vercelEnv==="production"){
+if(shouldMigrate){
   const directUrl=process.env.DIRECT_URL;
   if(!directUrl){
-    console.error("DIRECT_URL is required for production migrations.");
+    console.error(
+      vercelEnv==="production"
+        ?"DIRECT_URL is required for production migrations."
+        :"RUN_PREVIEW_MIGRATIONS=1 requires DIRECT_URL in the Preview environment."
+    );
     process.exit(1);
   }
-  console.log("Running production Prisma migrations through DIRECT_URL.");
+
+  console.log(
+    vercelEnv==="production"
+      ?"Running production Prisma migrations through DIRECT_URL."
+      :"Running explicitly enabled Preview Prisma migrations through DIRECT_URL."
+  );
+
   run(npx,["prisma","migrate","deploy"],{
     ...process.env,
     DATABASE_URL:directUrl
   });
 }else{
-  console.log("Skipping prisma migrate deploy outside production.");
+  console.log(
+    vercelEnv==="preview"
+      ?"Skipping Preview migrations. Set RUN_PREVIEW_MIGRATIONS=1 and provide Preview DIRECT_URL to enable them."
+      :"Skipping prisma migrate deploy outside Vercel production."
+  );
 }
 
 run(npx,["next","build"]);
