@@ -128,6 +128,8 @@ model Accommodation {
   maxAdults           Int                  @default(2)
   maxChildren         Int                  @default(0)
   beds                String?
+  sharedRoom          Boolean              @default(false)
+  bedCount            Int                  @default(0)
   bathrooms           Int                  @default(1)
   areaSqm             Float?
   amenities           String[]             @default([])
@@ -286,6 +288,7 @@ model InventoryHold {
   checkOut        DateTime
   token           String        @unique
   expiresAt       DateTime
+  units           Int           @default(1)
   createdAt       DateTime      @default(now())
 
   @@index([accommodationId, checkIn, checkOut])
