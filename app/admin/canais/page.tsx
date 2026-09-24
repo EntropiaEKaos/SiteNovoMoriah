@@ -2,6 +2,7 @@ import {prisma} from "../../../lib/prisma";
 import {requireAdmin} from "../../../lib/admin-auth";
 import {createChannelIntegration,toggleChannelIntegration,deleteChannelIntegration,syncChannelNow} from "../actions";
 import {listChannelAdapterCapabilities} from "../../../lib/channel-adapter-registry";
+import CalendarExportActions from "./calendar-export-actions";
 
 export const dynamic="force-dynamic";
 
@@ -90,6 +91,13 @@ export default async function Page(){
       </aside>
     </section>
 
+    <section className="adminPageNote" style={{marginBottom:20}}>
+      <strong>Sincronização automática protegida.</strong>{" "}
+      Quando a disponibilidade pública é consultada, o Moriah atualiza apenas canais que já estão com a próxima sincronização vencida.
+      Antes de confirmar uma reserva, o sistema força uma atualização crítica de todos os canais ativos daquela hospedagem.
+      O cron diário permanece como contingência compatível com o plano Vercel Hobby.
+    </section>
+
     {rows.length===0?<section className="adminEmptyState">
       <strong>Nenhum canal conectado.</strong>
       <p>Adicione o primeiro calendário iCal para começar a sincronização de inventário.</p>
@@ -108,9 +116,17 @@ export default async function Page(){
 
           <div className="adminMetaRow">
             <span className="adminChip">{channel._count.blocks} bloqueio(s)</span>
+            {channel.lastAttemptAt&&<span className="adminChip">Tentativa {channel.lastAttemptAt.toLocaleString("pt-BR")}</span>}
             {channel.lastSuccessAt&&<span className="adminChip">Sucesso {channel.lastSuccessAt.toLocaleString("pt-BR")}</span>}
+            {channel.nextSyncAt&&<span className="adminChip">Próxima devida {channel.nextSyncAt.toLocaleString("pt-BR")}</span>}
+            {channel.consecutiveFailures>0&&<span className="adminChip">{channel.consecutiveFailures} falha(s) seguida(s)</span>}
             {channel.syncDurationMs!=null&&<span className="adminChip">{channel.syncDurationMs} ms</span>}
           </div>
+
+          {channel.exportToken
+            ?<CalendarExportActions path={"/api/calendar/"+channel.exportToken}/>
+            :<div className="adminPageNote" style={{marginTop:14}}>Calendário de saída ainda não disponível para esta conexão.</div>
+          }
 
           {channel.lastError&&<div className="adminPageNote" style={{marginTop:14}}>Último erro: {channel.lastError}</div>}
 
