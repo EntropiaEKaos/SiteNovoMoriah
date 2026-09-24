@@ -187,7 +187,11 @@ export default async function PMS(){
         {tasks.length===0?<div className="adminPageNote">Tudo em ordem.</div>:<div className="adminStack">
           {tasks.map(task=><div key={task.id} className="adminStatusLine" style={{display:"block"}}>
             <div style={{display:"flex",justifyContent:"space-between",gap:12}}>
-              <span><b>{task.accommodation.name}</b><br/><small>{task.type} • {task.scheduledFor.toLocaleString("pt-BR")}</small></span>
+              <span>
+                <b>{task.accommodation.name}</b><br/>
+                <small>{task.type==="BED_TURNOVER"?"Troca / limpeza de cama":task.type} • {task.scheduledFor.toLocaleString("pt-BR")}</small>
+                {task.notes&&<><br/><small>{task.notes}</small></>}
+              </span>
               <span className="adminChip warn">{task.status}</span>
             </div>
             <form action={updateHousekeeping} style={{display:"flex",gap:7,marginTop:10}}>
