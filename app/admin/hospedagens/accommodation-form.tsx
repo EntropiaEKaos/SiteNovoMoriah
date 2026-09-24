@@ -34,6 +34,8 @@ type RoomFormValue={
   maxAdults?:number;
   maxChildren?:number;
   beds?:string|null;
+  sharedRoom?:boolean;
+  bedCount?:number;
   bathrooms?:number;
   areaSqm?:number|null;
   amenities?:string[];
@@ -80,6 +82,7 @@ export default function AccommodationForm({
             <option value="SUITE">Suíte</option>
             <option value="FAMILIA">Família</option>
             <option value="HOSTEL">Hostel / dormitório</option>
+            <option value="COMPARTILHADO">Quarto compartilhado</option>
             <option value="GRUPO">Grupo</option>
             <option value="POUSADA">Hospedagem</option>
           </select>
@@ -92,8 +95,15 @@ export default function AccommodationForm({
 
     <section className="adminSectionCard">
       <h2>Capacidade & tarifa</h2>
-      <p>Esses valores alimentam disponibilidade, reserva e comunicação comercial.</p>
+      <p>Esses valores alimentam disponibilidade, reserva e comunicação comercial. Em quarto compartilhado, cada hóspede ocupa uma cama e o sistema controla as vagas restantes.</p>
       <div className="adminFormGrid cols3">
+        <label className="span2" style={{display:"flex",gridTemplateColumns:"auto 1fr",alignItems:"center",gap:10}}>
+          <input name="sharedRoom" type="checkbox" defaultChecked={room?.sharedRoom??room?.type==="COMPARTILHADO"}/>
+          <span>Quarto compartilhado — vender camas individualmente</span>
+        </label>
+        <label>Número de camas
+          <input name="bedCount" type="number" min="0" max="50" defaultValue={room?.bedCount??0} placeholder="Ex.: 8"/>
+        </label>
         <label>Capacidade total
           <input name="capacity" type="number" min="1" max="50" defaultValue={room?.capacity??2} required/>
         </label>
@@ -103,7 +113,7 @@ export default function AccommodationForm({
         <label>Máx. crianças
           <input name="maxChildren" type="number" min="0" max="30" defaultValue={room?.maxChildren??0} required/>
         </label>
-        <label>Diária base
+        <label>Diária base {room?.sharedRoom?"por cama":""}
           <input name="price" inputMode="decimal" defaultValue={room?.priceCents==null?"":(room.priceCents/100).toFixed(2)} placeholder="R$ 0,00"/>
         </label>
         <label>Banheiros
