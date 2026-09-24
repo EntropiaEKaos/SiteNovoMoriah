@@ -20,7 +20,8 @@ export default async function GuestDetail({
       bookings:{
         include:{
           accommodation:true,
-          payments:{where:{status:"PAID"}}
+          payments:{where:{status:"PAID"}},
+          charges:true
         },
         orderBy:{createdAt:"desc"}
       }
@@ -41,7 +42,7 @@ export default async function GuestDetail({
     take:20
   });
 
-  const quoted=guest.bookings.reduce((sum,booking)=>sum+(booking.quotedTotalCents||0),0);
+  const quoted=guest.bookings.reduce((sum,booking)=>sum+(booking.quotedTotalCents||0)+booking.charges.reduce((value,charge)=>value+charge.amountCents,0),0);
   const paid=guest.bookings.reduce(
     (sum,booking)=>sum+booking.payments.reduce((value,payment)=>value+payment.amountCents,0),
     0
@@ -56,6 +57,11 @@ export default async function GuestDetail({
         <small>MORIAH PMS / CRM 2.0</small>
         <h1>{guest.name}</h1>
         <p>{guest.phone}{guest.email?" • "+guest.email:""}{guest.document?" • "+(guest.documentType?guest.documentType+" ":"")+guest.document:""}</p>
+        <div className="adminMetaRow" style={{marginTop:12}}>
+          {guest.monthlyGuest&&<span className="adminChip ok">Mensalista</span>}
+          {guest.employee&&<span className="adminChip">Colaborador</span>}
+          {(guest.monthlyGuest||guest.employee)&&<span className="adminChip">Hospedagem opcional</span>}
+        </div>
       </div>
       <div className="adminPageHeroActions">
         <Link className="adminSecondaryAction" href="/admin/hospedes">← Hóspedes</Link>
@@ -117,6 +123,16 @@ export default async function GuestDetail({
           <label>Contato de emergência
             <input name="emergencyContact" defaultValue={guest.emergencyContact||""}/>
           </label>
+          <div className="span2 guestMarkerGrid">
+            <label className="guestMarkerOption">
+              <input name="monthlyGuest" type="checkbox" defaultChecked={guest.monthlyGuest}/>
+              <span><b>Mensalista</b><small>Cadastro pode existir sem reserva ou hospedagem vinculada.</small></span>
+            </label>
+            <label className="guestMarkerOption">
+              <input name="employee" type="checkbox" defaultChecked={guest.employee}/>
+              <span><b>Colaborador</b><small>Cadastro operacional independente de hospedagem.</small></span>
+            </label>
+          </div>
           <label className="span2">Preferências de hospedagem
             <textarea name="preferences" rows={4} defaultValue={guest.preferences||""}/>
           </label>
@@ -134,6 +150,8 @@ export default async function GuestDetail({
         <div className="adminStatusLine"><span>Nacionalidade</span><b>{guest.nationality||"—"}</b></div>
         <div className="adminStatusLine"><span>Cidade</span><b>{guest.city?guest.city+(guest.state?" / "+guest.state:""):"—"}</b></div>
         <div className="adminStatusLine"><span>Documento</span><b>{guest.document||"—"}</b></div>
+        <div className="adminStatusLine"><span>Mensalista</span><b>{guest.monthlyGuest?"SIM":"NÃO"}</b></div>
+        <div className="adminStatusLine"><span>Colaborador</span><b>{guest.employee?"SIM":"NÃO"}</b></div>
         {guest.preferences&&<div className="adminPageNote" style={{marginTop:16}}>
           <b>Preferências</b><br/>{guest.preferences}
         </div>}
@@ -162,7 +180,8 @@ export default async function GuestDetail({
       {guest.bookings.length===0?<div className="adminPageNote">Ainda não há reservas vinculadas.</div>:<div className="adminStack">
         {guest.bookings.map(booking=>{
           const received=booking.payments.reduce((sum,payment)=>sum+payment.amountCents,0);
-          const total=booking.quotedTotalCents||0;
+          const extras=booking.charges.reduce((sum,charge)=>sum+charge.amountCents,0);
+          const total=(booking.quotedTotalCents||0)+extras;
           return <article className="adminListCard" key={booking.id}>
             <div className="adminListCardHead">
               <div>
@@ -172,7 +191,7 @@ export default async function GuestDetail({
               </div>
               <div style={{textAlign:"right"}}>
                 <strong>{(total/100).toLocaleString("pt-BR",{style:"currency",currency:booking.quotedCurrency||"BRL"})}</strong>
-                <small style={{display:"block",marginTop:5}}>Pago {(received/100).toLocaleString("pt-BR",{style:"currency",currency:"BRL"})}</small>
+                <small style={{display:"block",marginTop:5}}>Adicionais {(extras/100).toLocaleString("pt-BR",{style:"currency",currency:"BRL"})} • Pago {(received/100).toLocaleString("pt-BR",{style:"currency",currency:"BRL"})}</small>
               </div>
             </div>
             <div className="adminInlineActions">
