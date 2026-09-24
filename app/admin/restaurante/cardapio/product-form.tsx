@@ -235,8 +235,8 @@ export default function MenuProductForm({
       {ingredients.length===0?<div className="adminPageNote">
         Nenhum insumo ativo cadastrado. O produto pode ser salvo sem ficha técnica.
       </div>:<div className="menuStudioRecipeGrid">
-        {ingredients.map(ingredient=><label key={ingredient.id}>
-          <span><b>{ingredient.name}</b><small>Estoque: {ingredient.stockQty} {ingredient.unit}</small></span>
+        {ingredients.map(ingredient=><label key={ingredient.id} className={ingredient.active?"":"isMuted"}>
+          <span><b>{ingredient.name}{ingredient.active?"":" • inativo"}</b><small>Estoque: {ingredient.stockQty} {ingredient.unit}</small></span>
           <input
             name={"ingredient_"+ingredient.id}
             type="number"
