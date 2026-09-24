@@ -1,15 +1,23 @@
 import {NextRequest,NextResponse} from "next/server";
 import {prisma} from "../../../lib/prisma";
+import {hasUnitCapacity} from "../../../lib/shared-inventory";
 
 export const dynamic="force-dynamic";
+
+function day(value:Date){
+  return value.toISOString().slice(0,10);
+}
 
 export async function GET(req:NextRequest){
   const id=req.nextUrl.searchParams.get("accommodationId")||"";
   if(!id)return NextResponse.json({error:"accommodationId obrigatório"},{status:400});
 
+  const guestsRaw=Number(req.nextUrl.searchParams.get("guests")||1);
+  const requestedUnits=Number.isInteger(guestsRaw)&&guestsRaw>0?guestsRaw:1;
+
   const room=await prisma.accommodation.findFirst({
     where:{id,active:true},
-    select:{id:true}
+    select:{id:true,sharedRoom:true,bedCount:true,capacity:true}
   });
   if(!room)return NextResponse.json({error:"Hospedagem inválida"},{status:404});
 
@@ -30,7 +38,7 @@ export async function GET(req:NextRequest){
         checkOut:{gt:from},
         checkIn:{lt:to}
       },
-      select:{checkIn:true,checkOut:true}
+      select:{checkIn:true,checkOut:true,guests:true}
     }),
     prisma.inventoryHold.findMany({
       where:{
@@ -39,7 +47,7 @@ export async function GET(req:NextRequest){
         checkOut:{gt:from},
         checkIn:{lt:to}
       },
-      select:{checkIn:true,checkOut:true}
+      select:{checkIn:true,checkOut:true,units:true}
     }),
     prisma.manualInventoryBlock.findMany({
       where:{
@@ -51,12 +59,74 @@ export async function GET(req:NextRequest){
     })
   ]);
 
+  if(!room.sharedRoom){
+    return NextResponse.json({
+      sharedRoom:false,
+      capacity:room.capacity,
+      blocks:[
+        ...external.map(x=>({start:day(x.startsAt),end:day(x.endsAt),kind:"CHANNEL"})),
+        ...internal
+          .filter(x=>x.checkIn&&x.checkOut)
+          .map(x=>({start:day(x.checkIn!),end:day(x.checkOut!),kind:"BOOKING"})),
+        ...holds.map(x=>({start:day(x.checkIn),end:day(x.checkOut),kind:"HOLD"})),
+        ...manual.map(x=>({start:day(x.startsAt),end:day(x.endsAt),kind:"MANUAL"}))
+      ]
+    },{headers:{"Cache-Control":"private, max-age=15"}});
+  }
+
+  const totalBeds=Math.max(0,room.bedCount);
+  const softIntervals=[
+    ...internal
+      .filter(x=>x.checkIn&&x.checkOut)
+      .map(x=>({start:x.checkIn!,end:x.checkOut!,units:Math.max(1,x.guests)})),
+    ...holds.map(x=>({start:x.checkIn,end:x.checkOut,units:Math.max(1,x.units)}))
+  ];
+  const hardIntervals=[
+    ...external.map(x=>({start:x.startsAt,end:x.endsAt})),
+    ...manual.map(x=>({start:x.startsAt,end:x.endsAt}))
+  ];
+
+  const blockedDays:string[]=[];
+  const cursor=new Date(from);
+
+  while(cursor<to){
+    const next=new Date(cursor);
+    next.setUTCDate(next.getUTCDate()+1);
+
+    const hardBlocked=hardIntervals.some(interval=>
+      interval.start<next&&interval.end>cursor
+    );
+
+    const hasBeds=!hardBlocked&&hasUnitCapacity(
+      totalBeds,
+      requestedUnits,
+      softIntervals,
+      cursor,
+      next
+    );
+
+    if(!hasBeds)blockedDays.push(day(cursor));
+    cursor.setUTCDate(cursor.getUTCDate()+1);
+  }
+
+  const blocks:{start:string;end:string;kind:string}[]=[];
+  for(const date of blockedDays){
+    const current=new Date(date+"T00:00:00Z");
+    const next=new Date(current);
+    next.setUTCDate(next.getUTCDate()+1);
+    const last=blocks.at(-1);
+
+    if(last&&last.end===date){
+      last.end=day(next);
+    }else{
+      blocks.push({start:date,end:day(next),kind:"CAPACITY"});
+    }
+  }
+
   return NextResponse.json({
-    blocks:[
-      ...external.map(x=>({start:x.startsAt.toISOString().slice(0,10),end:x.endsAt.toISOString().slice(0,10),kind:"CHANNEL"})),
-      ...internal.filter(x=>x.checkIn&&x.checkOut).map(x=>({start:x.checkIn!.toISOString().slice(0,10),end:x.checkOut!.toISOString().slice(0,10),kind:"BOOKING"})),
-      ...holds.map(x=>({start:x.checkIn.toISOString().slice(0,10),end:x.checkOut.toISOString().slice(0,10),kind:"HOLD"})),
-      ...manual.map(x=>({start:x.startsAt.toISOString().slice(0,10),end:x.endsAt.toISOString().slice(0,10),kind:"MANUAL"}))
-    ]
+    sharedRoom:true,
+    totalBeds,
+    requestedBeds:requestedUnits,
+    blocks
   },{headers:{"Cache-Control":"private, max-age=15"}});
 }
