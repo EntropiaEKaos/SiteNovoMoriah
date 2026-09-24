@@ -1,4 +1,4 @@
-"use server";import {deleteMediaObject} from "../../lib/media-storage";import {prisma} from "../../lib/prisma";import {revalidatePath} from "next/cache";import {redirect} from "next/navigation";import {requireAdmin} from "../../lib/admin-auth";import {criticalAvailabilityCheck,hasAvailabilityConflict,syncChannelIntegration} from "../../lib/channel-sync";import {quoteAccommodation} from "../../lib/rate-engine";import {createInventoryHold,consumeInventoryHold,releaseInventoryHold} from "../../lib/inventory-holds";
+"use server";import {deleteMediaObject} from "../../lib/media-storage";import {prisma} from "../../lib/prisma";import {revalidatePath} from "next/cache";import {redirect} from "next/navigation";import {requireAdmin} from "../../lib/admin-auth";import {criticalAvailabilityCheck,hasAvailabilityConflict,syncChannelIntegration} from "../../lib/channel-sync";import {quoteAccommodation} from "../../lib/rate-engine";import {createInventoryHold,consumeInventoryHold,releaseInventoryHold} from "../../lib/inventory-holds";import {hasUnitCapacity} from "../../lib/shared-inventory";
 function readAccommodationForm(formData:FormData){
   const text=(name:string,max=500)=>String(formData.get(name)||"").trim().slice(0,max);
   const integer=(name:string,fallback:number,min:number,max:number)=>{
@@ -20,7 +20,13 @@ function readAccommodationForm(formData:FormData){
   if(!name||!description)throw new Error("Nome e descrição são obrigatórios.");
 
   const type=text("type",40)||"QUARTO";
-  const capacity=integer("capacity",2,1,50);
+  const sharedRoom=formData.get("sharedRoom")==="on"||type==="COMPARTILHADO";
+  let capacity=integer("capacity",2,1,50);
+  const bedCount=integer("bedCount",sharedRoom?capacity:0,0,50);
+  if(sharedRoom){
+    if(bedCount<1)throw new Error("Informe ao menos 1 cama para o quarto compartilhado.");
+    capacity=bedCount;
+  }
   const maxAdults=integer("maxAdults",Math.min(2,capacity),1,50);
   const maxChildren=integer("maxChildren",0,0,30);
   const bathrooms=integer("bathrooms",1,0,10);
@@ -62,6 +68,8 @@ function readAccommodationForm(formData:FormData){
     maxAdults,
     maxChildren,
     beds:text("beds",300)||null,
+    sharedRoom,
+    bedCount,
     bathrooms,
     areaSqm:optionalNumber("areaSqm"),
     amenities,
@@ -87,13 +95,219 @@ export async function togglePromotion(formData:FormData){await requireAdmin();co
 export async function deletePromotion(formData:FormData){await requireAdmin();const id=String(formData.get("id")||"");if(id){await prisma.promotion.delete({where:{id}});revalidatePath("/admin/promocoes");revalidatePath("/");}}
 
 export async function saveSettings(formData:FormData){await requireAdmin();await prisma.siteSettings.upsert({where:{id:"main"},create:{id:"main",siteName:String(formData.get("siteName")||"Pousada Moriah"),tagline:String(formData.get("tagline")||""),whatsapp:String(formData.get("whatsapp")||"")||null,instagram:String(formData.get("instagram")||"")||null,address:String(formData.get("address")||"")||null},update:{siteName:String(formData.get("siteName")||"Pousada Moriah"),tagline:String(formData.get("tagline")||""),whatsapp:String(formData.get("whatsapp")||"")||null,instagram:String(formData.get("instagram")||"")||null,address:String(formData.get("address")||"")||null}});revalidatePath("/admin/configuracoes");revalidatePath("/");}
-export async function createBookingLead(formData:FormData){const publicRequestToken=String(formData.get("publicRequestToken")||"").trim();if(!/^[0-9a-f-]{36}$/i.test(publicRequestToken))throw new Error("Identificador da solicitação inválido.");if(await prisma.bookingLead.findUnique({where:{publicRequestToken},select:{id:true}}))redirect("/reservar/obrigado");const accommodationId=String(formData.get("accommodationId")||"");const room=accommodationId?await prisma.accommodation.findFirst({where:{id:accommodationId,active:true}}):null;if(!room)throw new Error("Selecione uma hospedagem disponível.");const name=String(formData.get("name")||"").trim();const phone=String(formData.get("phone")||"").trim();if(!name||!phone)throw new Error("Nome e WhatsApp são obrigatórios.");const guestsRaw=Number(formData.get("guests")||1);if(!Number.isInteger(guestsRaw)||guestsRaw<1)throw new Error("Número de hóspedes inválido.");const guests=guestsRaw;if(guests>room.capacity)throw new Error("Número de hóspedes excede a capacidade desta hospedagem.");const checkIn=String(formData.get("checkIn")||"");const checkOut=String(formData.get("checkOut")||"");let quote=null as Awaited<ReturnType<typeof quoteAccommodation>>;if(checkIn&&checkOut){const start=new Date(checkIn+"T12:00:00Z"),end=new Date(checkOut+"T12:00:00Z");if(!(start<end))throw new Error("A saída deve ser posterior à entrada.");if(await hasAvailabilityConflict(accommodationId,start,end))redirect("/reservar?indisponivel=1&accommodationId="+encodeURIComponent(accommodationId));quote=await quoteAccommodation(accommodationId,start,end);if(!quote)throw new Error("Não existe tarifa vendável para este período.");const hold=await createInventoryHold(accommodationId,start,end);try{await consumeInventoryHold(hold.token,accommodationId,start,end,tx=>tx.bookingLead.create({data:{publicRequestToken,accommodationId,name,phone,email:String(formData.get("email")||"").trim()||null,checkIn:start,checkOut:end,guests,message:String(formData.get("message")||"").trim()||null,status:"NEW",source:"SITE",quotedTotalCents:quote!.totalCents,quotedCurrency:quote!.currency,quotedRatePlan:quote!.ratePlan,quoteSnapshot:JSON.parse(JSON.stringify(quote)),quotedAt:new Date()}}));}catch(error){await releaseInventoryHold(hold.token);throw error;}}else{throw new Error("Informe entrada e saída.");}revalidatePath("/admin/reservas");redirect("/reservar/obrigado");}
-export async function setBookingStatus(formData:FormData){await requireAdmin();const id=String(formData.get("id")||""),status=String(formData.get("status")||"");if(!id||!["NEW","CONTACTED","CONFIRMED","CANCELLED"].includes(status))throw new Error("Status inválido.");if(status==="CONFIRMED"){const pending=await prisma.bookingLead.findUnique({where:{id}});if(!pending?.accommodationId||!pending.checkIn||!pending.checkOut)throw new Error("A reserva precisa ter hospedagem e período antes da confirmação.");if(await criticalAvailabilityCheck(pending.accommodationId,pending.checkIn,pending.checkOut))throw new Error("Conflito de disponibilidade após atualização dos canais.");await prisma.$transaction(async tx=>{const booking=await tx.bookingLead.findUnique({where:{id}});if(!booking?.accommodationId||!booking.checkIn||!booking.checkOut)throw new Error("A reserva precisa ter hospedagem e período antes da confirmação.");await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${booking.accommodationId}))`;const [internal,external,holds,manual]=await Promise.all([
-  tx.bookingLead.count({where:{id:{not:id},accommodationId:booking.accommodationId,status:{in:["CONFIRMED","CHECKED_IN"]},checkIn:{lt:booking.checkOut},checkOut:{gt:booking.checkIn}}}),
-  tx.channelBlock.count({where:{startsAt:{lt:booking.checkOut},endsAt:{gt:booking.checkIn},integration:{accommodationId:booking.accommodationId,active:true}}}),
-  tx.inventoryHold.count({where:{accommodationId:booking.accommodationId,expiresAt:{gt:new Date()},checkIn:{lt:booking.checkOut},checkOut:{gt:booking.checkIn}}}),
-  tx.manualInventoryBlock.count({where:{accommodationId:booking.accommodationId,startsAt:{lt:booking.checkOut},endsAt:{gt:booking.checkIn}}})
-]);if(internal||external||holds||manual)throw new Error("Conflito de disponibilidade: existe reserva, canal, hold ou bloqueio manual neste período.");await tx.bookingLead.update({where:{id},data:{status:"CONFIRMED"}})});}else{const current=await prisma.bookingLead.findUnique({where:{id},select:{status:true,checkedInAt:true}});if(!current)throw new Error("Reserva não encontrada.");if(current.checkedInAt)throw new Error("Uma hospedagem iniciada deve ser tratada pelo PMS.");await prisma.bookingLead.update({where:{id},data:{status}})}revalidatePath("/admin/reservas");revalidatePath("/reservar");}
+export async function createBookingLead(formData:FormData){
+  const publicRequestToken=String(formData.get("publicRequestToken")||"").trim();
+  if(!/^[0-9a-f-]{36}$/i.test(publicRequestToken))throw new Error("Identificador da solicitação inválido.");
+  if(await prisma.bookingLead.findUnique({where:{publicRequestToken},select:{id:true}}))redirect("/reservar/obrigado");
+
+  const accommodationId=String(formData.get("accommodationId")||"");
+  const room=accommodationId
+    ?await prisma.accommodation.findFirst({where:{id:accommodationId,active:true}})
+    :null;
+  if(!room)throw new Error("Selecione uma hospedagem disponível.");
+
+  const name=String(formData.get("name")||"").trim();
+  const phone=String(formData.get("phone")||"").trim();
+  if(!name||!phone)throw new Error("Nome e WhatsApp são obrigatórios.");
+
+  const guestsRaw=Number(formData.get("guests")||1);
+  if(!Number.isInteger(guestsRaw)||guestsRaw<1)throw new Error("Número de hóspedes inválido.");
+  const guests=guestsRaw;
+  const sellableUnits=room.sharedRoom?room.bedCount:room.capacity;
+  if(sellableUnits<1)throw new Error("Hospedagem sem capacidade configurada.");
+  if(guests>sellableUnits){
+    throw new Error(room.sharedRoom
+      ?"Número de hóspedes excede a quantidade de camas deste quarto compartilhado."
+      :"Número de hóspedes excede a capacidade desta hospedagem."
+    );
+  }
+
+  const checkIn=String(formData.get("checkIn")||"");
+  const checkOut=String(formData.get("checkOut")||"");
+  if(!checkIn||!checkOut)throw new Error("Informe entrada e saída.");
+
+  const start=new Date(checkIn+"T12:00:00Z");
+  const end=new Date(checkOut+"T12:00:00Z");
+  if(!(start<end))throw new Error("A saída deve ser posterior à entrada.");
+
+  if(await hasAvailabilityConflict(accommodationId,start,end,guests)){
+    redirect("/reservar?indisponivel=1&accommodationId="+encodeURIComponent(accommodationId)+"&guests="+guests);
+  }
+
+  const quote=await quoteAccommodation(accommodationId,start,end,null,guests);
+  if(!quote)throw new Error("Não existe tarifa vendável para este período.");
+
+  const hold=await createInventoryHold(accommodationId,start,end,guests);
+  try{
+    await consumeInventoryHold(
+      hold.token,
+      accommodationId,
+      start,
+      end,
+      tx=>tx.bookingLead.create({
+        data:{
+          publicRequestToken,
+          accommodationId,
+          name,
+          phone,
+          email:String(formData.get("email")||"").trim()||null,
+          checkIn:start,
+          checkOut:end,
+          guests,
+          message:String(formData.get("message")||"").trim()||null,
+          status:"NEW",
+          source:"SITE",
+          quotedTotalCents:quote.totalCents,
+          quotedCurrency:quote.currency,
+          quotedRatePlan:quote.ratePlan,
+          quoteSnapshot:JSON.parse(JSON.stringify(quote)),
+          quotedAt:new Date()
+        }
+      })
+    );
+  }catch(error){
+    await releaseInventoryHold(hold.token);
+    throw error;
+  }
+
+  revalidatePath("/admin/reservas");
+  redirect("/reservar/obrigado");
+}
+
+export async function setBookingStatus(formData:FormData){
+  await requireAdmin();
+  const id=String(formData.get("id")||"");
+  const status=String(formData.get("status")||"");
+  if(!id||!["NEW","CONTACTED","CONFIRMED","CANCELLED"].includes(status)){
+    throw new Error("Status inválido.");
+  }
+
+  if(status==="CONFIRMED"){
+    const pending=await prisma.bookingLead.findUnique({where:{id}});
+    if(!pending?.accommodationId||!pending.checkIn||!pending.checkOut){
+      throw new Error("A reserva precisa ter hospedagem e período antes da confirmação.");
+    }
+
+    if(await criticalAvailabilityCheck(
+      pending.accommodationId,
+      pending.checkIn,
+      pending.checkOut,
+      pending.guests
+    )){
+      throw new Error("Conflito de disponibilidade após atualização dos canais.");
+    }
+
+    await prisma.$transaction(async tx=>{
+      const booking=await tx.bookingLead.findUnique({
+        where:{id},
+        include:{accommodation:{select:{sharedRoom:true,bedCount:true,capacity:true}}}
+      });
+      if(!booking?.accommodationId||!booking.checkIn||!booking.checkOut||!booking.accommodation){
+        throw new Error("A reserva precisa ter hospedagem e período antes da confirmação.");
+      }
+
+      await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${booking.accommodationId}))`;
+
+      const [external,manual]=await Promise.all([
+        tx.channelBlock.count({
+          where:{
+            startsAt:{lt:booking.checkOut},
+            endsAt:{gt:booking.checkIn},
+            integration:{accommodationId:booking.accommodationId,active:true}
+          }
+        }),
+        tx.manualInventoryBlock.count({
+          where:{
+            accommodationId:booking.accommodationId,
+            startsAt:{lt:booking.checkOut},
+            endsAt:{gt:booking.checkIn}
+          }
+        })
+      ]);
+
+      if(external||manual){
+        throw new Error("Conflito de disponibilidade: existe canal ou bloqueio manual neste período.");
+      }
+
+      if(booking.accommodation.sharedRoom){
+        const [internal,holds]=await Promise.all([
+          tx.bookingLead.findMany({
+            where:{
+              id:{not:id},
+              accommodationId:booking.accommodationId,
+              status:{in:["CONFIRMED","CHECKED_IN"]},
+              checkIn:{lt:booking.checkOut},
+              checkOut:{gt:booking.checkIn}
+            },
+            select:{checkIn:true,checkOut:true,guests:true}
+          }),
+          tx.inventoryHold.findMany({
+            where:{
+              accommodationId:booking.accommodationId,
+              expiresAt:{gt:new Date()},
+              checkIn:{lt:booking.checkOut},
+              checkOut:{gt:booking.checkIn}
+            },
+            select:{checkIn:true,checkOut:true,units:true}
+          })
+        ]);
+
+        const intervals=[
+          ...internal
+            .filter(row=>row.checkIn&&row.checkOut)
+            .map(row=>({start:row.checkIn!,end:row.checkOut!,units:Math.max(1,row.guests)})),
+          ...holds.map(row=>({start:row.checkIn,end:row.checkOut,units:Math.max(1,row.units)}))
+        ];
+
+        if(!hasUnitCapacity(
+          booking.accommodation.bedCount,
+          Math.max(1,booking.guests),
+          intervals,
+          booking.checkIn,
+          booking.checkOut
+        )){
+          throw new Error("Não há camas suficientes para confirmar esta reserva.");
+        }
+      }else{
+        const [internal,holds]=await Promise.all([
+          tx.bookingLead.count({
+            where:{
+              id:{not:id},
+              accommodationId:booking.accommodationId,
+              status:{in:["CONFIRMED","CHECKED_IN"]},
+              checkIn:{lt:booking.checkOut},
+              checkOut:{gt:booking.checkIn}
+            }
+          }),
+          tx.inventoryHold.count({
+            where:{
+              accommodationId:booking.accommodationId,
+              expiresAt:{gt:new Date()},
+              checkIn:{lt:booking.checkOut},
+              checkOut:{gt:booking.checkIn}
+            }
+          })
+        ]);
+        if(internal||holds){
+          throw new Error("Conflito de disponibilidade: existe reserva ou hold neste período.");
+        }
+      }
+
+      await tx.bookingLead.update({where:{id},data:{status:"CONFIRMED"}});
+    });
+  }else{
+    const current=await prisma.bookingLead.findUnique({
+      where:{id},
+      select:{status:true,checkedInAt:true}
+    });
+    if(!current)throw new Error("Reserva não encontrada.");
+    if(current.checkedInAt)throw new Error("Uma hospedagem iniciada deve ser tratada pelo PMS.");
+    await prisma.bookingLead.update({where:{id},data:{status}});
+  }
+
+  revalidatePath("/admin/reservas");
+  revalidatePath("/reservar");
+}
 
 export async function toggleAccommodation(formData:FormData){await requireAdmin();const id=String(formData.get("id")||"");const item=await prisma.accommodation.findUnique({where:{id}});if(item){await prisma.accommodation.update({where:{id},data:{active:!item.active}});revalidatePath("/admin/hospedagens");revalidatePath("/");}}
 export async function deleteAccommodation(formData:FormData){await requireAdmin();const id=String(formData.get("id")||"");if(id){await prisma.accommodation.delete({where:{id}});revalidatePath("/admin/hospedagens");revalidatePath("/");}}
