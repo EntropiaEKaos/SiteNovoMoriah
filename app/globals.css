@@ -2219,3 +2219,34 @@ body{background:linear-gradient(180deg,#fff 0,#fffdf5 100%)}.nav{box-shadow:0 8p
   .foodCategoryHead img{width:100%;height:150px}
   .foodProductVisual{height:200px}
 }
+
+.foodItemNote{
+  display:grid;
+  gap:5px;
+  margin-top:12px;
+}
+.foodItemNote span{
+  font-size:8px;
+  font-weight:950;
+  color:#777168;
+  text-transform:uppercase;
+  letter-spacing:.8px;
+}
+.foodItemNote input{
+  width:100%;
+  border:1px solid #d4cdbf;
+  padding:10px;
+  background:#fff;
+  font:inherit;
+}
+.kdsItemNote{
+  margin-top:5px!important;
+  padding:6px 8px;
+  background:#fff3a6;
+  color:#322c17!important;
+  font-weight:850;
+}
+.menuStudioRecipeGrid>label.isMuted{
+  opacity:.6;
+  background:#f2f0eb;
+}
