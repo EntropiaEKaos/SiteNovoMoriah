@@ -32,6 +32,24 @@ export async function syncAccommodationChannels(accommodationId:string){
  return {channels:channels.length,failures:failures.length};
 }
 
+export async function syncDueAccommodationChannels(accommodationId:string){
+ const now=new Date();
+ const channels=await prisma.channelIntegration.findMany({
+  where:{
+   accommodationId,
+   active:true,
+   importUrl:{not:null},
+   syncStatus:{not:"SYNCING"},
+   OR:[{nextSyncAt:null},{nextSyncAt:{lte:now}}]
+  },
+  select:{id:true}
+ });
+ if(!channels.length)return {channels:0,failures:0};
+ const results=await Promise.allSettled(channels.map(x=>syncChannelIntegration(x.id)));
+ const failures=results.filter((x):x is PromiseRejectedResult=>x.status==="rejected");
+ return {channels:channels.length,failures:failures.length};
+}
+
 export async function criticalAvailabilityCheck(accommodationId:string,checkIn:Date,checkOut:Date,requestedUnits=1){
  const sync=await syncAccommodationChannels(accommodationId);
  if(sync.failures)throw new Error("Não foi possível atualizar todos os canais. Tente novamente em instantes.");

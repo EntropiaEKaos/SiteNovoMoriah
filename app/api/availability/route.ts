@@ -1,6 +1,7 @@
 import {NextRequest,NextResponse} from "next/server";
 import {prisma} from "../../../lib/prisma";
 import {hasUnitCapacity} from "../../../lib/shared-inventory";
+import {syncDueAccommodationChannels} from "../../../lib/channel-sync";
 
 export const dynamic="force-dynamic";
 
@@ -20,6 +21,9 @@ export async function GET(req:NextRequest){
     select:{id:true,sharedRoom:true,bedCount:true,capacity:true}
   });
   if(!room)return NextResponse.json({error:"Hospedagem inválida"},{status:404});
+
+  const channelRefresh=await syncDueAccommodationChannels(id)
+    .catch(()=>({channels:0,failures:1}));
 
   const from=new Date();
   from.setUTCHours(0,0,0,0);
@@ -63,6 +67,7 @@ export async function GET(req:NextRequest){
     return NextResponse.json({
       sharedRoom:false,
       capacity:room.capacity,
+      channelRefresh,
       blocks:[
         ...external.map(x=>({start:day(x.startsAt),end:day(x.endsAt),kind:"CHANNEL"})),
         ...internal
@@ -128,6 +133,7 @@ export async function GET(req:NextRequest){
     sharedRoom:true,
     totalBeds,
     requestedBeds:requestedUnits,
+    channelRefresh,
     blocks
   },{headers:{"Cache-Control":"private, max-age=15"}});
 }
