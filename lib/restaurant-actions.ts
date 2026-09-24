@@ -1,6 +1,6 @@
-"use server";import {prisma} from "./prisma";import {requireAdmin} from "./admin-auth";import {revalidatePath} from "next/cache";import {redirect} from "next/navigation";
+"use server";import {prisma} from "./prisma";import {requireAdmin} from "./admin-auth";import {revalidatePath} from "next/cache";import {redirect} from "next/navigation";import {normalizeMediaUrl} from "./media-url";
 export async function createRestaurantCategory(formData:FormData){await requireAdmin();const name=String(formData.get("name")||"").trim();if(!name)throw new Error("Categoria obrigatória.");await prisma.restaurantCategory.create({data:{name}});revalidatePath("/admin/restaurante");}
-export async function createRestaurantProduct(formData:FormData){await requireAdmin();const categoryId=String(formData.get("categoryId")||""),name=String(formData.get("name")||"").trim(),price=Number(String(formData.get("price")||"").replace(",",".")),costRaw=String(formData.get("cost")||"").trim(),cost=costRaw===""?null:Number(costRaw.replace(",",".")),stock=Number(formData.get("stockQty")||0),min=Number(formData.get("minStockQty")||0);if(!categoryId||!name||!Number.isFinite(price)||price<0||!Number.isInteger(stock)||stock<0||!Number.isInteger(min)||min<0)throw new Error("Produto inválido.");await prisma.restaurantProduct.create({data:{categoryId,name,description:String(formData.get("description")||"").trim()||null,imageUrl:String(formData.get("imageUrl")||"").trim()||null,sku:String(formData.get("sku")||"").trim()||null,priceCents:Math.round(price*100),costCents:cost!==null&&Number.isFinite(cost)&&cost>=0?Math.round(cost*100):null,stockQty:stock,minStockQty:min,trackStock:formData.get("trackStock")==="on"}});revalidatePath("/admin/restaurante");revalidatePath("/restaurante");}
+export async function createRestaurantProduct(formData:FormData){await requireAdmin();const categoryId=String(formData.get("categoryId")||""),name=String(formData.get("name")||"").trim(),price=Number(String(formData.get("price")||"").replace(",",".")),costRaw=String(formData.get("cost")||"").trim(),cost=costRaw===""?null:Number(costRaw.replace(",",".")),stock=Number(formData.get("stockQty")||0),min=Number(formData.get("minStockQty")||0);if(!categoryId||!name||!Number.isFinite(price)||price<0||!Number.isInteger(stock)||stock<0||!Number.isInteger(min)||min<0)throw new Error("Produto inválido.");await prisma.restaurantProduct.create({data:{categoryId,name,description:String(formData.get("description")||"").trim()||null,imageUrl:normalizeMediaUrl(formData.get("imageUrl")),sku:String(formData.get("sku")||"").trim()||null,priceCents:Math.round(price*100),costCents:cost!==null&&Number.isFinite(cost)&&cost>=0?Math.round(cost*100):null,stockQty:stock,minStockQty:min,trackStock:formData.get("trackStock")==="on"}});revalidatePath("/admin/restaurante");revalidatePath("/restaurante");}
 export async function adjustRestaurantStock(formData:FormData){await requireAdmin();const productId=String(formData.get("productId")||""),quantity=Number(formData.get("quantity")||0),reason=String(formData.get("reason")||"Ajuste manual");if(!productId||!Number.isInteger(quantity)||quantity===0)throw new Error("Ajuste inválido.");await prisma.$transaction(async tx=>{const changed=quantity<0?await tx.restaurantProduct.updateMany({where:{id:productId,stockQty:{gte:Math.abs(quantity)}},data:{stockQty:{increment:quantity}}}):await tx.restaurantProduct.updateMany({where:{id:productId},data:{stockQty:{increment:quantity}}});if(changed.count!==1)throw new Error("Produto inexistente ou estoque insuficiente.");await tx.restaurantStockMovement.create({data:{productId,type:quantity>0?"IN":"OUT",quantity,reason}})});revalidatePath("/admin/restaurante");revalidatePath("/restaurante");}
 export async function setRestaurantOrderStatus(formData:FormData){
   await requireAdmin();
@@ -221,7 +221,7 @@ export async function saveRestaurantMenuSettings(formData:FormData){
   const data={
     menuTitle:String(formData.get("menuTitle")||"Moriah Food").trim().slice(0,120)||"Moriah Food",
     menuSubtitle:menuText(formData,"menuSubtitle",500),
-    menuBannerUrl:menuText(formData,"menuBannerUrl",1000),
+    menuBannerUrl:normalizeMediaUrl(formData.get("menuBannerUrl"),1000),
     showSoldOut:formData.get("showSoldOut")==="on"
   };
 
@@ -244,7 +244,7 @@ export async function createMenuCategory(formData:FormData){
     data:{
       name,
       description:menuText(formData,"description",1000),
-      imageUrl:menuText(formData,"imageUrl",1000),
+      imageUrl:normalizeMediaUrl(formData.get("imageUrl"),1000),
       sortOrder:menuInteger(formData,"sortOrder",100,0,100000),
       active:formData.get("active")==="on",
       featured:formData.get("featured")==="on",
@@ -270,7 +270,7 @@ export async function updateMenuCategory(formData:FormData){
     data:{
       name,
       description:menuText(formData,"description",1000),
-      imageUrl:menuText(formData,"imageUrl",1000),
+      imageUrl:normalizeMediaUrl(formData.get("imageUrl"),1000),
       sortOrder:menuInteger(formData,"sortOrder",100,0,100000),
       active:formData.get("active")==="on",
       featured:formData.get("featured")==="on",
@@ -334,7 +334,7 @@ function menuProductData(formData:FormData){
     categoryId,
     name,
     description:menuText(formData,"description",4000),
-    imageUrl:menuText(formData,"imageUrl",1000),
+    imageUrl:normalizeMediaUrl(formData.get("imageUrl"),1000),
     priceCents,
     promotionalPriceCents,
     costCents,

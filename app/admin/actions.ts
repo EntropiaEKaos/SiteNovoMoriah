@@ -1,4 +1,4 @@
-"use server";import {deleteMediaObject} from "../../lib/media-storage";import {prisma} from "../../lib/prisma";import {revalidatePath} from "next/cache";import {redirect} from "next/navigation";import {requireAdmin} from "../../lib/admin-auth";import {criticalAvailabilityCheck,hasAvailabilityConflict,syncChannelIntegration} from "../../lib/channel-sync";import {quoteAccommodation} from "../../lib/rate-engine";import {createInventoryHold,consumeInventoryHold,releaseInventoryHold} from "../../lib/inventory-holds";import {hasUnitCapacity,maxConcurrentUnits} from "../../lib/shared-inventory";
+"use server";import {deleteMediaObject} from "../../lib/media-storage";import {prisma} from "../../lib/prisma";import {revalidatePath} from "next/cache";import {redirect} from "next/navigation";import {requireAdmin} from "../../lib/admin-auth";import {criticalAvailabilityCheck,hasAvailabilityConflict,syncChannelIntegration} from "../../lib/channel-sync";import {quoteAccommodation} from "../../lib/rate-engine";import {createInventoryHold,consumeInventoryHold,releaseInventoryHold} from "../../lib/inventory-holds";import {hasUnitCapacity,maxConcurrentUnits} from "../../lib/shared-inventory";import {normalizeMediaUrl,normalizeMediaUrls} from "../../lib/media-url";
 function readAccommodationForm(formData:FormData){
   const text=(name:string,max=500)=>String(formData.get(name)||"").trim().slice(0,max);
   const integer=(name:string,fallback:number,min:number,max:number)=>{
@@ -44,10 +44,7 @@ function readAccommodationForm(formData:FormData){
   const internalCode=text("internalCode",40).toUpperCase()||null;
   if(internalCode&&!/^[A-Z0-9._-]+$/.test(internalCode))throw new Error("Código interno inválido.");
 
-  const galleryImages=formData.getAll("galleryImages")
-    .map(value=>String(value).trim())
-    .filter(value=>/^https?:\/\//i.test(value))
-    .slice(0,20);
+  const galleryImages=normalizeMediaUrls(formData.getAll("galleryImages"),20);
 
   const amenities=formData.getAll("amenities")
     .map(value=>String(value).trim().toUpperCase())
@@ -60,7 +57,7 @@ function readAccommodationForm(formData:FormData){
     type,
     capacity,
     priceCents:priceRaw===null?null:Math.round(priceRaw*100),
-    coverImage:text("coverImage",2000)||null,
+    coverImage:normalizeMediaUrl(formData.get("coverImage")),
     galleryImages,
     internalCode,
     roomNumber:text("roomNumber",40)||null,
@@ -85,10 +82,20 @@ function readAccommodationForm(formData:FormData){
 export async function createAccommodation(formData:FormData){
   await requireAdmin();
   const data=readAccommodationForm(formData);
-  await prisma.accommodation.create({data});
+  const created=await prisma.accommodation.create({
+    data,
+    select:{id:true,coverImage:true,galleryImages:true}
+  });
+
+  if(created.coverImage!==data.coverImage||created.galleryImages.join("\n")!==data.galleryImages.join("\n")){
+    throw new Error("A hospedagem foi criada, mas houve divergência ao persistir as imagens. Abra a ficha e tente salvar novamente.");
+  }
+
   revalidatePath("/admin/hospedagens");
+  revalidatePath("/admin/hospedagens/"+created.id);
   revalidatePath("/reservar");
   revalidatePath("/");
+  redirect("/admin/hospedagens/"+created.id+"?saved=1");
 }
 export async function createPromotion(formData:FormData){await requireAdmin();const title=String(formData.get("title")||"").trim();const description=String(formData.get("description")||"").trim();const coupon=String(formData.get("coupon")||"").trim().toUpperCase()||null;const discountType=String(formData.get("discountType")||"").trim()||null;const raw=Number(String(formData.get("discountValue")||"").replace(",","."));const min=Number(formData.get("minNights")||0);const accommodationId=String(formData.get("accommodationId")||"").trim()||null;if(!title)throw new Error("Título obrigatório.");if(discountType&&!["PERCENT","FIXED"].includes(discountType))throw new Error("Tipo de desconto inválido.");if(discountType&&(!Number.isFinite(raw)||raw<=0||(discountType==="PERCENT"&&raw>100)))throw new Error("Valor de desconto inválido.");await prisma.promotion.create({data:{title,description:description||null,coupon,active:true,discountType,discountValue:discountType==="FIXED"?Math.round(raw*100):discountType?Math.round(raw):null,minNights:min>0?Math.floor(min):null,accommodationId,stackable:formData.get("stackable")==="on"}});revalidatePath("/admin/promocoes");revalidatePath("/");}
 export async function togglePromotion(formData:FormData){await requireAdmin();const id=String(formData.get("id")||"");const row=await prisma.promotion.findUnique({where:{id}});if(row){await prisma.promotion.update({where:{id},data:{active:!row.active}});revalidatePath("/admin/promocoes");revalidatePath("/");}}
@@ -99,10 +106,11 @@ function safeBrandColor(value:FormDataEntryValue|null,fallback:string){
   return /^#[0-9a-f]{6}$/i.test(color)?color.toLowerCase():fallback;
 }
 function safeBrandMedia(value:FormDataEntryValue|null){
-  const url=String(value||"").trim();
-  if(!url)return null;
-  if(/^https:\/\//i.test(url)||url.startsWith("/api/media/"))return url.slice(0,2000);
-  throw new Error("Imagem de identidade inválida.");
+  const raw=String(value||"").trim();
+  if(!raw)return null;
+  const normalized=normalizeMediaUrl(raw);
+  if(!normalized)throw new Error("Imagem de identidade inválida.");
+  return normalized;
 }
 
 export async function saveSettings(formData:FormData){
@@ -397,11 +405,21 @@ export async function updateAccommodation(formData:FormData){
     }
   }
 
-  await prisma.accommodation.update({where:{id},data});
+  const updated=await prisma.accommodation.update({
+    where:{id},
+    data,
+    select:{coverImage:true,galleryImages:true}
+  });
+
+  if(updated.coverImage!==data.coverImage||updated.galleryImages.join("\n")!==data.galleryImages.join("\n")){
+    throw new Error("Os dados foram atualizados, mas houve divergência ao persistir as imagens. Tente salvar novamente.");
+  }
+
   revalidatePath("/admin/hospedagens");
   revalidatePath("/admin/hospedagens/"+id);
   revalidatePath("/reservar");
   revalidatePath("/");
+  redirect("/admin/hospedagens/"+id+"?saved=1");
 }
 export async function addMedia(formData:FormData){
   await requireAdmin();
@@ -447,6 +465,22 @@ export async function deleteMedia(formData:FormData){
     prisma.restaurantSettings.count({where:{menuBannerUrl:row.url}})
   ]);
 
+  let brandingRefs=0;
+  try{
+    brandingRefs=await prisma.siteSettings.count({
+      where:{
+        OR:[
+          {logoUrl:row.url},
+          {logoLightUrl:row.url},
+          {faviconUrl:row.url},
+          {defaultBackgroundImageUrl:row.url}
+        ]
+      }
+    });
+  }catch(error){
+    console.warn("MEDIA_BRANDING_REFERENCE_CHECK_SCHEMA_PENDING");
+  }
+
   const references=
     pageRefs+
     sectionMainRefs+
@@ -457,7 +491,8 @@ export async function deleteMedia(formData:FormData){
     blogRefs+
     productRefs+
     categoryRefs+
-    menuBannerRefs;
+    menuBannerRefs+
+    brandingRefs;
 
   if(references>0){
     throw new Error("Esta imagem está em uso em "+references+" local(is). Troque ou remova a referência antes de excluir o arquivo.");
@@ -474,8 +509,8 @@ export async function deleteMedia(formData:FormData){
 
 export async function saveFirebaseSettings(formData:FormData){await requireAdmin();const data={firebaseApiKey:String(formData.get("firebaseApiKey")||"").trim()||null,firebaseAuthDomain:String(formData.get("firebaseAuthDomain")||"").trim()||null,firebaseProjectId:String(formData.get("firebaseProjectId")||"").trim()||null,firebaseStorageBucket:String(formData.get("firebaseStorageBucket")||"").trim()||null,firebaseMessagingSenderId:String(formData.get("firebaseMessagingSenderId")||"").trim()||null,firebaseAppId:String(formData.get("firebaseAppId")||"").trim()||null,firebaseVapidKey:String(formData.get("firebaseVapidKey")||"").trim()||null};await prisma.integrationSettings.upsert({where:{id:"main"},update:data,create:{id:"main",...data}});revalidatePath("/admin/integracoes");}
 
-export async function createBlogPost(formData:FormData){await requireAdmin();const title=String(formData.get("title")||"").trim();const slug=String(formData.get("slug")||"").trim().toLowerCase().replace(/[^a-z0-9-]+/g,"-").replace(/^-|-$/g,"");const content=String(formData.get("content")||"").trim();if(!title||!slug||!content)throw new Error("Título, slug e conteúdo são obrigatórios.");const published=formData.get("published")==="on";await prisma.blogPost.create({data:{title,slug,content,excerpt:String(formData.get("excerpt")||"").trim()||null,coverImage:String(formData.get("coverImage")||"").trim()||null,published,publishedAt:published?new Date():null}});revalidatePath("/admin/blog");revalidatePath("/blog");revalidatePath("/");redirect("/admin/blog");}
-export async function updateBlogPost(formData:FormData){await requireAdmin();const id=String(formData.get("id")||"");const title=String(formData.get("title")||"").trim();const slug=String(formData.get("slug")||"").trim().toLowerCase().replace(/[^a-z0-9-]+/g,"-").replace(/^-|-$/g,"");const content=String(formData.get("content")||"").trim();if(!id||!title||!slug||!content)throw new Error("Título, slug e conteúdo são obrigatórios.");const published=formData.get("published")==="on";const current=await prisma.blogPost.findUnique({where:{id},select:{publishedAt:true}});if(!current)throw new Error("Post não encontrado.");await prisma.blogPost.update({where:{id},data:{title,slug,content,excerpt:String(formData.get("excerpt")||"").trim()||null,coverImage:String(formData.get("coverImage")||"").trim()||null,published,publishedAt:published?(current.publishedAt||new Date()):null}});revalidatePath("/admin/blog");revalidatePath("/blog");revalidatePath("/");redirect("/admin/blog");}
+export async function createBlogPost(formData:FormData){await requireAdmin();const title=String(formData.get("title")||"").trim();const slug=String(formData.get("slug")||"").trim().toLowerCase().replace(/[^a-z0-9-]+/g,"-").replace(/^-|-$/g,"");const content=String(formData.get("content")||"").trim();if(!title||!slug||!content)throw new Error("Título, slug e conteúdo são obrigatórios.");const published=formData.get("published")==="on";await prisma.blogPost.create({data:{title,slug,content,excerpt:String(formData.get("excerpt")||"").trim()||null,coverImage:normalizeMediaUrl(formData.get("coverImage")),published,publishedAt:published?new Date():null}});revalidatePath("/admin/blog");revalidatePath("/blog");revalidatePath("/");redirect("/admin/blog");}
+export async function updateBlogPost(formData:FormData){await requireAdmin();const id=String(formData.get("id")||"");const title=String(formData.get("title")||"").trim();const slug=String(formData.get("slug")||"").trim().toLowerCase().replace(/[^a-z0-9-]+/g,"-").replace(/^-|-$/g,"");const content=String(formData.get("content")||"").trim();if(!id||!title||!slug||!content)throw new Error("Título, slug e conteúdo são obrigatórios.");const published=formData.get("published")==="on";const current=await prisma.blogPost.findUnique({where:{id},select:{publishedAt:true}});if(!current)throw new Error("Post não encontrado.");await prisma.blogPost.update({where:{id},data:{title,slug,content,excerpt:String(formData.get("excerpt")||"").trim()||null,coverImage:normalizeMediaUrl(formData.get("coverImage")),published,publishedAt:published?(current.publishedAt||new Date()):null}});revalidatePath("/admin/blog");revalidatePath("/blog");revalidatePath("/");redirect("/admin/blog");}
 export async function deleteBlogPost(formData:FormData){await requireAdmin();const id=String(formData.get("id")||"");if(id){await prisma.blogPost.delete({where:{id}});revalidatePath("/admin/blog");revalidatePath("/blog");}}
 
 export async function createChannelIntegration(formData:FormData){await requireAdmin();const provider=String(formData.get("provider")||"ICAL");const name=String(formData.get("name")||"").trim();const importUrl=String(formData.get("importUrl")||"").trim()||null;const accommodationId=String(formData.get("accommodationId")||"");if(!accommodationId)throw new Error("Selecione a hospedagem do canal.");if(!name)throw new Error("Nome da conexão obrigatório.");if(!["AIRBNB","BOOKING","ICAL"].includes(provider))throw new Error("Canal inválido.");await prisma.channelIntegration.create({data:{provider,integrationType:"ICAL",name,importUrl,accommodationId,exportToken:crypto.randomUUID()}});revalidatePath("/admin/canais");}

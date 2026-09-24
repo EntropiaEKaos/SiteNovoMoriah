@@ -40,6 +40,31 @@ export default async function GuestsPage({
     prisma.guest.count({where:{employee:true}})
   ]);
 
+  let staffSchemaReady=true;
+  let staffPositions:Array<{id:string;name:string;description:string|null}>=[];
+  let staffAssignments:Array<{guestId:string;position:{name:string}}>=[];
+
+  try{
+    [staffPositions,staffAssignments]=await Promise.all([
+      prisma.staffPosition.findMany({
+        where:{active:true},
+        orderBy:[{sortOrder:"asc"},{name:"asc"}],
+        select:{id:true,name:true,description:true}
+      }),
+      guests.length
+        ?prisma.staffAssignment.findMany({
+            where:{guestId:{in:guests.map(guest=>guest.id)}},
+            select:{guestId:true,position:{select:{name:true}}}
+          })
+        :Promise.resolve([])
+    ]);
+  }catch(error){
+    staffSchemaReady=false;
+    console.error("STAFF_POSITION_SCHEMA_PENDING",error);
+  }
+
+  const positionByGuest=new Map(staffAssignments.map(item=>[item.guestId,item.position.name]));
+
   return <main className="adminPage">
     <section className="adminPageHero">
       <div>
@@ -110,6 +135,17 @@ export default async function GuestsPage({
             <input name="monthlyPaymentDueAt" type="date"/>
             <small>Preencha quando o cadastro for mensalista. A central avisará os admins na data.</small>
           </label>
+          <label>Categoria / cargo do colaborador
+            <select name="employeePositionId" disabled={!staffSchemaReady||staffPositions.length===0} defaultValue="">
+              <option value="">Selecione o cargo</option>
+              {staffPositions.map(position=><option value={position.id} key={position.id}>{position.name}</option>)}
+            </select>
+            <small>{staffSchemaReady
+              ?staffPositions.length
+                ?"Usado quando o cadastro estiver marcado como colaborador."
+                :"Crie primeiro um cargo em Colaboradores → Cargos."
+              :"Cargos aguardam a migration do banco."}</small>
+          </label>
           <div className="span2 guestMarkerGrid">
             <label className="guestMarkerOption">
               <input name="monthlyGuest" type="checkbox"/>
@@ -149,6 +185,11 @@ export default async function GuestsPage({
         {(q||type)&&<div className="adminPageNote" style={{marginTop:16}}>
           Filtro ativo{q?<> para <b>{q}</b></>:""}. <Link href="/admin/hospedes">Limpar busca</Link>
         </div>}
+        <div className="adminPageNote" style={{marginTop:16}}>
+          <b>Cargos de colaboradores</b><br/>
+          Crie categorias como Recepção, Cozinha, Limpeza, Manutenção ou Gerência com uma descrição operacional própria.{" "}
+          <Link href="/admin/colaboradores/cargos">Gerenciar cargos →</Link>
+        </div>
       </aside>
     </section>
 
@@ -169,6 +210,7 @@ export default async function GuestsPage({
           {guest.monthlyGuest&&<span className="adminChip ok">Mensalista</span>}
           {guest.monthlyGuest&&guest.monthlyPaymentDueAt&&<span className={"adminChip "+(guest.monthlyPaymentDueAt<new Date()?"warn":"")}>Próx. pagamento {guest.monthlyPaymentDueAt.toLocaleDateString("pt-BR")}</span>}
           {guest.employee&&<span className="adminChip">Colaborador</span>}
+          {guest.employee&&positionByGuest.get(guest.id)&&<span className="adminChip ok">{positionByGuest.get(guest.id)}</span>}
           {guest.document&&<span className="adminChip">{guest.document}</span>}
           {guest.city&&<span className="adminChip">{guest.city}{guest.state?" / "+guest.state:""}</span>}
           {guest.nationality&&<span className="adminChip">{guest.nationality}</span>}

@@ -31,7 +31,14 @@ export default function BlogEditor({
         <span className="adminChip">CARD + ARTIGO + SEO</span>
       </div>
       <p>Escolha uma imagem horizontal da Galeria/S3. Ela aparece na listagem e na abertura da publicação.</p>
-      <MediaPicker name="coverImage" media={media} defaultValue={post?.coverImage||""}/>
+      <MediaPicker
+        name="coverImage"
+        media={media}
+        defaultValue={post?.coverImage||""}
+        label="Capa da publicação"
+        help="Usada no card do Journal, no topo do artigo e no compartilhamento visual."
+        recommended="Horizontal • 1200×630 ou maior"
+      />
     </section>
 
     <div className="blogStudioSaveBar">

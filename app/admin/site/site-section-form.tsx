@@ -94,6 +94,13 @@ export default function SiteSectionForm({
 }){
   return <form action={action} className="adminStack siteBuilderForm">
     <input type="hidden" name="pageId" value={pageId}/>
+    <section className="siteStudioFieldMap">
+      <div><span>1</span><b>Textos</b><small>Título, subtítulo e descrição visíveis.</small></div>
+      <div><span>2</span><b>Imagem principal</b><small>Foto que aparece dentro do bloco.</small></div>
+      <div><span>3</span><b>Imagem de fundo</b><small>Foto atrás de toda a seção.</small></div>
+      <div><span>4</span><b>Galeria</b><small>Conjunto de imagens extras do bloco.</small></div>
+      <div><span>5</span><b>Botões</b><small>Texto e destino das chamadas para ação.</small></div>
+    </section>
     {section?.id&&<input type="hidden" name="id" value={section.id}/>}
 
     <section className="adminSectionCard">
@@ -167,7 +174,14 @@ export default function SiteSectionForm({
         <div className="siteStudioSectionHead">
           <div><small>03 / MÍDIA</small><h2>Imagem principal</h2></div>
         </div>
-        <MediaPicker name="imageUrl" media={media} defaultValue={section?.imageUrl||""}/>
+        <MediaPicker
+          name="imageUrl"
+          media={media}
+          defaultValue={section?.imageUrl||""}
+          label="Imagem principal da seção"
+          help="Esta imagem aparece como conteúdo do bloco. No Hero ela é a foto de abertura; em Food/Textos ela acompanha o texto."
+          recommended="Horizontal • alta resolução"
+        />
         <label style={{display:"grid",gap:6,marginTop:12,fontSize:10,fontWeight:850}}>
           Texto alternativo
           <input name="imageAlt" maxLength={300} defaultValue={section?.imageAlt||""} placeholder="Descrição acessível da imagem"/>
@@ -178,7 +192,14 @@ export default function SiteSectionForm({
         <div className="siteStudioSectionHead">
           <div><small>04 / FUNDO</small><h2>Direção visual</h2></div>
         </div>
-        <MediaPicker name="backgroundImageUrl" media={media} defaultValue={section?.backgroundImageUrl||""}/>
+        <MediaPicker
+          name="backgroundImageUrl"
+          media={media}
+          defaultValue={section?.backgroundImageUrl||""}
+          label="Imagem de fundo da seção"
+          help="Fica atrás do conteúdo e cobre toda esta seção. Se ficar vazia, o tema/cor de fundo será usado."
+          recommended="Horizontal • 1920×1080 ou maior"
+        />
         <div className="adminFormGrid" style={{marginTop:12}}>
           <label>Cor de fundo personalizada
             <input name="backgroundColor" defaultValue={section?.backgroundColor||""} placeholder="#ffffff"/>
@@ -195,7 +216,8 @@ export default function SiteSectionForm({
       <div className="siteStudioSectionHead">
         <div><small>05 / GALERIA</small><h2>Múltiplas imagens</h2></div>
       </div>
-      <MediaMultiPicker name="mediaUrls" media={media} defaultValues={section?.mediaUrls||[]} label="MÍDIAS DA SEÇÃO"/>
+      <p>Use aqui quando o bloco precisar de várias fotos, como Galeria, mosaicos ou sequências visuais. Não é a logo do site.</p>
+      <MediaMultiPicker name="mediaUrls" media={media} defaultValues={section?.mediaUrls||[]} label="IMAGENS EXTRAS DESTA SEÇÃO"/>
     </section>
 
     <section className="adminTwoCol">

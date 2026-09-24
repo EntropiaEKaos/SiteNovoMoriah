@@ -113,9 +113,30 @@ export default async function Page(){
           <h2>Logos & ícone</h2>
           <p>Escolha imagens já enviadas à Galeria/S3.</p>
           <div className="adminStack">
-            <MediaPicker name="logoUrl" media={media} defaultValue={branding.logoUrl}/>
-            <MediaPicker name="logoLightUrl" media={media} defaultValue={branding.logoLightUrl}/>
-            <MediaPicker name="faviconUrl" media={media} defaultValue={branding.faviconUrl}/>
+            <MediaPicker
+              name="logoUrl"
+              media={media}
+              defaultValue={branding.logoUrl}
+              label="Logo principal — cabeçalho"
+              help="Esta é a marca exibida no topo do site, ao lado do menu."
+              recommended="PNG/SVG horizontal • fundo transparente"
+            />
+            <MediaPicker
+              name="logoLightUrl"
+              media={media}
+              defaultValue={branding.logoLightUrl}
+              label="Logo clara — rodapé e fundos escuros"
+              help="Use uma versão branca/clara da marca para áreas escuras."
+              recommended="PNG/SVG claro • fundo transparente"
+            />
+            <MediaPicker
+              name="faviconUrl"
+              media={media}
+              defaultValue={branding.faviconUrl}
+              label="Favicon — ícone da aba"
+              help="Ícone pequeno que aparece na aba do navegador e nos favoritos."
+              recommended="Quadrado • 32×32, 64×64 ou 512×512"
+            />
           </div>
           <p className="adminHelp">Logo principal: cabeçalho. Logo clara: rodapé/fundos escuros. Favicon: ícone da aba do navegador.</p>
         </article>
@@ -165,6 +186,9 @@ export default async function Page(){
             name="defaultBackgroundImageUrl"
             media={media}
             defaultValue={branding.defaultBackgroundImageUrl}
+            label="Imagem de fundo padrão do Hero"
+            help="É usada na abertura da Home quando a seção Hero não tiver uma imagem própria."
+            recommended="Horizontal • 1920×1080 ou maior"
           />
           <div className="adminStatusLine"><span>Fundo por seção</span><b>Site Studio</b></div>
           <div className="adminStatusLine"><span>Paleta global</span><b>Identidade</b></div>

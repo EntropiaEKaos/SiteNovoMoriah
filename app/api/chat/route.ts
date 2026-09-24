@@ -2,6 +2,7 @@ import {NextRequest,NextResponse} from "next/server";
 import {prisma} from "../../../lib/prisma";
 import {isAccommodationAvailable} from "../../../lib/inventory-engine";
 import {quoteAccommodation} from "../../../lib/rate-engine";
+import {loadPublicSiteSettings} from "../../../lib/public-site-settings";
 
 const GROQ_URL="https://api.groq.com/openai/v1/chat/completions";
 const DEFAULT_GROQ_MODEL="openai/gpt-oss-20b";
@@ -130,7 +131,7 @@ async function liveAvailability(text:string){
 
 async function cmsContext(){
   const [settings,rooms,promo,restaurant,menu,pages]=await Promise.all([
-    prisma.siteSettings.findUnique({where:{id:"main"}}),
+    loadPublicSiteSettings(),
     prisma.accommodation.findMany({
       where:{active:true},
       orderBy:[{featured:"desc"},{createdAt:"desc"}],

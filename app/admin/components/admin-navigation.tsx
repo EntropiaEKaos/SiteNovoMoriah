@@ -7,6 +7,7 @@ import {
   BedDouble,
   Bell,
   BookOpen,
+  Briefcase,
   CalendarDays,
   ChefHat,
   Clock3,
@@ -32,6 +33,7 @@ const sections=[
       ["Visão geral","/admin",LayoutDashboard],
       ["Reservas","/admin/reservas",CalendarDays],
       ["Hóspedes","/admin/hospedes",Users],
+      ["Cargos de colaboradores","/admin/colaboradores/cargos",Briefcase],
       ["PMS / Front Desk","/admin/pms",BedDouble],
       ["Mapa de Reservas","/admin/canais/calendario",CalendarDays],
       ["Hospedagens","/admin/hospedagens",BedDouble],
@@ -61,7 +63,7 @@ const sections=[
   {
     label:"CONTEÚDO",
     items:[
-      ["Editor do site","/admin/site",LayoutDashboard],
+      ["Site Studio / Home","/admin/site",LayoutDashboard],
       ["Páginas do site","/admin/site/paginas",BookOpen],
       ["Galeria","/admin/galeria",Images],
       ["Mídia","/admin/midia",Image],

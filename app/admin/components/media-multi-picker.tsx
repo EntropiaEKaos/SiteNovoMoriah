@@ -1,35 +1,78 @@
+"use client";
+
+import {useMemo,useState} from "react";
+
+type MediaItem={id:string;url:string;alt:string|null};
+
 export default function MediaMultiPicker({
   name,
   media,
   defaultValues=[],
-  label="GALERIA / MÚLTIPLAS IMAGENS"
+  label="GALERIA / MÚLTIPLAS IMAGENS",
+  maxItems=20
 }:{
   name:string;
-  media:{id:string;url:string;alt:string|null}[];
+  media:MediaItem[];
   defaultValues?:string[];
   label?:string;
+  maxItems?:number;
 }){
-  if(media.length===0)return <div className="adminPageNote">
-    Nenhuma imagem disponível. Envie imagens pela Galeria antes de montar a galeria do quarto.
+  const choices=useMemo(()=>{
+    const known=new Set(media.map(item=>item.url));
+    const preserved:MediaItem[]=defaultValues
+      .filter(url=>url&&!known.has(url))
+      .map((url,index)=>({
+        id:"preserved-"+index,
+        url,
+        alt:"Imagem já vinculada"
+      }));
+    return [...preserved,...media];
+  },[defaultValues,media]);
+
+  const [selected,setSelected]=useState<string[]>(()=>{
+    return [...new Set(defaultValues.filter(Boolean))].slice(0,maxItems);
+  });
+
+  if(choices.length===0)return <div className="adminPageNote">
+    Nenhuma imagem disponível. Envie imagens pela Galeria antes de montar esta galeria.
   </div>;
 
-  return <fieldset style={{border:"1px solid #ddd7c8",padding:16,margin:0}}>
-    <legend style={{padding:"0 8px",fontSize:10,fontWeight:900}}>{label}</legend>
+  function toggle(url:string){
+    setSelected(current=>{
+      if(current.includes(url))return current.filter(item=>item!==url);
+      if(current.length>=maxItems)return current;
+      return [...current,url];
+    });
+  }
+
+  return <fieldset className="mediaMultiPicker">
+    <legend>{label}</legend>
+
+    {selected.map(url=><input key={url} type="hidden" name={name} value={url}/>)}
+
+    <div className="adminPageNote mediaMultiPickerNotice">
+      <b>{selected.length}/{maxItems}</b> imagem(ns) selecionada(s). As escolhas abaixo são gravadas junto com o formulário.
+    </div>
+
     <div className="adminImageGrid">
-      {media.map(item=><label className="adminMediaCard" key={item.id} style={{cursor:"pointer"}}>
-        <img src={item.url} alt={item.alt||""}/>
-        <div className="adminMediaCardBody">
-          <div style={{display:"flex",alignItems:"center",gap:8}}>
-            <input
-              type="checkbox"
-              name={name}
-              value={item.url}
-              defaultChecked={defaultValues.includes(item.url)}
-            />
-            <b>{item.alt||"Imagem sem descrição"}</b>
+      {choices.map(item=>{
+        const checked=selected.includes(item.url);
+        const blocked=!checked&&selected.length>=maxItems;
+        return <label className="adminMediaCard" key={item.id} style={{cursor:blocked?"not-allowed":"pointer",opacity:blocked?0.55:1}}>
+          <img src={item.url} alt={item.alt||""}/>
+          <div className="adminMediaCardBody">
+            <div style={{display:"flex",alignItems:"center",gap:8}}>
+              <input
+                type="checkbox"
+                checked={checked}
+                disabled={blocked}
+                onChange={()=>toggle(item.url)}
+              />
+              <b>{item.alt||"Imagem sem descrição"}</b>
+            </div>
           </div>
-        </div>
-      </label>)}
+        </label>;
+      })}
     </div>
   </fieldset>;
 }
