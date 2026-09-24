@@ -16,9 +16,14 @@ export default function KdsAutoRefresh({
   const previous=useRef(new Set(orderIds));
   const audio=useRef<AudioContext|null>(null);
   const [soundArmed,setSoundArmed]=useState(false);
-  const [desktopArmed,setDesktopArmed]=useState(
-    typeof window!=="undefined"&&"Notification" in window&&Notification.permission==="granted"
-  );
+  const [desktopSupported,setDesktopSupported]=useState(false);
+  const [desktopArmed,setDesktopArmed]=useState(false);
+
+  useEffect(()=>{
+    const supported="Notification" in window;
+    setDesktopSupported(supported);
+    if(supported)setDesktopArmed(Notification.permission==="granted");
+  },[]);
 
   useEffect(()=>{
     const timer=window.setInterval(()=>router.refresh(),10000);
@@ -97,7 +102,7 @@ export default function KdsAutoRefresh({
       {soundEnabled&&<button type="button" onClick={armSound}>
         {soundArmed?"Som ativo":"Ativar som"}
       </button>}
-      {"Notification" in globalThis&&<button type="button" onClick={armDesktop}>
+      {desktopSupported&&<button type="button" onClick={armDesktop}>
         {desktopArmed?"Notificação ativa":"Ativar notificação"}
       </button>}
     </div>
