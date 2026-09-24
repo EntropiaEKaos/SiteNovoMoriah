@@ -557,6 +557,8 @@ model RestaurantProduct {
  id String @id @default(cuid())
  categoryId String
  category RestaurantCategory @relation(fields:[categoryId],references:[id],onDelete:Restrict)
+ stationId String?
+ station RestaurantStation? @relation(fields:[stationId],references:[id],onDelete:SetNull)
  name String
  description String?
  imageUrl String?
@@ -567,11 +569,15 @@ model RestaurantProduct {
  active Boolean @default(true)
  featured Boolean @default(false)
  soldOut Boolean @default(false)
+ pauseUntil DateTime?
  badge String?
  tags String[] @default([])
  allergens String[] @default([])
  sortOrder Int @default(0)
  prepMinutes Int?
+ priorityWeight Int @default(100)
+ kitchenInstructions String?
+ platingNotes String?
  maxPerOrder Int @default(20)
  allowNotes Boolean @default(true)
  availableFrom String?
@@ -586,8 +592,11 @@ model RestaurantProduct {
  stockMovements RestaurantStockMovement[]
  recipes RestaurantRecipeItem[]
  modifierLinks RestaurantProductModifierGroup[]
+ productionBatches RestaurantProductionBatch[]
  @@index([categoryId,active,sortOrder])
  @@index([featured,active])
+ @@index([stationId,active])
+ @@index([pauseUntil])
 }
 model RestaurantOrder {
  id String @id @default(cuid())
@@ -597,10 +606,16 @@ model RestaurantOrder {
  roomLabel String?
  phone String?
  status String @default("NEW")
+ priority String @default("NORMAL")
+ source String @default("WEB")
+ expeditionStatus String @default("PENDING")
  preparingAt DateTime?
+ estimatedReadyAt DateTime?
  readyAt DateTime?
  deliveredAt DateTime?
  cancelledAt DateTime?
+ pausedAt DateTime?
+ pauseReason String?
  paymentMethod String @default("ROOM")
  paymentStatus String @default("PENDING")
  subtotalCents Int
@@ -610,8 +625,11 @@ model RestaurantOrder {
  updatedAt DateTime @updatedAt
  items RestaurantOrderItem[]
  roomCharge RestaurantRoomCharge?
+ kitchenEvents RestaurantKitchenEvent[]
  @@index([status,createdAt])
  @@index([bookingId])
+ @@index([priority,status,createdAt])
+ @@index([expeditionStatus,status])
 }
 model RestaurantOrderItem {
  id String @id @default(cuid())
@@ -619,15 +637,24 @@ model RestaurantOrderItem {
  order RestaurantOrder @relation(fields:[orderId],references:[id],onDelete:Cascade)
  productId String
  product RestaurantProduct @relation(fields:[productId],references:[id],onDelete:Restrict)
+ stationId String?
+ station RestaurantStation? @relation(fields:[stationId],references:[id],onDelete:SetNull)
  nameSnapshot String
+ kitchenInstructionsSnapshot String?
  unitPriceCents Int
  unitCostCents Int?
  quantity Int
  totalCents Int
  notes String?
+ kitchenStatus String @default("PENDING")
+ startedAt DateTime?
+ readyAt DateTime?
  modifiers RestaurantOrderItemModifier[]
+ kitchenEvents RestaurantKitchenEvent[]
  @@index([orderId])
  @@index([productId])
+ @@index([stationId,kitchenStatus])
+ @@index([orderId,kitchenStatus])
 }
 model RestaurantStockMovement {
  id String @id @default(cuid())
@@ -648,12 +675,80 @@ model RestaurantSettings {
  acceptingOrders Boolean @default(true)
  roomChargeEnabled Boolean @default(true)
  prepTargetMinutes Int @default(25)
+ kitchenWarningMinutes Int @default(20)
+ kitchenCriticalMinutes Int @default(35)
+ stationMode Boolean @default(true)
+ expeditionEnabled Boolean @default(true)
+ autoReadyOrder Boolean @default(true)
  kdsSoundEnabled Boolean @default(true)
  menuTitle String @default("Moriah Food")
  menuSubtitle String?
  menuBannerUrl String?
  showSoldOut Boolean @default(true)
  updatedAt DateTime @updatedAt
+}
+
+model RestaurantStation {
+ id String @id @default(cuid())
+ name String
+ code String @unique
+ description String?
+ color String @default("#0b607a")
+ active Boolean @default(true)
+ sortOrder Int @default(100)
+ targetMinutes Int @default(15)
+ products RestaurantProduct[]
+ orderItems RestaurantOrderItem[]
+ productionBatches RestaurantProductionBatch[]
+ createdAt DateTime @default(now())
+ updatedAt DateTime @updatedAt
+
+ @@index([active,sortOrder])
+}
+
+model RestaurantKitchenEvent {
+ id String @id @default(cuid())
+ orderId String
+ order RestaurantOrder @relation(fields:[orderId],references:[id],onDelete:Cascade)
+ itemId String?
+ item RestaurantOrderItem? @relation(fields:[itemId],references:[id],onDelete:Cascade)
+ eventType String
+ fromStatus String?
+ toStatus String?
+ notes String?
+ actorId String?
+ actorName String?
+ details Json?
+ createdAt DateTime @default(now())
+
+ @@index([orderId,createdAt])
+ @@index([itemId,createdAt])
+ @@index([eventType,createdAt])
+}
+
+model RestaurantProductionBatch {
+ id String @id @default(cuid())
+ stationId String?
+ station RestaurantStation? @relation(fields:[stationId],references:[id],onDelete:SetNull)
+ productId String?
+ product RestaurantProduct? @relation(fields:[productId],references:[id],onDelete:SetNull)
+ ingredientId String?
+ ingredient RestaurantIngredient? @relation(fields:[ingredientId],references:[id],onDelete:SetNull)
+ label String
+ quantity Float
+ unit String
+ status String @default("ACTIVE")
+ producedAt DateTime @default(now())
+ expiresAt DateTime?
+ notes String?
+ actorName String?
+ createdAt DateTime @default(now())
+ updatedAt DateTime @updatedAt
+
+ @@index([status,producedAt])
+ @@index([stationId,status])
+ @@index([productId,status])
+ @@index([ingredientId,status])
 }
 model RestaurantModifierGroup {
  id String @id @default(cuid())
@@ -690,6 +785,7 @@ model RestaurantIngredient {
  active Boolean @default(true)
  recipes RestaurantRecipeItem[]
  movements RestaurantIngredientMovement[]
+ productionBatches RestaurantProductionBatch[]
  @@index([active,name])
 }
 model RestaurantRecipeItem {

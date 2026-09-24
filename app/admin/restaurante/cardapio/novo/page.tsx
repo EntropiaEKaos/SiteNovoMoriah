@@ -14,7 +14,7 @@ export default async function NewMenuProduct({
   await requireAdmin();
   const params=await searchParams;
 
-  const [categories,media,modifierGroups,ingredients]=await Promise.all([
+  const [categories,media,modifierGroups,ingredients,stations]=await Promise.all([
     prisma.restaurantCategory.findMany({orderBy:[{sortOrder:"asc"},{name:"asc"}]}),
     prisma.media.findMany({orderBy:{createdAt:"desc"},take:250}),
     prisma.restaurantModifierGroup.findMany({
@@ -23,6 +23,9 @@ export default async function NewMenuProduct({
     }),
     prisma.restaurantIngredient.findMany({
       orderBy:[{active:"desc"},{name:"asc"}]
+    }),
+    prisma.restaurantStation.findMany({
+      orderBy:[{active:"desc"},{sortOrder:"asc"},{name:"asc"}]
     })
   ]);
 
@@ -54,6 +57,7 @@ export default async function NewMenuProduct({
       media={media}
       modifierGroups={modifierGroups}
       ingredients={ingredients}
+      stations={stations}
     />}
   </main>;
 }

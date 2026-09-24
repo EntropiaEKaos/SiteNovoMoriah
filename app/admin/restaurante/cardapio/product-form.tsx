@@ -28,6 +28,10 @@ type ProductValue={
   allergens?:string[];
   sortOrder?:number;
   prepMinutes?:number|null;
+  priorityWeight?:number;
+  stationId?:string|null;
+  kitchenInstructions?:string|null;
+  platingNotes?:string|null;
   maxPerOrder?:number;
   allowNotes?:boolean;
   availableFrom?:string|null;
@@ -46,7 +50,8 @@ export default function MenuProductForm({
   categories,
   media,
   modifierGroups,
-  ingredients
+  ingredients,
+  stations
 }:{
   action:(formData:FormData)=>void|Promise<void>;
   product?:ProductValue;
@@ -67,6 +72,13 @@ export default function MenuProductForm({
     unit:string;
     stockQty:number;
     active:boolean;
+  }>;
+  stations:Array<{
+    id:string;
+    name:string;
+    code:string;
+    active:boolean;
+    targetMinutes:number;
   }>;
 }){
   const daySet=new Set(product?.availableDays||[]);
@@ -136,9 +148,6 @@ export default function MenuProductForm({
           <label>Custo estimado
             <input name="cost" inputMode="decimal" defaultValue={product?.costCents==null?"":(product.costCents/100).toFixed(2)} placeholder="Opcional"/>
           </label>
-          <label>Tempo de preparo
-            <input name="prepMinutes" type="number" min="1" max="240" defaultValue={product?.prepMinutes??""} placeholder="min"/>
-          </label>
           <label>Máx. por pedido
             <input name="maxPerOrder" type="number" min="1" max="100" defaultValue={product?.maxPerOrder??20}/>
           </label>
@@ -201,9 +210,39 @@ export default function MenuProductForm({
       </article>
     </section>
 
+    <section className="adminSectionCard kitchenProductSection">
+      <div className="menuStudioSectionTitle">
+        <div><small>07 / COZINHA</small><h2>Produção & montagem</h2></div>
+        <span className="adminChip">Kitchen 4.0</span>
+      </div>
+      <div className="adminFormGrid cols3">
+        <label>Estação responsável
+          <select name="stationId" defaultValue={product?.stationId||""}>
+            <option value="">Sem estação específica</option>
+            {stations.map(station=><option key={station.id} value={station.id}>
+              {station.name}{station.active?"":" • inativa"} • meta {station.targetMinutes} min
+            </option>)}
+          </select>
+        </label>
+        <label>Peso de prioridade
+          <input name="priorityWeight" type="number" min="0" max="1000" defaultValue={product?.priorityWeight??100}/>
+        </label>
+        <label>Tempo de preparo
+          <input name="prepMinutes" type="number" min="1" max="240" defaultValue={product?.prepMinutes??""} placeholder="min"/>
+        </label>
+        <label className="span2">Instrução de preparo
+          <textarea name="kitchenInstructions" rows={5} maxLength={4000} defaultValue={product?.kitchenInstructions||""} placeholder="Passo a passo objetivo para a estação: ponto, sequência, cocção, finalização..."/>
+        </label>
+        <label>Montagem / expedição
+          <textarea name="platingNotes" rows={5} maxLength={2000} defaultValue={product?.platingNotes||""} placeholder="Embalagem, guarnição, montagem e conferência final."/>
+        </label>
+      </div>
+      <p className="adminHelp">Essas informações acompanham o pedido na cozinha. A instrução é copiada para o item no momento da venda para preservar o histórico.</p>
+    </section>
+
     <section className="adminSectionCard">
       <div className="menuStudioSectionTitle">
-        <div><small>07 / PERSONALIZAÇÃO</small><h2>Adicionais & escolhas</h2></div>
+        <div><small>08 / PERSONALIZAÇÃO</small><h2>Adicionais & escolhas</h2></div>
         <span className="adminChip">{modifierGroups.length} grupo(s)</span>
       </div>
 
@@ -228,7 +267,7 @@ export default function MenuProductForm({
 
     <section className="adminSectionCard">
       <div className="menuStudioSectionTitle">
-        <div><small>08 / FICHA TÉCNICA</small><h2>Ingredientes por unidade vendida</h2></div>
+        <div><small>09 / FICHA TÉCNICA</small><h2>Ingredientes por unidade vendida</h2></div>
         <span className="adminChip">{ingredients.length} insumo(s)</span>
       </div>
 

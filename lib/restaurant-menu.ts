@@ -73,6 +73,7 @@ export function effectiveRestaurantPrice(product:{
 export function restaurantProductAvailable(product:{
   active:boolean;
   soldOut:boolean;
+  pauseUntil:Date|null;
   trackStock:boolean;
   stockQty:number;
   availableFrom:string|null;
@@ -84,6 +85,7 @@ export function restaurantProductAvailable(product:{
   }>;
 },now=new Date()){
   if(!product.active||product.soldOut)return false;
+  if(product.pauseUntil&&product.pauseUntil.getTime()>now.getTime())return false;
   if(!isMenuScheduleAvailable(product,now))return false;
   if(product.trackStock&&product.stockQty<=0)return false;
   if(product.recipes.some(recipe=>
