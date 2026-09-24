@@ -346,47 +346,77 @@ function menuProductData(formData:FormData){
   };
 }
 
-async function replaceProductComposition(productId:string,formData:FormData){
-  const groupIds=[...new Set(formData.getAll("modifierGroupIds").map(String).filter(Boolean))];
+async function readProductComposition(formData:FormData){
+  const requestedGroupIds=[...new Set(
+    formData.getAll("modifierGroupIds").map(String).filter(Boolean)
+  )];
 
-  const ingredients=await prisma.restaurantIngredient.findMany({
-    where:{active:true},
-    select:{id:true}
-  });
+  const [groups,ingredients]=await Promise.all([
+    prisma.restaurantModifierGroup.findMany({
+      where:{id:{in:requestedGroupIds}},
+      select:{id:true}
+    }),
+    prisma.restaurantIngredient.findMany({
+      select:{id:true}
+    })
+  ]);
+
+  if(groups.length!==requestedGroupIds.length){
+    throw new Error("Um grupo de adicionais não existe mais.");
+  }
+
+  const ingredientIds=new Set(ingredients.map(ingredient=>ingredient.id));
   const recipeItems=ingredients
     .map(ingredient=>{
       const raw=String(formData.get("ingredient_"+ingredient.id)||"").trim();
       if(!raw)return null;
+
       const quantity=Number(raw.replace(",","."));
-      if(!Number.isFinite(quantity)||quantity<=0)throw new Error("Quantidade inválida na ficha técnica.");
+      if(!Number.isFinite(quantity)||quantity<=0){
+        throw new Error("Quantidade inválida na ficha técnica.");
+      }
+
       return {ingredientId:ingredient.id,quantity};
     })
-    .filter((item):item is {ingredientId:string;quantity:number}=>Boolean(item));
+    .filter((item):item is {ingredientId:string;quantity:number}=>Boolean(item))
+    .filter(item=>ingredientIds.has(item.ingredientId));
 
-  await prisma.$transaction(async tx=>{
-    await tx.restaurantProductModifierGroup.deleteMany({where:{productId}});
-    if(groupIds.length){
-      await tx.restaurantProductModifierGroup.createMany({
-        data:groupIds.map(groupId=>({productId,groupId})),
-        skipDuplicates:true
-      });
-    }
-
-    await tx.restaurantRecipeItem.deleteMany({where:{productId}});
-    if(recipeItems.length){
-      await tx.restaurantRecipeItem.createMany({
-        data:recipeItems.map(item=>({productId,...item}))
-      });
-    }
-  });
+  return {
+    groupIds:requestedGroupIds,
+    recipeItems
+  };
 }
 
 export async function createMenuProduct(formData:FormData){
   await requireAdmin();
 
   const data=menuProductData(formData);
-  const product=await prisma.restaurantProduct.create({data});
-  await replaceProductComposition(product.id,formData);
+  const composition=await readProductComposition(formData);
+
+  const product=await prisma.$transaction(async tx=>{
+    const created=await tx.restaurantProduct.create({data});
+
+    if(composition.groupIds.length){
+      await tx.restaurantProductModifierGroup.createMany({
+        data:composition.groupIds.map(groupId=>({
+          productId:created.id,
+          groupId
+        })),
+        skipDuplicates:true
+      });
+    }
+
+    if(composition.recipeItems.length){
+      await tx.restaurantRecipeItem.createMany({
+        data:composition.recipeItems.map(item=>({
+          productId:created.id,
+          ...item
+        }))
+      });
+    }
+
+    return created;
+  });
 
   revalidateMenu();
   revalidatePath("/admin/restaurante/insumos");
@@ -401,8 +431,32 @@ export async function updateMenuProduct(formData:FormData){
   if(!id)throw new Error("Produto inválido.");
 
   const data=menuProductData(formData);
-  await prisma.restaurantProduct.update({where:{id},data});
-  await replaceProductComposition(id,formData);
+  const composition=await readProductComposition(formData);
+
+  await prisma.$transaction(async tx=>{
+    await tx.restaurantProduct.update({where:{id},data});
+
+    await tx.restaurantProductModifierGroup.deleteMany({where:{productId:id}});
+    if(composition.groupIds.length){
+      await tx.restaurantProductModifierGroup.createMany({
+        data:composition.groupIds.map(groupId=>({
+          productId:id,
+          groupId
+        })),
+        skipDuplicates:true
+      });
+    }
+
+    await tx.restaurantRecipeItem.deleteMany({where:{productId:id}});
+    if(composition.recipeItems.length){
+      await tx.restaurantRecipeItem.createMany({
+        data:composition.recipeItems.map(item=>({
+          productId:id,
+          ...item
+        }))
+      });
+    }
+  });
 
   revalidateMenu();
   revalidatePath("/admin/restaurante/cardapio/"+id);
