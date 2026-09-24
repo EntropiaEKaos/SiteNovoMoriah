@@ -7,6 +7,7 @@ import KdsAutoRefresh from "./kds-auto-refresh";
 export const dynamic="force-dynamic";
 
 const money=(value:number)=>(value/100).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
+const minutesBetween=(start:Date,end=new Date())=>Math.max(0,Math.floor((end.getTime()-start.getTime())/60000));
 
 const labels:Record<string,string>={
   NEW:"Novos",
@@ -14,23 +15,11 @@ const labels:Record<string,string>={
   READY:"Prontos"
 };
 
-function ageMinutes(date:Date){
-  return Math.max(0,Math.floor((Date.now()-date.getTime())/60000));
-}
-
-function nextStatus(status:string){
-  if(status==="NEW")return "PREPARING";
-  if(status==="PREPARING")return "READY";
-  if(status==="READY")return "DELIVERED";
-  return null;
-}
-
-function nextLabel(status:string){
-  if(status==="NEW")return "Iniciar preparo";
-  if(status==="PREPARING")return "Marcar pronto";
-  if(status==="READY")return "Entregar";
-  return "";
-}
+const nextAction:Record<string,{status:string;label:string}>={
+  NEW:{status:"PREPARING",label:"Iniciar preparo"},
+  PREPARING:{status:"READY",label:"Marcar pronto"},
+  READY:{status:"DELIVERED",label:"Entregar"}
+};
 
 export default async function Page(){
   await requireAdmin();
@@ -39,8 +28,10 @@ export default async function Page(){
     prisma.restaurantOrder.findMany({
       where:{status:{in:["NEW","PREPARING","READY"]}},
       include:{
-        items:{include:{modifiers:true}},
-        booking:{select:{id:true,name:true,accommodation:{select:{name:true,roomNumber:true}}}}
+        booking:{select:{id:true,name:true,accommodation:{select:{name:true,roomNumber:true}}}},
+        items:{
+          include:{modifiers:true}
+        }
       },
       orderBy:{createdAt:"asc"}
     }),
@@ -48,34 +39,33 @@ export default async function Page(){
   ]);
 
   const target=settings?.prepTargetMinutes||25;
-  const columns=["NEW","PREPARING","READY"] as const;
-  const late=orders.filter(order=>{
-    const anchor=order.status==="PREPARING"
-      ?order.preparingAt||order.createdAt
-      :order.status==="READY"
-        ?order.readyAt||order.createdAt
-        :order.createdAt;
-    return ageMinutes(anchor)>target;
+  const now=new Date();
+  const delayed=orders.filter(order=>{
+    if(order.status==="READY")return false;
+    const started=order.preparingAt||order.createdAt;
+    return minutesBetween(started,now)>target;
   }).length;
+
+  const columns=["NEW","PREPARING","READY"] as const;
 
   return <main className="adminPage kdsPage">
     <section className="adminPageHero">
       <div>
         <small>MORIAH FOOD / KDS 3.0</small>
         <h1>Cozinha</h1>
-        <p>Fluxo ao vivo de pedidos, tempo de preparo, alertas e impressão de comandas.</p>
+        <p>Fila operacional em tempo real, com SLA de preparo, etapas claras, alertas e comanda imprimível.</p>
       </div>
       <div className="adminPageHeroActions">
-        <Link className="adminSecondaryAction" href="/admin/restaurante">Gestão do Food →</Link>
-        <Link className="adminSecondaryAction" href="/restaurante" target="_blank">Cardápio ↗</Link>
+        <Link className="adminSecondaryAction" href="/admin/restaurante">← Gestão Food</Link>
+        <Link className="adminSecondaryAction" href="/admin/restaurante/bi">BI →</Link>
       </div>
     </section>
 
     <section className="adminMetricStrip">
-      <div><small>Na fila</small><strong>{orders.length}</strong></div>
+      <div><small>Fila ativa</small><strong>{orders.length}</strong></div>
       <div><small>Novos</small><strong>{orders.filter(order=>order.status==="NEW").length}</strong></div>
       <div><small>Em preparo</small><strong>{orders.filter(order=>order.status==="PREPARING").length}</strong></div>
-      <div><small>Acima da meta</small><strong>{late}</strong></div>
+      <div><small>Acima do SLA</small><strong>{delayed}</strong></div>
     </section>
 
     <KdsAutoRefresh
@@ -83,86 +73,89 @@ export default async function Page(){
       soundEnabled={settings?.kdsSoundEnabled!==false}
     />
 
-    <div className="kdsBoard">
+    {orders.length===0?<section className="adminEmptyState">
+      <strong>Nenhum pedido na fila.</strong>
+      <p>Novos pedidos aparecerão automaticamente aqui.</p>
+    </section>:<section className="kdsBoard">
       {columns.map(status=>{
-        const rows=orders.filter(order=>order.status===status);
+        const columnOrders=orders.filter(order=>order.status===status);
 
-        return <section className="kdsColumn" key={status}>
+        return <div className={"kdsColumn is-"+status.toLowerCase()} key={status}>
           <header>
             <div>
-              <small>{status}</small>
+              <small>ETAPA</small>
               <h2>{labels[status]}</h2>
             </div>
-            <b>{rows.length}</b>
+            <strong>{columnOrders.length}</strong>
           </header>
 
           <div className="kdsColumnBody">
-            {rows.length===0?<div className="kdsEmpty">Nenhum pedido nesta etapa.</div>:rows.map(order=>{
-              const anchor=order.status==="PREPARING"
+            {columnOrders.length===0?<div className="kdsEmpty">Sem pedidos nesta etapa.</div>:columnOrders.map(order=>{
+              const timerStart=order.status==="PREPARING"
                 ?order.preparingAt||order.createdAt
                 :order.status==="READY"
-                  ?order.readyAt||order.createdAt
+                  ?order.readyAt||order.preparingAt||order.createdAt
                   :order.createdAt;
-              const minutes=ageMinutes(anchor);
-              const isLate=minutes>target;
-              const next=nextStatus(order.status);
+              const elapsed=minutesBetween(timerStart,now);
+              const late=order.status!=="READY"&&elapsed>target;
+              const action=nextAction[order.status];
 
-              return <article className={"kdsTicket"+(isLate?" isLate":"")} key={order.id}>
+              return <article className={"kdsTicket"+(late?" isLate":"")} key={order.id}>
                 <div className="kdsTicketHead">
                   <div>
-                    <small>#{order.id.slice(-6).toUpperCase()}</small>
+                    <small>#{order.id.slice(-6).toUpperCase()} • {order.createdAt.toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"})}</small>
                     <h3>{order.guestName}</h3>
-                    <p>{order.roomLabel||order.booking?.accommodation?.roomNumber||order.booking?.accommodation?.name||"Retirada / recepção"}</p>
+                    <p>{order.roomLabel
+                      ||order.booking?.accommodation?.roomNumber
+                      ||order.booking?.accommodation?.name
+                      ||"Retirada / recepção"}</p>
                   </div>
                   <div className="kdsTimer">
-                    <b>{minutes}</b><small>min</small>
+                    <strong>{elapsed}</strong>
+                    <small>MIN</small>
                   </div>
                 </div>
 
-                <div className="kdsSla">
-                  <span style={{width:Math.min(100,Math.round(minutes*100/target))+"%"}}/>
-                </div>
-                <small className={isLate?"kdsLateLabel":""}>
-                  Meta: {target} min {isLate?"• ATRASADO":""}
-                </small>
+                {late&&<div className="kdsAlert">ACIMA DA META DE {target} MIN</div>}
 
                 <div className="kdsItems">
-                  {order.items.map(item=><div key={item.id}>
+                  {order.items.map(item=><div className="kdsItem" key={item.id}>
                     <div>
                       <b>{item.quantity}× {item.nameSnapshot}</b>
-                      <span>{money(item.totalCents)}</span>
+                      {item.modifiers.length>0&&<small>
+                        {item.modifiers.map(modifier=>modifier.nameSnapshot).join(" • ")}
+                      </small>}
                     </div>
-                    {item.modifiers.length>0&&<small>
-                      {item.modifiers.map(modifier=>modifier.nameSnapshot).join(" • ")}
-                    </small>}
+                    <span>{money(item.totalCents)}</span>
                   </div>)}
                 </div>
 
-                {order.notes&&<div className="kdsNote"><b>OBS.</b> {order.notes}</div>}
+                {order.notes&&<div className="kdsNotes"><b>OBS.</b> {order.notes}</div>}
 
                 <div className="kdsTicketFooter">
-                  <strong>{money(order.totalCents)}</strong>
-                  <span>{order.paymentMethod}</span>
-                </div>
-
-                <div className="adminInlineActions">
-                  {next&&<form action={setRestaurantOrderStatus}>
-                    <input type="hidden" name="id" value={order.id}/>
-                    <input type="hidden" name="status" value={next}/>
-                    <button className="highlight">{nextLabel(order.status)}</button>
-                  </form>}
-                  <Link href={"/admin/restaurante/pedidos/"+order.id+"/imprimir"} target="_blank">Imprimir ↗</Link>
-                  <form action={setRestaurantOrderStatus}>
-                    <input type="hidden" name="id" value={order.id}/>
-                    <input type="hidden" name="status" value="CANCELLED"/>
-                    <button>Cancelar</button>
-                  </form>
+                  <div>
+                    <small>TOTAL</small>
+                    <strong>{money(order.totalCents)}</strong>
+                  </div>
+                  <div className="adminInlineActions">
+                    <Link href={"/admin/restaurante/pedidos/"+order.id+"/comanda"} target="_blank">Imprimir ↗</Link>
+                    {action&&<form action={setRestaurantOrderStatus}>
+                      <input type="hidden" name="id" value={order.id}/>
+                      <input type="hidden" name="status" value={action.status}/>
+                      <button className="highlight">{action.label}</button>
+                    </form>}
+                    <form action={setRestaurantOrderStatus}>
+                      <input type="hidden" name="id" value={order.id}/>
+                      <input type="hidden" name="status" value="CANCELLED"/>
+                      <button className="danger">Cancelar</button>
+                    </form>
+                  </div>
                 </div>
               </article>;
             })}
           </div>
-        </section>;
+        </div>;
       })}
-    </div>
+    </section>}
   </main>;
 }
