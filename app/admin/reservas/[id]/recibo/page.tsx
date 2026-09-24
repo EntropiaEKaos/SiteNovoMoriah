@@ -23,7 +23,8 @@ export default async function ReceiptPage({params}:{params:Promise<{id:string}>}
   });
   if(!booking)notFound();
 
-  const paid=booking.payments.reduce((sum,payment)=>sum+payment.amountCents,0);
+  const lodgingPayments=booking.payments.filter(payment=>payment.reference!=="RESTAURANT_FOLIO");
+  const paid=lodgingPayments.reduce((sum,payment)=>sum+payment.amountCents,0);
   const lodgingTotal=booking.quotedTotalCents||0;
   const extrasTotal=booking.charges.reduce((sum,charge)=>sum+charge.amountCents,0);
   const total=lodgingTotal+extrasTotal;
@@ -60,7 +61,7 @@ export default async function ReceiptPage({params}:{params:Promise<{id:string}>}
         <b>{money(charge.amountCents)}</b>
       </div>)}
       <div className="receiptLine receiptTotal"><span>Total da conta</span><b>{money(total,booking.quotedCurrency||"BRL")}</b></div>
-      {booking.payments.map(payment=><div className="receiptLine" key={payment.id}>
+      {lodgingPayments.map(payment=><div className="receiptLine" key={payment.id}>
         <span>{payment.method} • {payment.source} • {payment.paidAt.toLocaleDateString("pt-BR")}{payment.reference?" • "+payment.reference:""}</span>
         <b>{money(payment.amountCents,payment.currency)}</b>
       </div>)}
