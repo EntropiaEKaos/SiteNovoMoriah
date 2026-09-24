@@ -18,3 +18,9 @@ ALTER TABLE "SiteSection"
 
 CREATE INDEX IF NOT EXISTS "SiteSection_anchorId_idx" ON "SiteSection"("anchorId");
 CREATE INDEX IF NOT EXISTS "SitePage_showInNav_sortOrder_idx" ON "SitePage"("showInNav","sortOrder");
+
+
+CREATE INDEX IF NOT EXISTS "Guest_monthlyGuest_idx" ON "Guest"("monthlyGuest");
+CREATE INDEX IF NOT EXISTS "Guest_employee_idx" ON "Guest"("employee");
+CREATE INDEX IF NOT EXISTS "NotificationMessage_audience_status_createdAt_idx"
+  ON "NotificationMessage"("audience","status","createdAt");
