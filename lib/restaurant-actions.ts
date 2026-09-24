@@ -3,7 +3,7 @@ export async function createRestaurantCategory(formData:FormData){await requireA
 export async function createRestaurantProduct(formData:FormData){await requireAdmin();const categoryId=String(formData.get("categoryId")||""),name=String(formData.get("name")||"").trim(),price=Number(String(formData.get("price")||"").replace(",",".")),costRaw=String(formData.get("cost")||"").trim(),cost=costRaw===""?null:Number(costRaw.replace(",",".")),stock=Number(formData.get("stockQty")||0),min=Number(formData.get("minStockQty")||0);if(!categoryId||!name||!Number.isFinite(price)||price<0||!Number.isInteger(stock)||stock<0||!Number.isInteger(min)||min<0)throw new Error("Produto inválido.");await prisma.restaurantProduct.create({data:{categoryId,name,description:String(formData.get("description")||"").trim()||null,imageUrl:normalizeMediaUrl(formData.get("imageUrl")),sku:String(formData.get("sku")||"").trim()||null,priceCents:Math.round(price*100),costCents:cost!==null&&Number.isFinite(cost)&&cost>=0?Math.round(cost*100):null,stockQty:stock,minStockQty:min,trackStock:formData.get("trackStock")==="on"}});revalidatePath("/admin/restaurante");revalidatePath("/restaurante");}
 export async function adjustRestaurantStock(formData:FormData){await requireAdmin();const productId=String(formData.get("productId")||""),quantity=Number(formData.get("quantity")||0),reason=String(formData.get("reason")||"Ajuste manual");if(!productId||!Number.isInteger(quantity)||quantity===0)throw new Error("Ajuste inválido.");await prisma.$transaction(async tx=>{const changed=quantity<0?await tx.restaurantProduct.updateMany({where:{id:productId,stockQty:{gte:Math.abs(quantity)}},data:{stockQty:{increment:quantity}}}):await tx.restaurantProduct.updateMany({where:{id:productId},data:{stockQty:{increment:quantity}}});if(changed.count!==1)throw new Error("Produto inexistente ou estoque insuficiente.");await tx.restaurantStockMovement.create({data:{productId,type:quantity>0?"IN":"OUT",quantity,reason}})});revalidatePath("/admin/restaurante");revalidatePath("/restaurante");}
 export async function setRestaurantOrderStatus(formData:FormData){
-  await requireAdmin();
+  const session=await requireAdmin();
   const id=String(formData.get("id")||"");
   const status=String(formData.get("status")||"");
   if(!["NEW","PREPARING","READY","DELIVERED","CANCELLED"].includes(status))throw new Error("Status inválido.");
@@ -81,6 +81,16 @@ export async function setRestaurantOrderStatus(formData:FormData){
         where:{audience:"KITCHEN",recipient:id,status:"READY"},
         data:{status:"CANCELLED"}
       });
+      await tx.restaurantKitchenEvent.create({
+        data:{
+          orderId:id,
+          eventType:"ORDER_CANCELLED",
+          fromStatus:order.status,
+          toStatus:"CANCELLED",
+          actorId:session.userId,
+          actorName:session.username
+        }
+      });
       return;
     }
 
@@ -100,18 +110,38 @@ export async function setRestaurantOrderStatus(formData:FormData){
         where:{id},
         data:{
           status,
-          ...(status==="PREPARING"?{preparingAt:changedAt}:{}),
-          ...(status==="READY"?{readyAt:changedAt}:{ }),
-          ...(status==="DELIVERED"?{deliveredAt:changedAt}:{ })
+          ...(status==="PREPARING"?{preparingAt:changedAt}:{ }),
+          ...(status==="READY"?{readyAt:changedAt,expeditionStatus:"WAITING"}:{ }),
+          ...(status==="DELIVERED"?{deliveredAt:changedAt,expeditionStatus:"RELEASED"}:{ })
         }
       });
 
       if(status==="PREPARING"){
+        await tx.restaurantOrderItem.updateMany({
+          where:{orderId:id,kitchenStatus:"PENDING"},
+          data:{kitchenStatus:"PREPARING",startedAt:changedAt}
+        });
         await tx.notificationMessage.updateMany({
           where:{audience:"KITCHEN",recipient:id,status:"READY"},
           data:{status:"SENT",sentAt:changedAt}
         });
       }
+      if(status==="READY"){
+        await tx.restaurantOrderItem.updateMany({
+          where:{orderId:id,kitchenStatus:{not:"READY"}},
+          data:{kitchenStatus:"READY",readyAt:changedAt}
+        });
+      }
+      await tx.restaurantKitchenEvent.create({
+        data:{
+          orderId:id,
+          eventType:"ORDER_STATUS",
+          fromStatus:order.status,
+          toStatus:status,
+          actorId:session.userId,
+          actorName:session.username
+        }
+      });
     }
   });
 

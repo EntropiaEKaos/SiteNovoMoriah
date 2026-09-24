@@ -348,3 +348,24 @@ export async function saveKitchenSettings(formData:FormData){
   });
   refreshKitchen();
 }
+
+
+export async function createDefaultKitchenStations(){
+  await requireAdmin();
+  const presets=[
+    {name:"Chapa",code:"CHAPA",description:"Hambúrgueres, carnes, ovos e grelhados.",color:"#d86138",sortOrder:10,targetMinutes:15},
+    {name:"Fritadeira",code:"FRITADEIRA",description:"Frituras, batatas, porções e empanados.",color:"#d89b00",sortOrder:20,targetMinutes:12},
+    {name:"Cozinha",code:"COZINHA",description:"Pratos, acompanhamentos e cocção geral.",color:"#0b607a",sortOrder:30,targetMinutes:20},
+    {name:"Bebidas",code:"BEBIDAS",description:"Bebidas, sucos e montagem fria.",color:"#17795e",sortOrder:40,targetMinutes:5},
+    {name:"Sobremesas",code:"SOBREMESAS",description:"Doces, sobremesas e finalizações frias.",color:"#8b5bb4",sortOrder:50,targetMinutes:8}
+  ];
+  for(const station of presets){
+    await prisma.restaurantStation.upsert({
+      where:{code:station.code},
+      create:station,
+      update:{name:station.name,description:station.description,color:station.color,sortOrder:station.sortOrder,targetMinutes:station.targetMinutes}
+    });
+  }
+  revalidatePath("/admin/restaurante/cozinha/estacoes");
+  refreshKitchen();
+}

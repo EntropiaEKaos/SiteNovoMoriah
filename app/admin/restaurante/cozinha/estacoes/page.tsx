@@ -1,6 +1,7 @@
 import {prisma} from "../../../../../lib/prisma";
 import {requireAdmin} from "../../../../../lib/admin-auth";
 import {
+  createDefaultKitchenStations,
   createKitchenStation,
   saveKitchenSettings,
   updateKitchenStation
@@ -24,6 +25,11 @@ export default async function Page(){
       <div><small>MORIAH KITCHEN 4.0</small><h1>Estações</h1><p>Organize a produção por chapa, fritadeira, cozinha, bebidas, sobremesas ou qualquer fluxo da operação.</p></div>
     </section>
     <KitchenNav active="/admin/restaurante/cozinha/estacoes"/>
+
+    <div className="kitchenPresetBar">
+      <div><b>Começando agora?</b><span>Crie Chapa, Fritadeira, Cozinha, Bebidas e Sobremesas automaticamente.</span></div>
+      <form action={createDefaultKitchenStations}><button className="kitchenPrimary">Criar estações padrão</button></form>
+    </div>
 
     <section className="kitchenTwoCol">
       <form action={createKitchenStation} className="kitchenPanel kitchenForm">
