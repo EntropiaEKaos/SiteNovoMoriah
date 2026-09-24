@@ -14,7 +14,11 @@ export type PublicSiteSettings=
     "accentColor"|
     "backgroundColor"|
     "textColor"|
-    "buttonColor"
+    "buttonColor"|
+    "whatsappFloatingEnabled"|
+    "whatsappFloatingMessage"|
+    "whatsappFloatingLabel"|
+    "whatsappFloatingPosition"
   >>;
 
 export async function loadPublicSiteSettings():Promise<PublicSiteSettings|null>{
@@ -51,7 +55,11 @@ export async function loadPublicSiteSettings():Promise<PublicSiteSettings|null>{
         accentColor:true,
         backgroundColor:true,
         textColor:true,
-        buttonColor:true
+        buttonColor:true,
+        whatsappFloatingEnabled:true,
+        whatsappFloatingMessage:true,
+        whatsappFloatingLabel:true,
+        whatsappFloatingPosition:true
       }
     });
     return {...base,...(branding||{})};

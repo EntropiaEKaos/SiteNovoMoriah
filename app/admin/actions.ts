@@ -131,7 +131,11 @@ export async function saveSettings(formData:FormData){
     accentColor:safeBrandColor(formData.get("accentColor"),"#ffc845"),
     backgroundColor:safeBrandColor(formData.get("backgroundColor"),"#f4f7f8"),
     textColor:safeBrandColor(formData.get("textColor"),"#1b252b"),
-    buttonColor:safeBrandColor(formData.get("buttonColor"),"#0b607a")
+    buttonColor:safeBrandColor(formData.get("buttonColor"),"#0b607a"),
+    whatsappFloatingEnabled:formData.get("whatsappFloatingEnabled")==="on",
+    whatsappFloatingMessage:String(formData.get("whatsappFloatingMessage")||"Olá! Vim pelo site da Moriah e gostaria de atendimento.").trim().slice(0,500)||"Olá! Vim pelo site da Moriah e gostaria de atendimento.",
+    whatsappFloatingLabel:String(formData.get("whatsappFloatingLabel")||"Fale no WhatsApp").trim().slice(0,40)||"Fale no WhatsApp",
+    whatsappFloatingPosition:String(formData.get("whatsappFloatingPosition")||"LEFT")==="RIGHT"?"RIGHT":"LEFT"
   };
 
   try{

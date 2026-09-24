@@ -51,6 +51,10 @@ model SiteSettings {
   siteName                  String   @default("Pousada Moriah")
   tagline                   String   @default("Seu lugar perto de tudo. Do seu jeito.")
   whatsapp                  String?
+  whatsappFloatingEnabled   Boolean  @default(true)
+  whatsappFloatingMessage   String   @default("Olá! Vim pelo site da Moriah e gostaria de atendimento.")
+  whatsappFloatingLabel     String   @default("Fale no WhatsApp")
+  whatsappFloatingPosition  String   @default("LEFT")
   instagram                 String?
   address                   String?
   logoUrl                   String?

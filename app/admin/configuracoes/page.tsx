@@ -14,7 +14,11 @@ const DEFAULT_BRANDING={
   accentColor:"#ffc845",
   backgroundColor:"#f4f7f8",
   textColor:"#1b252b",
-  buttonColor:"#0b607a"
+  buttonColor:"#0b607a",
+  whatsappFloatingEnabled:true,
+  whatsappFloatingMessage:"Olá! Vim pelo site da Moriah e gostaria de atendimento.",
+  whatsappFloatingLabel:"Fale no WhatsApp",
+  whatsappFloatingPosition:"LEFT"
 };
 
 export default async function Page(){
@@ -46,7 +50,11 @@ export default async function Page(){
         accentColor:true,
         backgroundColor:true,
         textColor:true,
-        buttonColor:true
+        buttonColor:true,
+        whatsappFloatingEnabled:true,
+        whatsappFloatingMessage:true,
+        whatsappFloatingLabel:true,
+        whatsappFloatingPosition:true
       }
     });
     if(row){
@@ -60,7 +68,11 @@ export default async function Page(){
         accentColor:row.accentColor||DEFAULT_BRANDING.accentColor,
         backgroundColor:row.backgroundColor||DEFAULT_BRANDING.backgroundColor,
         textColor:row.textColor||DEFAULT_BRANDING.textColor,
-        buttonColor:row.buttonColor||DEFAULT_BRANDING.buttonColor
+        buttonColor:row.buttonColor||DEFAULT_BRANDING.buttonColor,
+        whatsappFloatingEnabled:row.whatsappFloatingEnabled,
+        whatsappFloatingMessage:row.whatsappFloatingMessage||DEFAULT_BRANDING.whatsappFloatingMessage,
+        whatsappFloatingLabel:row.whatsappFloatingLabel||DEFAULT_BRANDING.whatsappFloatingLabel,
+        whatsappFloatingPosition:row.whatsappFloatingPosition==="RIGHT"?"RIGHT":"LEFT"
       };
     }
   }catch(error){
@@ -107,6 +119,29 @@ export default async function Page(){
               <input name="address" defaultValue={baseSettings?.address||""}/>
             </label>
           </div>
+        </article>
+
+        <article className="adminSectionCard">
+          <h2>WhatsApp flutuante</h2>
+          <p>Configure o atalho de atendimento que acompanha o visitante nas páginas públicas.</p>
+          <div className="adminFormGrid">
+            <label className="span2" style={{display:"flex",alignItems:"center",gap:10}}>
+              <span><input name="whatsappFloatingEnabled" type="checkbox" defaultChecked={branding.whatsappFloatingEnabled}/> Exibir botão flutuante</span>
+            </label>
+            <label className="span2">Texto do botão
+              <input name="whatsappFloatingLabel" defaultValue={branding.whatsappFloatingLabel} maxLength={40} placeholder="Fale no WhatsApp"/>
+            </label>
+            <label className="span2">Mensagem automática
+              <textarea name="whatsappFloatingMessage" rows={3} maxLength={500} defaultValue={branding.whatsappFloatingMessage}/>
+            </label>
+            <label className="span2">Posição
+              <select name="whatsappFloatingPosition" defaultValue={branding.whatsappFloatingPosition}>
+                <option value="LEFT">Esquerda</option>
+                <option value="RIGHT">Direita</option>
+              </select>
+            </label>
+          </div>
+          <p className="adminHelp">O número usado é o WhatsApp configurado em Identidade pública. O botão fica oculto dentro do painel administrativo.</p>
         </article>
 
         <article className="adminSectionCard">
