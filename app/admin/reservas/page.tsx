@@ -144,6 +144,7 @@ export default async function Page({
             <div>
               {booking.message&&<div className="adminPageNote">{booking.message}</div>}
               <div className="adminInlineActions">
+                <Link className="highlight" href={"/admin/reservas/"+booking.id}>Abrir reserva →</Link>
                 {booking.guest&&<Link href={"/admin/hospedes/"+booking.guest.id}>Ficha do hóspede</Link>}
                 <Link href="/admin/canais/calendario">Ver no mapa</Link>
                 {["CONFIRMED","CHECKED_IN"].includes(booking.status)&&<Link className="highlight" href="/admin/pms">Abrir no PMS</Link>}
