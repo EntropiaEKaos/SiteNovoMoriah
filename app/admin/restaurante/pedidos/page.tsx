@@ -15,6 +15,13 @@ const labels:Record<string,string>={
   READY:"Prontos"
 };
 
+const paymentLabels:Record<string,string>={
+  ROOM:"Conta do quarto",
+  PIX:"PIX",
+  CARD:"Cartão",
+  CASH:"Dinheiro"
+};
+
 const nextAction:Record<string,{status:string;label:string}>={
   NEW:{status:"PREPARING",label:"Iniciar preparo"},
   PREPARING:{status:"READY",label:"Marcar pronto"},
@@ -116,7 +123,11 @@ export default async function Page(){
               return <article className={"kdsTicket"+(late?" isLate":"")} key={order.id}>
                 <div className="kdsTicketHead">
                   <div>
-                    <small>#{order.id.slice(-6).toUpperCase()} • {order.createdAt.toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"})}</small>
+                    <div className="kdsTicketMeta">
+                      <span>#{order.id.slice(-6).toUpperCase()}</span>
+                      <span>{order.createdAt.toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"})}</span>
+                      <span>{paymentLabels[order.paymentMethod]||order.paymentMethod}</span>
+                    </div>
                     <h3>{order.guestName}</h3>
                     <p>{order.roomLabel
                       ||order.booking?.accommodation?.roomNumber
@@ -147,23 +158,27 @@ export default async function Page(){
                 {order.notes&&<div className="kdsNotes"><b>OBS.</b> {order.notes}</div>}
 
                 <div className="kdsTicketFooter">
-                  <div>
-                    <small>TOTAL</small>
+                  <div className="kdsTicketTotal">
+                    <small>TOTAL • {order.items.reduce((sum,item)=>sum+item.quantity,0)} ITEM(NS)</small>
                     <strong>{money(order.totalCents)}</strong>
                   </div>
-                  <div className="adminInlineActions">
-                    <Link href={"/admin/restaurante/pedidos/"+order.id+"/comanda"} target="_blank">Comanda ↗</Link>
-                    <Link href={"/admin/restaurante/pedidos/"+order.id+"/recibo"} target="_blank">Recibo ↗</Link>
-                    {action&&<form action={setRestaurantOrderStatus}>
+
+                  <div className="kdsTicketActions">
+                    {action&&<form action={setRestaurantOrderStatus} className="kdsPrimaryAction">
                       <input type="hidden" name="id" value={order.id}/>
                       <input type="hidden" name="status" value={action.status}/>
                       <button className="highlight">{action.label}</button>
                     </form>}
-                    <form action={setRestaurantOrderStatus}>
-                      <input type="hidden" name="id" value={order.id}/>
-                      <input type="hidden" name="status" value="CANCELLED"/>
-                      <button className="danger">Cancelar</button>
-                    </form>
+
+                    <div className="kdsSecondaryActions">
+                      <Link href={"/admin/restaurante/pedidos/"+order.id+"/comanda"} target="_blank">Comanda ↗</Link>
+                      <Link href={"/admin/restaurante/pedidos/"+order.id+"/recibo"} target="_blank">Recibo ↗</Link>
+                      <form action={setRestaurantOrderStatus}>
+                        <input type="hidden" name="id" value={order.id}/>
+                        <input type="hidden" name="status" value="CANCELLED"/>
+                        <button className="danger">Cancelar</button>
+                      </form>
+                    </div>
                   </div>
                 </div>
               </article>;
