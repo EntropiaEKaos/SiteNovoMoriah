@@ -3,6 +3,13 @@
 import {useRef,useState} from "react";
 
 const SERVER_LIMIT=3_500_000;
+const MAX_FILES=20;
+
+type UploadState={
+  name:string;
+  status:"queued"|"optimizing"|"uploading"|"done"|"error";
+  message?:string;
+};
 
 async function optimizeImage(file:File){
   if(file.size<=SERVER_LIMIT)return file;
@@ -21,7 +28,11 @@ async function optimizeImage(file:File){
     bitmap.close();
     const blob=await new Promise<Blob|null>(resolve=>canvas.toBlob(resolve,"image/webp",0.88));
     if(!blob)return file;
-    return new File([blob],file.name.replace(/.[^.]+$/,"")+".webp",{type:"image/webp"});
+    return new File(
+      [blob],
+      file.name.replace(/\.[^.]+$/,"")+".webp",
+      {type:"image/webp"}
+    );
   }catch{
     return file;
   }
@@ -64,62 +75,115 @@ async function uploadDirect(file:File,alt:string){
   return saved;
 }
 
+function fallbackAlt(file:File){
+  return file.name
+    .replace(/\.[^.]+$/,"")
+    .replace(/[-_]+/g," ")
+    .replace(/\s+/g," ")
+    .trim()
+    .slice(0,300);
+}
+
 export default function S3Upload(){
   const fileInput=useRef<HTMLInputElement>(null);
-  const [status,setStatus]=useState("");
+  const altInput=useRef<HTMLInputElement>(null);
+  const [items,setItems]=useState<UploadState[]>([]);
   const [busy,setBusy]=useState(false);
 
+  function patch(index:number,patch:Partial<UploadState>){
+    setItems(current=>current.map((item,i)=>i===index?{...item,...patch}:item));
+  }
+
   async function upload(){
-    const original=fileInput.current?.files?.[0];
-    if(!original||busy)return;
+    const originals=Array.from(fileInput.current?.files||[]).slice(0,MAX_FILES);
+    if(!originals.length||busy)return;
 
-    const alt=(document.getElementById("s3-alt") as HTMLInputElement)?.value||"";
     setBusy(true);
+    setItems(originals.map(file=>({name:file.name,status:"queued"})));
 
-    try{
-      setStatus("Otimizando imagem…");
-      const file=await optimizeImage(original);
+    let success=0;
+    const sharedAlt=altInput.current?.value.trim()||"";
 
-      if(file.size<=SERVER_LIMIT){
-        setStatus("Enviando imagem com segurança…");
-        await uploadViaServer(file,alt);
-      }else{
-        setStatus("Enviando diretamente para o S3…");
-        try{
-          await uploadDirect(file,alt);
-        }catch(error){
-          if(error instanceof TypeError||String(error).includes("Failed to fetch")){
-            throw new Error("O navegador bloqueou o envio direto ao S3. Reduza a imagem para menos de 3,5 MB ou configure o CORS do bucket.");
+    for(let index=0;index<originals.length;index++){
+      const original=originals[index];
+      try{
+        patch(index,{status:"optimizing",message:"Otimizando…"});
+
+        const file=await optimizeImage(original);
+        const alt=sharedAlt||fallbackAlt(original);
+
+        patch(index,{status:"uploading",message:file.size<=SERVER_LIMIT?"Upload protegido…":"Upload direto ao S3…"});
+
+        if(file.size<=SERVER_LIMIT){
+          await uploadViaServer(file,alt);
+        }else{
+          try{
+            await uploadDirect(file,alt);
+          }catch(error){
+            if(error instanceof TypeError||String(error).includes("Failed to fetch")){
+              throw new Error("Envio direto bloqueado pelo navegador. Reduza a imagem ou revise o CORS do bucket.");
+            }
+            throw error;
           }
-          throw error;
         }
-      }
 
-      setStatus("Upload concluído.");
-      location.reload();
-    }catch(error){
-      console.error("MEDIA_UPLOAD_CLIENT_FAILED",error);
-      setStatus(error instanceof Error?error.message:"Erro no upload.");
-    }finally{
-      setBusy(false);
+        success++;
+        patch(index,{status:"done",message:"Concluído"});
+      }catch(error){
+        console.error("MEDIA_UPLOAD_CLIENT_FAILED",original.name,error);
+        patch(index,{
+          status:"error",
+          message:error instanceof Error?error.message:"Falha no upload."
+        });
+      }
+    }
+
+    setBusy(false);
+
+    if(success===originals.length){
+      window.setTimeout(()=>location.reload(),650);
     }
   }
 
-  return <section className="adminSectionCard" style={{padding:0,border:0}}>
-    <div className="adminPageNote" style={{marginBottom:14}}>
-      JPEG, PNG ou WebP. Fotos grandes são otimizadas automaticamente antes do envio.
+  const completed=items.filter(item=>item.status==="done").length;
+  const failed=items.filter(item=>item.status==="error").length;
+
+  return <section className="mediaUploadCenter">
+    <div className="adminPageNote">
+      Selecione até {MAX_FILES} imagens. JPEG, PNG e WebP. Fotos grandes são otimizadas automaticamente antes do envio.
     </div>
-    <div className="adminFormGrid">
-      <label className="span2">Arquivo
-        <input ref={fileInput} type="file" accept="image/jpeg,image/png,image/webp"/>
+
+    <div className="adminFormGrid" style={{marginTop:14}}>
+      <label className="span2">Arquivos
+        <input
+          ref={fileInput}
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          multiple
+          disabled={busy}
+        />
       </label>
-      <label className="span2">Texto alternativo
-        <input id="s3-alt" placeholder="Ex.: Quarto casal com janela"/>
+      <label className="span2">Texto alternativo compartilhado
+        <input
+          ref={altInput}
+          placeholder="Opcional. Se vazio, cada arquivo usa o nome da imagem."
+          disabled={busy}
+        />
       </label>
       <button className="span2" type="button" onClick={upload} disabled={busy}>
-        {busy?"Enviando…":"Enviar imagem"}
+        {busy?"Enviando lote…":"Enviar imagens"}
       </button>
     </div>
-    {status&&<p aria-live="polite" style={{marginTop:14,fontWeight:800}}>{status}</p>}
+
+    {items.length>0&&<div className="mediaUploadQueue" aria-live="polite">
+      <div className="mediaUploadSummary">
+        <b>{completed}/{items.length} concluída(s)</b>
+        {failed>0&&<span>{failed} falha(s)</span>}
+      </div>
+      {items.map((item,index)=><div className={"mediaUploadRow is-"+item.status} key={item.name+index}>
+        <span>{item.name}</span>
+        <b>{item.message||item.status}</b>
+      </div>)}
+    </div>}
   </section>;
 }
