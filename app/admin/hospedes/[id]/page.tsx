@@ -18,7 +18,10 @@ export default async function GuestDetail({
     where:{id},
     include:{
       bookings:{
-        include:{accommodation:true},
+        include:{
+          accommodation:true,
+          payments:{where:{status:"PAID"}}
+        },
         orderBy:{createdAt:"desc"}
       }
     }
@@ -38,12 +41,21 @@ export default async function GuestDetail({
     take:20
   });
 
+  const quoted=guest.bookings.reduce((sum,booking)=>sum+(booking.quotedTotalCents||0),0);
+  const paid=guest.bookings.reduce(
+    (sum,booking)=>sum+booking.payments.reduce((value,payment)=>value+payment.amountCents,0),
+    0
+  );
+  const lastStay=guest.bookings
+    .filter(booking=>booking.checkOut)
+    .sort((a,b)=>(b.checkOut?.getTime()||0)-(a.checkOut?.getTime()||0))[0];
+
   return <main className="adminPage">
     <section className="adminPageHero">
       <div>
-        <small>MORIAH PMS / FICHA DO HÓSPEDE</small>
+        <small>MORIAH PMS / CRM 2.0</small>
         <h1>{guest.name}</h1>
-        <p>{guest.phone}{guest.email?" • "+guest.email:""}{guest.document?" • "+guest.document:""}</p>
+        <p>{guest.phone}{guest.email?" • "+guest.email:""}{guest.document?" • "+(guest.documentType?guest.documentType+" ":"")+guest.document:""}</p>
       </div>
       <div className="adminPageHeroActions">
         <Link className="adminSecondaryAction" href="/admin/hospedes">← Hóspedes</Link>
@@ -53,14 +65,15 @@ export default async function GuestDetail({
 
     <section className="adminMetricStrip">
       <div><small>Reservas</small><strong>{guest.bookings.length}</strong></div>
-      <div><small>Documento</small><strong style={{fontSize:16}}>{guest.document||"—"}</strong></div>
-      <div><small>Cadastro</small><strong style={{fontSize:16}}>{guest.createdAt.toLocaleDateString("pt-BR")}</strong></div>
-      <div><small>Atualização</small><strong style={{fontSize:16}}>{guest.updatedAt.toLocaleDateString("pt-BR")}</strong></div>
+      <div><small>Valor histórico</small><strong style={{fontSize:18}}>{(quoted/100).toLocaleString("pt-BR",{style:"currency",currency:"BRL"})}</strong></div>
+      <div><small>Recebido</small><strong style={{fontSize:18}}>{(paid/100).toLocaleString("pt-BR",{style:"currency",currency:"BRL"})}</strong></div>
+      <div><small>Última saída</small><strong style={{fontSize:16}}>{lastStay?.checkOut?.toLocaleDateString("pt-BR")||"—"}</strong></div>
     </section>
 
     <section className="adminTwoCol">
       <article className="adminSectionCard">
-        <h2>Dados do hóspede</h2>
+        <h2>Perfil do hóspede</h2>
+        <p>Dados pessoais e de atendimento usados pela equipe. Preferências e observações são internas.</p>
         <form action={updateGuest} className="adminFormGrid">
           <input type="hidden" name="id" value={guest.id}/>
           <label className="span2">Nome completo
@@ -72,10 +85,42 @@ export default async function GuestDetail({
           <label>E-mail
             <input name="email" type="email" defaultValue={guest.email||""}/>
           </label>
-          <label className="span2">Documento
+          <label>Tipo de documento
+            <select name="documentType" defaultValue={guest.documentType||"CPF"}>
+              <option value="CPF">CPF</option>
+              <option value="RG">RG</option>
+              <option value="PASSAPORTE">Passaporte</option>
+              <option value="OUTRO">Outro</option>
+            </select>
+          </label>
+          <label>Documento
             <input name="document" defaultValue={guest.document||""}/>
           </label>
-          <label className="span2">Observações
+          <label>Data de nascimento
+            <input name="birthDate" type="date" defaultValue={guest.birthDate?.toISOString().slice(0,10)||""}/>
+          </label>
+          <label>Nacionalidade
+            <input name="nationality" defaultValue={guest.nationality||""}/>
+          </label>
+          <label className="span2">Endereço
+            <input name="address" defaultValue={guest.address||""}/>
+          </label>
+          <label>Cidade
+            <input name="city" defaultValue={guest.city||""}/>
+          </label>
+          <label>Estado
+            <input name="state" defaultValue={guest.state||""}/>
+          </label>
+          <label>CEP
+            <input name="postalCode" defaultValue={guest.postalCode||""}/>
+          </label>
+          <label>Contato de emergência
+            <input name="emergencyContact" defaultValue={guest.emergencyContact||""}/>
+          </label>
+          <label className="span2">Preferências de hospedagem
+            <textarea name="preferences" rows={4} defaultValue={guest.preferences||""}/>
+          </label>
+          <label className="span2">Observações internas
             <textarea name="notes" rows={5} defaultValue={guest.notes||""}/>
           </label>
           <button className="span2">Salvar ficha</button>
@@ -83,7 +128,17 @@ export default async function GuestDetail({
       </article>
 
       <aside className="adminSectionCard">
-        <h2>Reservas para vincular</h2>
+        <h2>Resumo CRM</h2>
+        <div className="adminStatusLine"><span>Cadastro desde</span><b>{guest.createdAt.toLocaleDateString("pt-BR")}</b></div>
+        <div className="adminStatusLine"><span>Última atualização</span><b>{guest.updatedAt.toLocaleDateString("pt-BR")}</b></div>
+        <div className="adminStatusLine"><span>Nacionalidade</span><b>{guest.nationality||"—"}</b></div>
+        <div className="adminStatusLine"><span>Cidade</span><b>{guest.city?guest.city+(guest.state?" / "+guest.state:""):"—"}</b></div>
+        <div className="adminStatusLine"><span>Documento</span><b>{guest.document||"—"}</b></div>
+        {guest.preferences&&<div className="adminPageNote" style={{marginTop:16}}>
+          <b>Preferências</b><br/>{guest.preferences}
+        </div>}
+
+        <h2 style={{marginTop:28}}>Reservas para vincular</h2>
         <p>Possíveis reservas encontradas pelo nome ou telefone que ainda não têm hóspede vinculado.</p>
         {candidates.length===0?<div className="adminPageNote">Nenhuma reserva pendente de vínculo.</div>:<div className="adminStack">
           {candidates.map(booking=><div className="adminStatusLine" key={booking.id} style={{alignItems:"flex-start"}}>
@@ -102,19 +157,29 @@ export default async function GuestDetail({
     </section>
 
     <section className="adminSectionCard" style={{marginTop:20}}>
-      <h2>Histórico de reservas</h2>
-      <p>Reservas já vinculadas a esta ficha.</p>
+      <h2>Histórico de estadias e financeiro</h2>
+      <p>Reservas, valores e pagamentos associados a este hóspede.</p>
       {guest.bookings.length===0?<div className="adminPageNote">Ainda não há reservas vinculadas.</div>:<div className="adminStack">
-        {guest.bookings.map(booking=><article className="adminListCard" key={booking.id}>
-          <div className="adminListCardHead">
-            <div>
-              <small>{booking.status} • {booking.source}</small>
-              <h3>{booking.accommodation?.name||"Hospedagem"}</h3>
-              <p>{booking.checkIn?booking.checkIn.toLocaleDateString("pt-BR"):"—"} → {booking.checkOut?booking.checkOut.toLocaleDateString("pt-BR"):"—"} • {booking.guests} hóspede(s)</p>
+        {guest.bookings.map(booking=>{
+          const received=booking.payments.reduce((sum,payment)=>sum+payment.amountCents,0);
+          const total=booking.quotedTotalCents||0;
+          return <article className="adminListCard" key={booking.id}>
+            <div className="adminListCardHead">
+              <div>
+                <small>{booking.status} • {booking.source}</small>
+                <h3>{booking.accommodation?.name||"Hospedagem"}</h3>
+                <p>{booking.checkIn?booking.checkIn.toLocaleDateString("pt-BR"):"—"} → {booking.checkOut?booking.checkOut.toLocaleDateString("pt-BR"):"—"} • {booking.guests} hóspede(s)</p>
+              </div>
+              <div style={{textAlign:"right"}}>
+                <strong>{(total/100).toLocaleString("pt-BR",{style:"currency",currency:booking.quotedCurrency||"BRL"})}</strong>
+                <small style={{display:"block",marginTop:5}}>Pago {(received/100).toLocaleString("pt-BR",{style:"currency",currency:"BRL"})}</small>
+              </div>
             </div>
-            {booking.quotedTotalCents!=null&&<strong>{(booking.quotedTotalCents/100).toLocaleString("pt-BR",{style:"currency",currency:booking.quotedCurrency||"BRL"})}</strong>}
-          </div>
-        </article>)}
+            <div className="adminInlineActions">
+              <Link className="highlight" href={"/admin/reservas/"+booking.id}>Abrir reserva →</Link>
+            </div>
+          </article>;
+        })}
       </div>}
     </section>
   </main>;

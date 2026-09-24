@@ -120,6 +120,7 @@ export default async function PMS(){
 
               <div>
                 <div className="adminInlineActions">
+                  <Link className="highlight" href={"/admin/reservas/"+booking.id}>Abrir reserva →</Link>
                   {booking.guest&&<Link href={"/admin/hospedes/"+booking.guest.id}>Ficha do hóspede</Link>}
                   {booking.status==="CONFIRMED"&&<form action={pmsBookingAction}>
                     <input type="hidden" name="id" value={booking.id}/>
@@ -131,7 +132,7 @@ export default async function PMS(){
                     <input type="hidden" name="action" value="CHECK_OUT"/>
                     <button className="highlight">Fazer check-out</button>
                   </form>}
-                  {["CONFIRMED","CONTACTED"].includes(booking.status)&&<form action={pmsBookingAction}>
+                  {booking.status==="CONFIRMED"&&<form action={pmsBookingAction}>
                     <input type="hidden" name="id" value={booking.id}/>
                     <input type="hidden" name="action" value="NO_SHOW"/>
                     <button>No-show</button>

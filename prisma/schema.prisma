@@ -150,11 +150,17 @@ model Media {
   id         String   @id @default(cuid())
   url        String
   alt        String?
+  label      String?
+  folder     String?
+  sortOrder  Int      @default(0)
   storageKey String?  @unique
   mimeType   String?
   sizeBytes  Int?
   provider   String   @default("EXTERNAL")
   createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([folder, sortOrder, createdAt])
 }
 
 model BookingLead {
@@ -187,6 +193,8 @@ model BookingLead {
   housekeepingTasks HousekeepingTask[]
   restaurantOrders RestaurantOrder[]
   restaurantRoomCharges RestaurantRoomCharge[]
+  companions      BookingCompanion[]
+  internalNotes   String?
   createdAt       DateTime       @default(now())
 
   @@index([accommodationId])
@@ -358,16 +366,40 @@ model ChatMetric {
 }
 
 model Guest {
-  id String @id @default(cuid())
-  name String
-  email String?
-  phone String
-  document String?
-  notes String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  bookings BookingLead[]
+  id               String   @id @default(cuid())
+  name             String
+  email            String?
+  phone            String
+  document         String?
+  documentType     String?
+  birthDate        DateTime?
+  nationality      String?
+  address          String?
+  city             String?
+  state            String?
+  postalCode       String?
+  preferences      String?
+  emergencyContact String?
+  notes            String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  bookings         BookingLead[]
+
   @@index([phone])
+  @@index([document])
+}
+
+model BookingCompanion {
+  id        String      @id @default(cuid())
+  bookingId String
+  booking   BookingLead @relation(fields:[bookingId],references:[id],onDelete:Cascade)
+  name      String
+  document  String?
+  birthDate DateTime?
+  notes     String?
+  createdAt DateTime    @default(now())
+
+  @@index([bookingId])
 }
 model Payment {
   id String @id @default(cuid())
