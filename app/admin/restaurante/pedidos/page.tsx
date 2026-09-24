@@ -50,7 +50,7 @@ export default async function Page({
         booking:{select:{id:true,name:true,accommodation:{select:{name:true,roomNumber:true}}}},
         items:{
           include:{modifiers:true,station:true},
-          orderBy:[{station:{sortOrder:"asc"}},{id:"asc"}]
+          orderBy:[{stationId:"asc"},{id:"asc"}]
         }
       },
       orderBy:[{priority:"desc"},{createdAt:"asc"}]
@@ -121,7 +121,7 @@ export default async function Page({
         key={station.id}
         className={selectedStation===station.id?"isActive":""}
         href={"/admin/restaurante/pedidos?station="+station.id}
-        style={{"--station":station.color} as React.CSSProperties}
+        style={{borderColor:selectedStation===station.id?station.color:undefined}}
       >
         <b>{station.name}</b><span>{station.pending} un. em carga</span>
       </Link>)}

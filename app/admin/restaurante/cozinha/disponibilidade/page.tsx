@@ -9,7 +9,7 @@ export default async function Page(){
   await requireAdmin();
   const products=await prisma.restaurantProduct.findMany({
     include:{category:true,station:true},
-    orderBy:[{station:{sortOrder:"asc"}},{category:{sortOrder:"asc"}},{name:"asc"}]
+    orderBy:[{stationId:"asc"},{categoryId:"asc"},{name:"asc"}]
   });
   const now=Date.now();
 
