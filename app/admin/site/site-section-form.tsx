@@ -180,11 +180,11 @@ export default function SiteSectionForm({
         </div>
         <MediaPicker name="backgroundImageUrl" media={media} defaultValue={section?.backgroundImageUrl||""}/>
         <div className="adminFormGrid" style={{marginTop:12}}>
-          <label>Cor de fundo
-            <input name="backgroundColor" type="color" defaultValue={section?.backgroundColor||"#ffffff"}/>
+          <label>Cor de fundo personalizada
+            <input name="backgroundColor" defaultValue={section?.backgroundColor||""} placeholder="#ffffff"/>
           </label>
-          <label>Cor do texto
-            <input name="textColor" type="color" defaultValue={section?.textColor||"#111111"}/>
+          <label>Cor do texto personalizada
+            <input name="textColor" defaultValue={section?.textColor||""} placeholder="#111111"/>
           </label>
         </div>
         <p className="adminHelp">As cores personalizadas sobrescrevem o tema somente nesta seção.</p>
