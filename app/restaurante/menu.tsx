@@ -1,6 +1,14 @@
 "use client";
 
 import {useMemo,useState} from "react";
+import {
+  BedDouble,
+  CreditCard,
+  MessageSquareText,
+  Phone,
+  ShoppingBag,
+  UserRound
+} from "lucide-react";
 import {placeRestaurantOrder} from "../../lib/restaurant-order-actions";
 
 type ModifierGroup={
@@ -92,6 +100,24 @@ export default function Menu({
 
     return sum+(product.priceCents+extras)*quantity;
   },0),[cart,mods,products]);
+
+  const cartLines=useMemo(()=>products
+    .filter(product=>(cart[product.id]||0)>0)
+    .map(product=>{
+      const quantity=cart[product.id]||0;
+      const selectedIds=new Set(mods[product.id]||[]);
+      const selectedOptions=product.groups
+        .flatMap(group=>group.options)
+        .filter(option=>selectedIds.has(option.id));
+      const extras=selectedOptions.reduce((sum,option)=>sum+option.priceCents,0);
+
+      return {
+        product,
+        quantity,
+        selectedOptions,
+        lineTotal:(product.priceCents+extras)*quantity
+      };
+    }),[cart,mods,products]);
 
   const itemCount=useMemo(
     ()=>Object.values(cart).reduce((sum,quantity)=>sum+quantity,0),
@@ -275,36 +301,84 @@ export default function Menu({
       </section>)}
     </section>
 
-    <aside className="foodCart">
-      <small>SEU PEDIDO • {itemCount} ITEM(NS)</small>
-      <h2>{money(total)}</h2>
+    <aside className="foodCart foodOrderPanel">
+      <div className="foodOrderHead">
+        <span className="foodOrderIcon"><ShoppingBag size={20}/></span>
+        <div>
+          <small>SEU PEDIDO</small>
+          <h2>{itemCount} {itemCount===1?"item":"itens"}</h2>
+        </div>
+        <strong>{money(total)}</strong>
+      </div>
 
-      {itemCount>0&&<div className="foodCartLines">
-        {products.filter(product=>(cart[product.id]||0)>0).map(product=><div key={product.id}>
-          <span>{cart[product.id]}× {product.name}</span>
-          <b>{money(product.priceCents*(cart[product.id]||0))}</b>
+      {itemCount===0?<div className="foodCartEmpty">
+        <ShoppingBag size={22}/>
+        <b>Seu pedido está vazio.</b>
+        <span>Escolha os itens do cardápio para continuar.</span>
+      </div>:<div className="foodCartLines">
+        {cartLines.map(({product,quantity,selectedOptions,lineTotal})=><div className="foodCartLine" key={product.id}>
+          <div>
+            <b>{quantity}× {product.name}</b>
+            {selectedOptions.length>0&&<small>
+              + {selectedOptions.map(option=>option.name).join(" • ")}
+            </small>}
+            {itemNotes[product.id]?.trim()&&<small>Obs.: {itemNotes[product.id]}</small>}
+          </div>
+          <strong>{money(lineTotal)}</strong>
         </div>)}
       </div>}
 
-      <form action={placeRestaurantOrder}>
+      <div className="foodOrderTotal">
+        <span>Total do pedido</span>
+        <b>{money(total)}</b>
+      </div>
+
+      <form action={placeRestaurantOrder} className="foodOrderForm">
         <input type="hidden" name="cart" value={payload}/>
         <input type="hidden" name="bookingToken" value={bookingToken}/>
-        <input name="guestName" required placeholder="Seu nome"/>
-        <input name="roomLabel" placeholder="Quarto / acomodação"/>
-        <input name="phone" placeholder="WhatsApp"/>
-        <select name="paymentMethod" defaultValue="ROOM">
-          <option value="ROOM">Lançar na hospedagem</option>
-          <option value="PIX">PIX</option>
-          <option value="CARD">Cartão</option>
-          <option value="CASH">Dinheiro</option>
-        </select>
-        <textarea name="notes" placeholder="Observações gerais do pedido"/>
-        <button disabled={!total||!accepting}>
-          {accepting?"Enviar pedido":"Pedidos pausados"}
+
+        <label>
+          <span><UserRound size={14}/> Nome de quem recebe</span>
+          <input name="guestName" required placeholder="Ex.: João Silva"/>
+        </label>
+
+        <label>
+          <span><BedDouble size={14}/> Quarto / acomodação</span>
+          <input name="roomLabel" placeholder={bookingToken?"Opcional — hospedagem já vinculada":"Ex.: Quarto 12 ou Retirada"}/>
+        </label>
+
+        <label>
+          <span><Phone size={14}/> WhatsApp</span>
+          <input name="phone" inputMode="tel" placeholder="(13) 99999-9999"/>
+        </label>
+
+        <label>
+          <span><CreditCard size={14}/> Forma de pagamento</span>
+          <select name="paymentMethod" defaultValue={bookingToken?"ROOM":"PIX"}>
+            {bookingToken&&<option value="ROOM">Lançar na hospedagem</option>}
+            <option value="PIX">PIX</option>
+            <option value="CARD">Cartão</option>
+            <option value="CASH">Dinheiro</option>
+          </select>
+        </label>
+
+        <label>
+          <span><MessageSquareText size={14}/> Observações gerais</span>
+          <textarea name="notes" rows={3} maxLength={1000} placeholder="Ex.: entregar na recepção, sem talheres..."/>
+        </label>
+
+        <button className="foodOrderSubmit" disabled={!total||!accepting}>
+          {accepting
+            ?itemCount>0
+              ?<>Enviar pedido <b>{money(total)}</b></>
+              :"Escolha ao menos um item"
+            :"Pedidos pausados"}
         </button>
       </form>
 
-      <p>Preço, adicionais, agenda, hospedagem e estoque são validados novamente no servidor.</p>
+      <p className="foodOrderTrust">
+        Preços, adicionais, disponibilidade e estoque são validados novamente antes da confirmação.
+      </p>
     </aside>
   </div>;
 }

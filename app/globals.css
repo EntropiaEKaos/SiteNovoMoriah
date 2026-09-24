@@ -4113,3 +4113,288 @@ body{background:linear-gradient(180deg,#fff 0,#fffdf5 100%)}.nav{box-shadow:0 8p
   color:inherit;
   padding:0;
 }
+
+
+/* Moriah Food Orders UX 7.2 */
+.foodOrderPanel{
+  padding:0;
+  overflow:hidden;
+  background:#0b2631;
+  color:#fff;
+  border:1px solid #164352;
+  border-radius:22px;
+  box-shadow:0 18px 48px rgba(4,30,39,.2);
+}
+.foodOrderHead{
+  display:grid;
+  grid-template-columns:44px minmax(0,1fr) auto;
+  gap:12px;
+  align-items:center;
+  padding:18px;
+  background:linear-gradient(135deg,#082f3d,#0b607a);
+  border-bottom:1px solid rgba(255,255,255,.1);
+}
+.foodOrderIcon{
+  width:44px;
+  height:44px;
+  display:grid;
+  place-items:center;
+  border-radius:13px;
+  background:#ffc845;
+  color:#14343f;
+}
+.foodOrderHead>div{
+  display:grid;
+  gap:2px;
+}
+.foodOrderHead small{
+  color:#b8d7e0!important;
+  font-size:7px!important;
+  letter-spacing:1.3px!important;
+}
+.foodOrderHead h2{
+  margin:0!important;
+  color:#fff!important;
+  font-size:18px!important;
+  letter-spacing:-.4px!important;
+}
+.foodOrderHead>strong{
+  color:#ffc845;
+  font-size:21px;
+  letter-spacing:-.7px;
+  white-space:nowrap;
+}
+
+.foodCartEmpty{
+  margin:16px 16px 0;
+  padding:22px 16px;
+  display:grid;
+  place-items:center;
+  gap:6px;
+  text-align:center;
+  border:1px dashed #49636d;
+  border-radius:14px;
+  color:#9fb3ba;
+}
+.foodCartEmpty b{color:#e9f1f3;font-size:12px}
+.foodCartEmpty span{font-size:9px;line-height:1.4}
+
+.foodCartLines{
+  display:grid;
+  margin:0;
+  padding:8px 18px 4px;
+  max-height:240px;
+  overflow:auto;
+}
+.foodCartLine{
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:14px;
+  align-items:start;
+  padding:12px 0!important;
+  border-bottom:1px solid #29444e!important;
+}
+.foodCartLine>div{
+  display:grid;
+  gap:3px;
+  min-width:0;
+}
+.foodCartLine b{
+  color:#fff;
+  font-size:12px;
+}
+.foodCartLine small{
+  color:#9fb5bd;
+  font-size:8px;
+  line-height:1.35;
+}
+.foodCartLine>strong{
+  color:#d9e6ea;
+  font-size:11px;
+  white-space:nowrap;
+}
+.foodOrderTotal{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:18px;
+  margin:12px 18px 0;
+  padding:14px 0;
+  border-top:1px solid #36515b;
+  border-bottom:1px solid #36515b;
+}
+.foodOrderTotal span{
+  color:#9fb3ba;
+  font-size:9px;
+  font-weight:850;
+  text-transform:uppercase;
+  letter-spacing:.7px;
+}
+.foodOrderTotal b{
+  color:#ffc845;
+  font-size:22px;
+  letter-spacing:-.8px;
+}
+
+.foodOrderForm{
+  display:grid;
+  gap:10px!important;
+  padding:16px 18px 18px;
+}
+.foodOrderForm label{
+  display:grid;
+  gap:6px;
+}
+.foodOrderForm label>span{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  color:#c7d7dc;
+  font-size:9px;
+  font-weight:800;
+}
+.foodOrderForm input,
+.foodOrderForm select,
+.foodOrderForm textarea{
+  width:100%;
+  border:1px solid #3a5964!important;
+  border-radius:10px;
+  background:#123642!important;
+  color:#fff!important;
+  padding:11px 12px!important;
+  outline:0;
+  font:inherit;
+  font-size:12px;
+  transition:border .18s ease,box-shadow .18s ease,background .18s ease;
+}
+.foodOrderForm textarea{
+  min-height:78px;
+  resize:vertical;
+}
+.foodOrderForm input::placeholder,
+.foodOrderForm textarea::placeholder{color:#79939c}
+.foodOrderForm input:focus,
+.foodOrderForm select:focus,
+.foodOrderForm textarea:focus{
+  border-color:#6bb9d0!important;
+  background:#153e4b!important;
+  box-shadow:0 0 0 3px rgba(107,185,208,.1);
+}
+.foodOrderSubmit{
+  min-height:50px;
+  margin-top:2px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px;
+  border:0!important;
+  border-radius:12px;
+  padding:0 15px!important;
+  background:#ffc845!important;
+  color:#14343f!important;
+  font-size:12px;
+  font-weight:950!important;
+  cursor:pointer;
+  transition:transform .18s ease,filter .18s ease,opacity .18s ease;
+}
+.foodOrderSubmit:hover:not(:disabled){
+  transform:translateY(-1px);
+  filter:brightness(.98);
+}
+.foodOrderSubmit:disabled{
+  opacity:.42;
+  cursor:not-allowed;
+}
+.foodOrderSubmit b{
+  font-size:13px;
+  white-space:nowrap;
+}
+.foodOrderTrust{
+  margin:0!important;
+  padding:0 18px 18px;
+  color:#78909a!important;
+  font-size:8px!important;
+  line-height:1.45!important;
+  text-align:center;
+}
+
+.kdsTicketMeta{
+  display:flex;
+  flex-wrap:wrap;
+  gap:5px;
+  margin-bottom:6px;
+}
+.kdsTicketMeta span{
+  padding:4px 6px;
+  background:#eef2f3;
+  color:#586c74;
+  font-size:7px;
+  font-weight:900;
+  letter-spacing:.45px;
+}
+.kdsTicketTotal{
+  display:grid;
+  gap:3px;
+  min-width:110px;
+}
+.kdsTicketActions{
+  display:grid;
+  gap:8px;
+  min-width:min(220px,100%);
+}
+.kdsPrimaryAction form,
+.kdsPrimaryAction{width:100%}
+.kdsPrimaryAction button{
+  width:100%;
+  min-height:40px;
+  border:0;
+  background:#0b607a!important;
+  color:#fff!important;
+  font-weight:950;
+  cursor:pointer;
+}
+.kdsSecondaryActions{
+  display:flex;
+  justify-content:flex-end;
+  align-items:center;
+  gap:8px;
+  flex-wrap:wrap;
+}
+.kdsSecondaryActions a,
+.kdsSecondaryActions button{
+  border:1px solid #d4dfe2;
+  background:#fff;
+  color:#304850;
+  padding:7px 9px;
+  font-size:9px;
+  font-weight:850;
+  cursor:pointer;
+}
+.kdsSecondaryActions button.danger{
+  color:#9d3028;
+  border-color:#e2c2bf;
+}
+.kdsTicketFooter{
+  align-items:center;
+}
+@media(max-width:1100px){
+  .foodOrderPanel{
+    position:relative;
+    top:auto;
+    max-width:720px;
+    margin:0 auto;
+  }
+}
+@media(max-width:680px){
+  .foodOrderHead{
+    grid-template-columns:40px minmax(0,1fr);
+  }
+  .foodOrderHead>strong{
+    grid-column:1/-1;
+    padding-top:10px;
+    border-top:1px solid rgba(255,255,255,.12);
+  }
+  .foodCartLines{max-height:none}
+  .kdsTicketActions{width:100%}
+  .kdsSecondaryActions{justify-content:flex-start}
+}
