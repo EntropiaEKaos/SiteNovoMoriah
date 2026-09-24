@@ -438,6 +438,7 @@ model Guest {
   monthlyPaymentDueAt      DateTime?
   monthlyPaymentLastPaidAt DateTime?
   employee                 Boolean   @default(false)
+  staffAssignment          StaffAssignment?
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
   bookings         BookingLead[]
@@ -447,6 +448,31 @@ model Guest {
   @@index([monthlyGuest])
   @@index([monthlyGuest, monthlyPaymentDueAt])
   @@index([employee])
+}
+
+model StaffPosition {
+  id          String            @id @default(cuid())
+  name        String            @unique
+  description String?
+  active      Boolean           @default(true)
+  sortOrder   Int               @default(100)
+  assignments StaffAssignment[]
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  @@index([active, sortOrder])
+}
+
+model StaffAssignment {
+  id         String        @id @default(cuid())
+  guestId    String        @unique
+  guest      Guest         @relation(fields: [guestId], references: [id], onDelete: Cascade)
+  positionId String
+  position   StaffPosition @relation(fields: [positionId], references: [id], onDelete: Restrict)
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+
+  @@index([positionId])
 }
 
 model BookingCompanion {

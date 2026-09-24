@@ -5,6 +5,52 @@ import {revalidatePath} from "next/cache";
 import {requireAdmin} from "../../../lib/admin-auth";
 import {prisma} from "../../../lib/prisma";
 
+function isMissingStaffSchema(error:unknown){
+  const record=error&&typeof error==="object"?error as {code?:unknown;message?:unknown}:null;
+  const code=String(record?.code||"");
+  const message=String(record?.message||"");
+  return code==="P2021"||message.includes("StaffPosition")||message.includes("StaffAssignment");
+}
+
+async function validateStaffPositionChoice(employee:boolean,positionId:string|null){
+  if(!employee)return;
+  try{
+    if(!positionId){
+      await prisma.staffPosition.count();
+      throw new Error("Selecione o cargo do colaborador.");
+    }
+    const position=await prisma.staffPosition.findUnique({
+      where:{id:positionId},
+      select:{id:true,active:true}
+    });
+    if(!position?.active)throw new Error("Selecione um cargo ativo para o colaborador.");
+  }catch(error){
+    if(isMissingStaffSchema(error)){
+      if(positionId)throw new Error("O módulo de cargos aguarda a migration do banco.");
+      return;
+    }
+    throw error;
+  }
+}
+
+async function syncStaffAssignment(guestId:string,employee:boolean,positionId:string|null){
+  try{
+    if(!employee){
+      await prisma.staffAssignment.deleteMany({where:{guestId}});
+      return;
+    }
+    if(!positionId)return;
+    await prisma.staffAssignment.upsert({
+      where:{guestId},
+      create:{guestId,positionId},
+      update:{positionId}
+    });
+  }catch(error){
+    if(isMissingStaffSchema(error))return;
+    throw error;
+  }
+}
+
 function readGuest(formData:FormData){
   const value=(name:string,max:number)=>String(formData.get(name)||"").trim().slice(0,max)||null;
   const name=String(formData.get("name")||"").trim().slice(0,160);
@@ -28,6 +74,9 @@ function readGuest(formData:FormData){
     ?new Date(monthlyPaymentDueRaw+"T12:00:00Z")
     :null;
   const employee=formData.get("employee")==="on";
+  const employeePositionId=employee
+    ?String(formData.get("employeePositionId")||"").trim()||null
+    :null;
 
   if(!name||!phone)throw new Error("Nome e telefone/WhatsApp são obrigatórios.");
   if(email&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))throw new Error("E-mail inválido.");
@@ -51,13 +100,16 @@ function readGuest(formData:FormData){
     notes,
     monthlyGuest,
     monthlyPaymentDueAt,
-    employee
+    employee,
+    employeePositionId
   };
 }
 
 export async function createGuest(formData:FormData){
   await requireAdmin();
-  const data=readGuest(formData);
+  const raw=readGuest(formData);
+  const {employeePositionId,...data}=raw;
+  await validateStaffPositionChoice(data.employee,employeePositionId);
 
   const duplicate=await prisma.guest.findFirst({
     where:{
@@ -82,6 +134,11 @@ export async function createGuest(formData:FormData){
           employee:duplicate.employee||data.employee
         }
       });
+      await syncStaffAssignment(
+        duplicate.id,
+        duplicate.employee||data.employee,
+        employeePositionId
+      );
       revalidatePath("/admin/hospedes");
       revalidatePath("/admin/hospedes/"+duplicate.id);
     }
@@ -89,6 +146,7 @@ export async function createGuest(formData:FormData){
   }
 
   const guest=await prisma.guest.create({data});
+  await syncStaffAssignment(guest.id,data.employee,employeePositionId);
   revalidatePath("/admin/hospedes");
   redirect("/admin/hospedes/"+guest.id);
 }
@@ -97,12 +155,16 @@ export async function updateGuest(formData:FormData){
   await requireAdmin();
   const id=String(formData.get("id")||"");
   if(!id)throw new Error("Hóspede inválido.");
-  const data=readGuest(formData);
+  const raw=readGuest(formData);
+  const {employeePositionId,...data}=raw;
+  await validateStaffPositionChoice(data.employee,employeePositionId);
 
   await prisma.guest.update({where:{id},data});
+  await syncStaffAssignment(id,data.employee,employeePositionId);
   revalidatePath("/admin/hospedes");
   revalidatePath("/admin/hospedes/"+id);
   revalidatePath("/admin/reservas");
+  revalidatePath("/admin/colaboradores/cargos");
 }
 
 export async function linkGuestBooking(formData:FormData){

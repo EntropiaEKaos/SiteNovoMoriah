@@ -69,9 +69,25 @@ export default async function SiteEditor(){
       </div>
     </section>
 
+    <section className="siteStudioQuickMap">
+      <Link href="/admin/configuracoes">
+        <small>IDENTIDADE</small><b>Logo, cores e fundo padrão</b><span>Configurações →</span>
+      </Link>
+      <a href="#home-sections">
+        <small>CONTEÚDO</small><b>Textos e imagens da Home</b><span>Seções ↓</span>
+      </a>
+      <Link href="/admin/galeria">
+        <small>ARQUIVOS</small><b>Enviar e organizar imagens</b><span>Galeria →</span>
+      </Link>
+      <a href="#home-seo">
+        <small>GOOGLE</small><b>SEO e imagem de compartilhamento</b><span>SEO ↓</span>
+      </a>
+    </section>
+
     <section className="adminPageNote" style={{marginBottom:20}}>
-      <b>Onde altero os textos da Home?</b> Role até <b>Seções</b> e clique em <b>Editar textos e visual</b> no bloco desejado. 
-      Hero altera a abertura; Hospedagens altera o título da área de quartos; Estrutura, Galeria, Food, Blog, CTA e Texto editorial controlam o restante da página.
+      <b>Mapa rápido da Home:</b> Hero = abertura; Hospedagens = título e lista de quartos; Estrutura = diferenciais;
+      Galeria = mosaico de fotos; Food e Blog = chamadas dinâmicas; CTA = chamada final. Em cada seção, <b>Imagem principal</b>
+      aparece dentro do conteúdo e <b>Imagem de fundo</b> fica atrás do bloco.
     </section>
 
     <section className="adminMetricStrip">
@@ -82,7 +98,7 @@ export default async function SiteEditor(){
     </section>
 
     <section className="adminTwoCol" style={{marginBottom:20}}>
-      <article className="adminSectionCard">
+      <article className="adminSectionCard" id="home-seo">
         <h2>SEO & página</h2>
         <p>Metadados da Home. Eles não alteram o conteúdo das seções.</p>
         <form action={saveSitePageMeta} className="adminFormGrid">
@@ -102,7 +118,14 @@ export default async function SiteEditor(){
             <textarea name="seoDescription" rows={3} defaultValue={page.seoDescription||""}/>
           </label>
           <div className="span2">
-            <MediaPicker name="ogImage" media={media} defaultValue={page.ogImage||""}/>
+            <MediaPicker
+              name="ogImage"
+              media={media}
+              defaultValue={page.ogImage||""}
+              label="Imagem de compartilhamento (Open Graph)"
+              help="Aparece quando o link da Home é compartilhado em WhatsApp, Facebook e outras redes."
+              recommended="Horizontal • aproximadamente 1200×630"
+            />
           </div>
           <label className="span2" style={{display:"flex",alignItems:"center",gap:8}}>
             <span><input name="published" type="checkbox" defaultChecked={page.published}/> Página publicada</span>
@@ -123,7 +146,7 @@ export default async function SiteEditor(){
       </aside>
     </section>
 
-    <section className="siteBuilderList">
+    <section className="siteBuilderList" id="home-sections">
       <div className="siteBuilderListHead">
         <div>
           <small>HOME / ORDEM DE PUBLICAÇÃO</small>
@@ -139,6 +162,11 @@ export default async function SiteEditor(){
       </div>:<div className="adminStack">
         {page.sections.map((section,index)=><article className="adminListCard siteBuilderSectionCard" key={section.id}>
           <div className="siteBuilderOrder">{String(index+1).padStart(2,"0")}</div>
+          <div className="siteBuilderSectionThumb">
+            {section.imageUrl||section.backgroundImageUrl
+              ?<img src={section.imageUrl||section.backgroundImageUrl||""} alt={section.imageAlt||section.title||"Prévia da seção"}/>
+              :<span>{typeLabels[section.type]||section.type}</span>}
+          </div>
           <div className="siteBuilderSectionMain">
             <div className="adminListCardHead">
               <div>
@@ -151,8 +179,9 @@ export default async function SiteEditor(){
 
             <div className="adminMetaRow">
               <span className="adminChip">Ordem {section.sortOrder}</span>
-              {section.imageUrl&&<span className="adminChip">Imagem</span>}
-              {section.mediaUrls.length>0&&<span className="adminChip">{section.mediaUrls.length} mídia(s)</span>}
+              {section.imageUrl&&<span className="adminChip">Imagem principal</span>}
+              {section.backgroundImageUrl&&<span className="adminChip">Imagem de fundo</span>}
+              {section.mediaUrls.length>0&&<span className="adminChip">{section.mediaUrls.length} imagem(ns) extras</span>}
               {section.ctaLabel&&<span className="adminChip">CTA</span>}
             </div>
 

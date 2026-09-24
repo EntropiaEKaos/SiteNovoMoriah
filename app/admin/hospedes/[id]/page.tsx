@@ -29,6 +29,33 @@ export default async function GuestDetail({
   });
   if(!guest)notFound();
 
+  let staffSchemaReady=true;
+  let staffAssignment:{positionId:string;position:{name:string;description:string|null;active:boolean}}|null=null;
+  let staffPositions:Array<{id:string;name:string;description:string|null;active:boolean}>=[];
+
+  try{
+    staffAssignment=await prisma.staffAssignment.findUnique({
+      where:{guestId:guest.id},
+      select:{
+        positionId:true,
+        position:{select:{name:true,description:true,active:true}}
+      }
+    });
+    staffPositions=await prisma.staffPosition.findMany({
+      where:{
+        OR:[
+          {active:true},
+          ...(staffAssignment?[{id:staffAssignment.positionId}]:[])
+        ]
+      },
+      orderBy:[{sortOrder:"asc"},{name:"asc"}],
+      select:{id:true,name:true,description:true,active:true}
+    });
+  }catch(error){
+    staffSchemaReady=false;
+    console.error("STAFF_POSITION_SCHEMA_PENDING",error);
+  }
+
   const candidates=await prisma.bookingLead.findMany({
     where:{
       guestId:null,
@@ -129,6 +156,19 @@ export default async function GuestDetail({
             <input name="monthlyPaymentDueAt" type="date" defaultValue={guest.monthlyPaymentDueAt?.toISOString().slice(0,10)||""}/>
             <small>O sistema gera um lembrete interno para os admins quando essa data chegar.</small>
           </label>
+          <label>Categoria / cargo do colaborador
+            <select
+              name="employeePositionId"
+              defaultValue={staffAssignment?.positionId||""}
+              disabled={!staffSchemaReady}
+            >
+              <option value="">Selecione o cargo</option>
+              {staffPositions.map(position=><option value={position.id} key={position.id}>
+                {position.name}{position.active?"":" — inativo"}
+              </option>)}
+            </select>
+            <small>{staffAssignment?.position.description||"Escolha o cargo quando o cadastro estiver marcado como colaborador."}</small>
+          </label>
           <div className="span2 guestMarkerGrid">
             <label className="guestMarkerOption">
               <input name="monthlyGuest" type="checkbox" defaultChecked={guest.monthlyGuest}/>
@@ -160,6 +200,10 @@ export default async function GuestDetail({
         {guest.monthlyGuest&&<div className="adminStatusLine"><span>Próximo pagamento</span><b>{guest.monthlyPaymentDueAt?.toLocaleDateString("pt-BR")||"Não definido"}</b></div>}
         {guest.monthlyGuest&&<div className="adminStatusLine"><span>Último pagamento</span><b>{guest.monthlyPaymentLastPaidAt?.toLocaleDateString("pt-BR")||"Ainda não registrado"}</b></div>}
         <div className="adminStatusLine"><span>Colaborador</span><b>{guest.employee?"SIM":"NÃO"}</b></div>
+        {guest.employee&&<div className="adminStatusLine"><span>Cargo</span><b>{staffAssignment?.position.name||"Não definido"}</b></div>}
+        {guest.employee&&staffAssignment?.position.description&&<div className="adminPageNote" style={{marginTop:12}}>
+          <b>Descrição do cargo</b><br/>{staffAssignment.position.description}
+        </div>}
         {guest.monthlyGuest&&<form action={registerMonthlyPayment} className="adminFormGrid" style={{marginTop:16}}>
           <input type="hidden" name="id" value={guest.id}/>
           <label>Registrar pagamento

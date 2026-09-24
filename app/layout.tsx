@@ -1,15 +1,12 @@
 import type {Metadata} from "next";
-import {prisma} from "../lib/prisma";
+import {loadPublicSiteSettings} from "../lib/public-site-settings";
 import PwaRegister from "./pwa-register";
 import GlobalSupportChat from "./global-support-chat";
 import "./globals.css";
 
 export async function generateMetadata():Promise<Metadata>{
   try{
-    const settings=await prisma.siteSettings.findUnique({
-      where:{id:"main"},
-      select:{siteName:true,tagline:true,faviconUrl:true}
-    });
+    const settings=await loadPublicSiteSettings();
     return {
       title:(settings?.siteName||"Pousada Moriah")+" | Praia Grande",
       description:settings?.tagline||"Pousada e hostel em Praia Grande",
