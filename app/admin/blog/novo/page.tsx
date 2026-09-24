@@ -1,1 +1,24 @@
-import {createBlogPost} from "../../actions";import {prisma} from "../../../../lib/prisma";import MediaPicker from "../../components/media-picker";export const dynamic="force-dynamic";export default async function Page(){const media=await prisma.media.findMany({orderBy:{createdAt:"desc"}});{return <main style={{padding:"50px 6vw",maxWidth:900}}><small>MORIAH CMS / BLOG</small><h1 style={{fontSize:48}}>Novo post</h1><form action={createBlogPost} style={{display:"grid",gap:14}}><input name="title" required placeholder="Título" style={{padding:14}}/><input name="slug" required placeholder="slug-do-post" style={{padding:14}}/><input name="excerpt" placeholder="Resumo" style={{padding:14}}/><MediaPicker name="coverImage" media={media}/><textarea name="content" required rows={16} placeholder="Conteúdo do post" style={{padding:14}}/><label><input type="checkbox" name="published"/> Publicar imediatamente</label><button style={{background:"#ffd400",border:0,padding:16,fontWeight:800}}>Salvar post</button></form></main>}}
+import Link from "next/link";
+import {createBlogPost} from "../../actions";
+import {prisma} from "../../../../lib/prisma";
+import BlogEditor from "../blog-editor";
+
+export const dynamic="force-dynamic";
+
+export default async function Page(){
+  const media=await prisma.media.findMany({orderBy:{createdAt:"desc"},take:200});
+  return <main className="adminPage">
+    <section className="adminPageHero">
+      <div>
+        <small>MORIAH CMS / JOURNAL</small>
+        <h1>Nova publicação</h1>
+        <p>Crie uma matéria completa com capa, resumo, URL e conteúdo editorial.</p>
+      </div>
+      <div className="adminPageHeroActions">
+        <Link className="adminSecondaryAction" href="/admin/blog">← Voltar ao Blog</Link>
+        <Link className="adminSecondaryAction" href="/admin/galeria">Gerenciar imagens →</Link>
+      </div>
+    </section>
+    <BlogEditor action={createBlogPost} media={media}/>
+  </main>;
+}
