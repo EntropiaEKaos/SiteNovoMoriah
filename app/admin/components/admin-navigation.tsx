@@ -60,6 +60,7 @@ const sections=[
     label:"CONTEÚDO",
     items:[
       ["Editor do site","/admin/site",LayoutDashboard],
+      ["Páginas do site","/admin/site/paginas",BookOpen],
       ["Galeria","/admin/galeria",Images],
       ["Mídia","/admin/midia",Image],
       ["Blog","/admin/blog",BookOpen]
