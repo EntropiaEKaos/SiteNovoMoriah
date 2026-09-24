@@ -8,20 +8,25 @@ export const dynamic="force-dynamic";
 export default async function GuestsPage({
   searchParams
 }:{
-  searchParams:Promise<{q?:string}>
+  searchParams:Promise<{q?:string;type?:string}>
 }){
   await requireAdmin();
   const params=await searchParams;
   const q=String(params.q||"").trim();
+  const type=String(params.type||"").trim().toUpperCase();
 
-  const where=q?{
-    OR:[
-      {name:{contains:q,mode:"insensitive" as const}},
-      {phone:{contains:q,mode:"insensitive" as const}},
-      {email:{contains:q,mode:"insensitive" as const}},
-      {document:{contains:q,mode:"insensitive" as const}}
-    ]
-  }:undefined;
+  const where={
+    ...(type==="MONTHLY"?{monthlyGuest:true}:{}),
+    ...(type==="EMPLOYEE"?{employee:true}:{}),
+    ...(q?{
+      OR:[
+        {name:{contains:q,mode:"insensitive" as const}},
+        {phone:{contains:q,mode:"insensitive" as const}},
+        {email:{contains:q,mode:"insensitive" as const}},
+        {document:{contains:q,mode:"insensitive" as const}}
+      ]
+    }:{})
+  };
 
   const [guests,total,monthlyGuests,employees]=await Promise.all([
     prisma.guest.findMany({
@@ -125,20 +130,27 @@ export default async function GuestsPage({
         <h2>Buscar cadastro</h2>
         <p>Pesquise por nome, telefone, e-mail ou documento. Cadastros com mesmo documento ou nome + telefone são reaproveitados.</p>
         <form method="get" className="adminFormGrid">
-          <label className="span2">Busca
+          <label>Busca
             <input name="q" defaultValue={q} placeholder="Digite para localizar"/>
+          </label>
+          <label>Tipo
+            <select name="type" defaultValue={type}>
+              <option value="">Todos os cadastros</option>
+              <option value="MONTHLY">Mensalistas</option>
+              <option value="EMPLOYEE">Colaboradores</option>
+            </select>
           </label>
           <button className="span2">Buscar</button>
         </form>
-        {q&&<div className="adminPageNote" style={{marginTop:16}}>
-          Resultado para <b>{q}</b>. <Link href="/admin/hospedes">Limpar busca</Link>
+        {(q||type)&&<div className="adminPageNote" style={{marginTop:16}}>
+          Filtro ativo{q?<> para <b>{q}</b></>:""}. <Link href="/admin/hospedes">Limpar busca</Link>
         </div>}
       </aside>
     </section>
 
     {guests.length===0?<section className="adminEmptyState">
-      <strong>{q?"Nenhum hóspede encontrado.":"Nenhum hóspede cadastrado."}</strong>
-      <p>{q?"Tente outro nome, telefone, e-mail ou documento.":"Use o formulário acima para criar o primeiro cadastro."}</p>
+      <strong>{q||type?"Nenhum cadastro encontrado.":"Nenhum hóspede cadastrado."}</strong>
+      <p>{q||type?"Ajuste a busca ou o tipo de cadastro.":"Use o formulário acima para criar o primeiro cadastro."}</p>
     </section>:<section className="adminStack">
       {guests.map(guest=><article className="adminListCard" key={guest.id}>
         <div className="adminListCardHead">
