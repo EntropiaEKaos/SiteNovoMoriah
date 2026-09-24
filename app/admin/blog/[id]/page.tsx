@@ -1,1 +1,31 @@
-import {notFound} from "next/navigation";import {prisma} from "../../../../lib/prisma";import {updateBlogPost} from "../../actions";import MediaPicker from "../../components/media-picker";export const dynamic="force-dynamic";export default async function Page({params}:{params:Promise<{id:string}>}){const {id}=await params;const [post,media]=await Promise.all([prisma.blogPost.findUnique({where:{id}}),prisma.media.findMany({orderBy:{createdAt:"desc"}})]);if(!post)notFound();return <main style={{padding:"50px 6vw",maxWidth:900}}><small>MORIAH CMS / BLOG</small><h1 style={{fontSize:48}}>Editar post</h1><form action={updateBlogPost} style={{display:"grid",gap:14}}><input type="hidden" name="id" value={post.id}/><input name="title" required defaultValue={post.title} style={{padding:14}}/><input name="slug" required defaultValue={post.slug} style={{padding:14}}/><input name="excerpt" defaultValue={post.excerpt||""} placeholder="Resumo" style={{padding:14}}/><MediaPicker name="coverImage" media={media} defaultValue={post.coverImage||""}/><textarea name="content" required rows={16} defaultValue={post.content} style={{padding:14}}/><label><input type="checkbox" name="published" defaultChecked={post.published}/> Publicado</label><button style={{background:"#ffd400",border:0,padding:16,fontWeight:800}}>Salvar alterações</button></form></main>}
+import Link from "next/link";
+import {notFound} from "next/navigation";
+import {prisma} from "../../../../lib/prisma";
+import {updateBlogPost} from "../../actions";
+import BlogEditor from "../blog-editor";
+
+export const dynamic="force-dynamic";
+
+export default async function Page({params}:{params:Promise<{id:string}>}){
+  const {id}=await params;
+  const [post,media]=await Promise.all([
+    prisma.blogPost.findUnique({where:{id}}),
+    prisma.media.findMany({orderBy:{createdAt:"desc"},take:200})
+  ]);
+  if(!post)notFound();
+
+  return <main className="adminPage">
+    <section className="adminPageHero">
+      <div>
+        <small>MORIAH CMS / JOURNAL</small>
+        <h1>Editar publicação</h1>
+        <p>{post.title} • altere conteúdo, capa ou estado de publicação mantendo a URL editorial.</p>
+      </div>
+      <div className="adminPageHeroActions">
+        <Link className="adminSecondaryAction" href="/admin/blog">← Voltar ao Blog</Link>
+        {post.published&&<Link className="adminSecondaryAction" href={"/blog/"+post.slug}>Ver no site ↗</Link>}
+      </div>
+    </section>
+    <BlogEditor action={updateBlogPost} media={media} post={post}/>
+  </main>;
+}
