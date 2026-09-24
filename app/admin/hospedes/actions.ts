@@ -60,10 +60,26 @@ export async function createGuest(formData:FormData){
         {name:data.name,phone:data.phone}
       ]
     },
-    select:{id:true}
+    select:{id:true,monthlyGuest:true,employee:true}
   });
 
-  if(duplicate)redirect("/admin/hospedes/"+duplicate.id);
+  if(duplicate){
+    if(
+      (data.monthlyGuest&&!duplicate.monthlyGuest)||
+      (data.employee&&!duplicate.employee)
+    ){
+      await prisma.guest.update({
+        where:{id:duplicate.id},
+        data:{
+          monthlyGuest:duplicate.monthlyGuest||data.monthlyGuest,
+          employee:duplicate.employee||data.employee
+        }
+      });
+      revalidatePath("/admin/hospedes");
+      revalidatePath("/admin/hospedes/"+duplicate.id);
+    }
+    redirect("/admin/hospedes/"+duplicate.id);
+  }
 
   const guest=await prisma.guest.create({data});
   revalidatePath("/admin/hospedes");
