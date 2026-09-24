@@ -37,6 +37,7 @@ export default async function KitchenTicket({params}:{params:Promise<{id:string}
       {order.items.map(item=><div key={item.id}>
         <strong>{item.quantity}× {item.nameSnapshot}</strong>
         {item.modifiers.length>0&&<small>{item.modifiers.map(modifier=>modifier.nameSnapshot).join(" • ")}</small>}
+        {item.notes&&<small><strong>OBS. ITEM:</strong> {item.notes}</small>}
         <b>{money(item.totalCents)}</b>
       </div>)}
     </section>
