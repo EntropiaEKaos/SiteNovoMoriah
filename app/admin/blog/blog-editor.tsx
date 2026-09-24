@@ -1,4 +1,5 @@
 import MediaPicker from "../components/media-picker";
+import BlogEditorFields from "./blog-editor-fields";
 
 type PostValue={
   id?:string;
@@ -19,49 +20,28 @@ export default function BlogEditor({
   media:{id:string;url:string;alt:string|null}[];
   post?:PostValue;
 }){
-  return <form action={action} className="adminStack">
+  return <form action={action} className="adminStack blogStudioForm">
     {post?.id&&<input type="hidden" name="id" value={post.id}/>}
 
-    <section className="adminSectionCard">
-      <h2>Publicação</h2>
-      <p>Defina título, URL, resumo e estado editorial.</p>
-      <div className="adminFormGrid">
-        <label className="span2">Título
-          <input name="title" required maxLength={180} defaultValue={post?.title||""} placeholder="Título da publicação"/>
-        </label>
-        <label>Slug
-          <input name="slug" required maxLength={180} defaultValue={post?.slug||""} placeholder="titulo-da-publicacao"/>
-        </label>
-        <label style={{display:"flex",alignItems:"center",gap:8}}>
-          <span><input type="checkbox" name="published" defaultChecked={post?.published??false}/> Publicar no Journal</span>
-        </label>
-        <label className="span2">Resumo
-          <textarea name="excerpt" rows={3} maxLength={500} defaultValue={post?.excerpt||""} placeholder="Resumo usado no card e na abertura do artigo."/>
-        </label>
-      </div>
-    </section>
+    <BlogEditorFields post={post} media={media}/>
 
     <section className="adminSectionCard">
-      <h2>Imagem de capa</h2>
-      <p>Escolha uma imagem da biblioteca de mídia.</p>
+      <div className="siteStudioSectionHead">
+        <div><small>03 / CAPA</small><h2>Imagem principal</h2></div>
+        <span className="adminChip">CARD + ARTIGO + SEO</span>
+      </div>
+      <p>Escolha uma imagem horizontal da Galeria/S3. Ela aparece na listagem e na abertura da publicação.</p>
       <MediaPicker name="coverImage" media={media} defaultValue={post?.coverImage||""}/>
     </section>
 
-    <section className="adminSectionCard">
-      <h2>Conteúdo</h2>
-      <p>Escreva o conteúdo completo do artigo. Quebras de linha são preservadas no site.</p>
-      <textarea
-        name="content"
-        required
-        rows={22}
-        defaultValue={post?.content||""}
-        placeholder="Escreva aqui a publicação..."
-        style={{width:"100%",padding:16,lineHeight:1.7}}
-      />
-    </section>
-
-    <button className="adminPrimaryAction" style={{border:0,fontSize:13,padding:"15px 22px"}}>
-      {post?.id?"Salvar alterações":"Criar publicação"}
-    </button>
+    <div className="blogStudioSaveBar">
+      <div>
+        <b>{post?.id?"Atualizar publicação":"Criar publicação"}</b>
+        <small>Você pode manter como rascunho e publicar depois.</small>
+      </div>
+      <button className="adminPrimaryAction" style={{border:0,fontSize:13,padding:"15px 22px"}}>
+        {post?.id?"Salvar alterações":"Salvar publicação"}
+      </button>
+    </div>
   </form>;
 }

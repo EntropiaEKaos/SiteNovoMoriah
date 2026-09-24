@@ -143,20 +143,20 @@ export default function SiteSectionForm({
 
     <section className="adminSectionCard">
       <div className="siteStudioSectionHead">
-        <div><small>02 / CONTEÚDO</small><h2>Texto e narrativa</h2></div>
+        <div><small>02 / CONTEÚDO</small><h2>Textos que aparecem no site</h2></div>
       </div>
-      <p>Os campos se adaptam ao tipo de seção. Para FAQ use uma linha por item no formato <b>Pergunta | Resposta</b>. Para números use <b>Valor | Rótulo</b>. Para depoimentos use <b>Nome | Depoimento | Detalhe</b>.</p>
+      <p>Preencha aqui o conteúdo visível desta parte da página. <b>Título</b> é a chamada principal, <b>Subtítulo</b> é a linha de apoio e <b>Texto</b> é a descrição. Para FAQ use <b>Pergunta | Resposta</b>; para números use <b>Valor | Rótulo</b>.</p>
       <div className="adminFormGrid">
-        <label>Eyebrow / categoria
+        <label>Chamada pequena / categoria
           <input name="eyebrow" maxLength={120} defaultValue={section?.eyebrow||""} placeholder="Ex.: ESCOLHA SUA ESTADIA"/>
         </label>
-        <label>Subtítulo curto
+        <label>Subtítulo / linha de apoio
           <input name="subtitle" maxLength={300} defaultValue={section?.subtitle||""} placeholder="Linha de apoio"/>
         </label>
         <label className="span2">Título
           <input name="title" maxLength={220} defaultValue={section?.title||""} placeholder="Título principal da seção"/>
         </label>
-        <label className="span2">Texto / itens
+        <label className="span2">Texto principal / itens
           <textarea name="body" rows={9} maxLength={8000} defaultValue={section?.body||""} placeholder={"Texto editorial ou itens por linha.\nFAQ: Pergunta | Resposta\nNúmeros: 24h | Atendimento"}/>
         </label>
       </div>

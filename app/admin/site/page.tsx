@@ -59,14 +59,19 @@ export default async function SiteEditor(){
     <section className="adminPageHero">
       <div>
         <small>MORIAH CMS / SITE BUILDER</small>
-        <h1>Editor do site</h1>
-        <p>Controle a Home por seções: conteúdo, imagens, ordem, tema, layout, CTAs e SEO sem editar código.</p>
+        <h1>Conteúdo da Home</h1>
+        <p>Edite os textos e imagens da página inicial bloco por bloco. Cada card abaixo corresponde a uma parte visível da Home.</p>
       </div>
       <div className="adminPageHeroActions">
         <Link className="adminSecondaryAction" href="/admin/site/paginas">Páginas →</Link>
         <Link className="adminSecondaryAction" href="/" target="_blank">Preview do site ↗</Link>
         <Link className="adminPrimaryAction" href="/admin/site/nova">+ Nova seção</Link>
       </div>
+    </section>
+
+    <section className="adminPageNote" style={{marginBottom:20}}>
+      <b>Onde altero os textos da Home?</b> Role até <b>Seções</b> e clique em <b>Editar textos e visual</b> no bloco desejado. 
+      Hero altera a abertura; Hospedagens altera o título da área de quartos; Estrutura, Galeria, Food, Blog, CTA e Texto editorial controlam o restante da página.
     </section>
 
     <section className="adminMetricStrip">
@@ -152,7 +157,7 @@ export default async function SiteEditor(){
             </div>
 
             <div className="adminInlineActions">
-              <Link className="highlight" href={"/admin/site/"+section.id}>Editar</Link>
+              <Link className="highlight" href={"/admin/site/"+section.id}>Editar textos e visual</Link>
               <form action={moveSiteSection}>
                 <input type="hidden" name="id" value={section.id}/>
                 <input type="hidden" name="direction" value="UP"/>
