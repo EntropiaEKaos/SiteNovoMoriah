@@ -40,8 +40,10 @@ export default async function Page({searchParams}:{searchParams:Promise<{booking
 
   const menuProducts=products
     .map(product=>{
-      const categoryAvailable=isMenuScheduleAvailable(product.category,now);
-      const available=categoryAvailable&&restaurantProductAvailable(product,now);
+      const categoryScheduled=isMenuScheduleAvailable(product.category,now);
+      const productScheduled=isMenuScheduleAvailable(product,now);
+      const scheduled=categoryScheduled&&productScheduled;
+      const available=scheduled&&restaurantProductAvailable(product,now);
       const effectivePrice=effectiveRestaurantPrice(product);
 
       return {
@@ -64,6 +66,7 @@ export default async function Page({searchParams}:{searchParams:Promise<{booking
         featured:product.featured,
         soldOut:product.soldOut,
         available,
+        scheduled,
         maxPerOrder:product.maxPerOrder,
         groups:product.modifierLinks
           .filter(link=>link.group.active)
@@ -81,7 +84,10 @@ export default async function Page({searchParams}:{searchParams:Promise<{booking
           }))
       };
     })
-    .filter(product=>product.available||settings?.showSoldOut!==false);
+    .filter(product=>
+      product.scheduled&&
+      (product.available||settings?.showSoldOut!==false)
+    );
 
   const accepting=settings?.acceptingOrders!==false;
   const hours=(settings?.openTime||"07:00")+"–"+(settings?.closeTime||"22:00");
