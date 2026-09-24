@@ -30,7 +30,8 @@ export default function MediaPicker({
       {recommended&&<small>{recommended}</small>}
     </span>
 
-    <select name={name} value={value} onChange={event=>setValue(event.target.value)}>
+    <input type="hidden" name={name} value={value}/>
+    <select value={value} onChange={event=>setValue(event.target.value)}>
       <option value="">{emptyLabel}</option>
       {defaultValue&&!media.some(item=>item.url===defaultValue)&&<option value={defaultValue}>Imagem atual</option>}
       {media.map(item=><option key={item.id} value={item.url}>{item.alt||item.url}</option>)}

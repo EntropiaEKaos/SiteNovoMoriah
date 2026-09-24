@@ -127,12 +127,15 @@ export default async function MenuStudio(){
         <label>Ordem
           <input name="sortOrder" type="number" min="0" defaultValue="100"/>
         </label>
-        <label>Imagem
-          <select name="imageUrl" defaultValue="">
-            <option value="">Sem imagem</option>
-            {media.map(item=><option key={item.id} value={item.url}>{item.alt||item.label||item.url}</option>)}
-          </select>
-        </label>
+        <div>
+          <MediaPicker
+            name="imageUrl"
+            media={media}
+            label="Imagem da categoria"
+            help="Aparece na apresentação visual desta categoria do cardápio."
+            recommended="Horizontal ou quadrada • boa resolução"
+          />
+        </div>
         <label className="span2">Descrição
           <input name="description" maxLength={1000} placeholder="Descrição curta da categoria"/>
         </label>
@@ -179,12 +182,16 @@ export default async function MenuStudio(){
               <input type="hidden" name="id" value={category.id}/>
               <label>Nome<input name="name" required defaultValue={category.name}/></label>
               <label>Ordem<input name="sortOrder" type="number" min="0" defaultValue={category.sortOrder}/></label>
-              <label>Imagem
-                <select name="imageUrl" defaultValue={category.imageUrl||""}>
-                  <option value="">Sem imagem</option>
-                  {media.map(item=><option key={item.id} value={item.url}>{item.alt||item.label||item.url}</option>)}
-                </select>
-              </label>
+              <div>
+                <MediaPicker
+                  name="imageUrl"
+                  media={media}
+                  defaultValue={category.imageUrl||""}
+                  label="Imagem da categoria"
+                  help="Imagem persistida junto com a categoria."
+                  recommended="Horizontal ou quadrada • boa resolução"
+                />
+              </div>
               <label className="span2">Descrição<input name="description" defaultValue={category.description||""}/></label>
               <label style={{display:"flex",gap:8,alignItems:"center"}}><input name="active" type="checkbox" defaultChecked={category.active}/> Publicada</label>
               <label style={{display:"flex",gap:8,alignItems:"center"}}><input name="featured" type="checkbox" defaultChecked={category.featured}/> Destaque</label>

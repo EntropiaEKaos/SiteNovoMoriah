@@ -111,3 +111,25 @@ A Galeria bloqueava exclusão de imagens usadas em quartos, Blog, Site Studio e 
 Blog, Site Studio, quartos, branding e Moriah Food tratavam URLs de mídia de formas diferentes.
 
 **Correção:** novo helper `lib/media-url.ts` centraliza a normalização; quartos, Blog, branding, Site Studio e Moriah Food passam a aceitar o mesmo formato de mídia interna/externa.
+
+
+### Adendo 2 — hardening de persistência de mídia
+
+Depois do relato de imagens de hospedagem que não permaneciam após criar/editar, a persistência foi reforçada de ponta a ponta:
+
+- `MediaPicker` agora envia a seleção por um `input hidden` controlado; o `select` ficou apenas como interface.
+- `MediaMultiPicker` agora mantém estado explícito das imagens marcadas e gera um `input hidden` por URL selecionada.
+- Hospedagens verificam o valor devolvido pelo Prisma após create/update e redirecionam para a ficha recarregada do banco.
+- A ficha mostra confirmação de save e reapresenta capa/galeria persistidas.
+- `updateBlogPost` passou a usar `normalizeMediaUrl`, igual ao create.
+- Imagens de categoria do Cardápio Studio passaram a usar o mesmo `MediaPicker` central em vez de selects avulsos.
+
+#### Superfícies revisadas
+- Hospedagem: capa + galeria.
+- Site Studio: imagem principal + fundo + galeria.
+- Identidade visual: logo principal + logo clara + favicon + fundo padrão.
+- Home/SEO: Open Graph.
+- Blog: capa.
+- Moriah Food: banner, categorias e produtos.
+
+Com isso, os principais cadastros de mídia usam o mesmo contrato de formulário e normalização.

@@ -6,8 +6,15 @@ import AccommodationForm from "../accommodation-form";
 
 export const dynamic="force-dynamic";
 
-export default async function Page({params}:{params:Promise<{id:string}>}){
+export default async function Page({
+  params,
+  searchParams
+}:{
+  params:Promise<{id:string}>;
+  searchParams:Promise<{saved?:string}>;
+}){
   const {id}=await params;
+  const query=await searchParams;
   const [room,media]=await Promise.all([
     prisma.accommodation.findUnique({where:{id}}),
     prisma.media.findMany({orderBy:{createdAt:"desc"},take:200})
@@ -27,6 +34,9 @@ export default async function Page({params}:{params:Promise<{id:string}>}){
       </div>
     </section>
 
+    {query.saved==="1"&&<section className="adminPageNote" style={{marginBottom:18}}>
+      <b>Hospedagem salva.</b> Capa e galeria foram relidas do banco e estão exibidas abaixo.
+    </section>}
     <AccommodationForm action={updateAccommodation} media={media} room={room}/>
   </main>;
 }
