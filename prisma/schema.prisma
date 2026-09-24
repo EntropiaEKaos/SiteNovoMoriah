@@ -226,6 +226,7 @@ model BookingLead {
   restaurantRoomCharges RestaurantRoomCharge[]
   charges         BookingCharge[]
   companions      BookingCompanion[]
+  rentals         RentalOrder[]
   internalNotes   String?
   createdAt       DateTime       @default(now())
 
@@ -418,6 +419,89 @@ model NotificationMessage {
   @@index([audience, status, createdAt])
 }
 
+model NotificationRule {
+  id              String   @id @default(cuid())
+  module          String
+  eventKey        String
+  label           String
+  active          Boolean  @default(true)
+  channels        String[] @default(["IN_APP"])
+  audience        String   @default("INTERNAL")
+  advanceMinutes  Int      @default(0)
+  templateTitle   String?
+  templateBody    String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([module, eventKey])
+  @@index([module, active])
+}
+
+model CalendarWidgetSettings {
+  id           String   @id @default("main")
+  publicToken  String   @unique @default(cuid())
+  active       Boolean  @default(true)
+  title        String   @default("Disponibilidade Moriah")
+  subtitle     String?
+  primaryColor String   @default("#0b607a")
+  accentColor  String   @default("#ffc845")
+  showPrices   Boolean  @default(true)
+  allowBooking Boolean  @default(true)
+  compact      Boolean  @default(false)
+  updatedAt    DateTime @updatedAt
+}
+
+model RentalItem {
+  id               String        @id @default(cuid())
+  name             String
+  category         String        @default("BIKE")
+  description      String?
+  imageUrl         String?
+  active           Boolean       @default(true)
+  quantityTotal    Int           @default(1)
+  hourlyPriceCents Int?
+  dailyPriceCents  Int?
+  depositCents     Int           @default(0)
+  sortOrder        Int           @default(100)
+  notes            String?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+  rentals          RentalOrder[]
+
+  @@index([active, sortOrder])
+  @@index([category, active])
+}
+
+model RentalOrder {
+  id             String      @id @default(cuid())
+  itemId         String
+  item           RentalItem  @relation(fields:[itemId],references:[id],onDelete:Restrict)
+  guestId        String?
+  guest          Guest?      @relation(fields:[guestId],references:[id],onDelete:SetNull)
+  bookingId      String?
+  booking        BookingLead? @relation(fields:[bookingId],references:[id],onDelete:SetNull)
+  renterName     String
+  phone          String?
+  quantity       Int         @default(1)
+  pricingMode    String      @default("HOURLY")
+  unitPriceCents Int
+  startAt        DateTime
+  dueAt          DateTime
+  returnedAt     DateTime?
+  status         String      @default("ACTIVE")
+  totalCents     Int
+  depositCents   Int         @default(0)
+  paymentStatus  String      @default("PENDING")
+  notes          String?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  @@index([itemId, status, startAt, dueAt])
+  @@index([bookingId, status])
+  @@index([guestId, status])
+  @@index([dueAt, status])
+}
+
 model Guest {
   id               String   @id @default(cuid())
   name             String
@@ -442,6 +526,7 @@ model Guest {
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
   bookings         BookingLead[]
+  rentals          RentalOrder[]
 
   @@index([phone])
   @@index([document])

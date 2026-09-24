@@ -3,6 +3,7 @@
 import {revalidatePath} from "next/cache";
 import {prisma} from "./prisma";
 import {requireAdmin} from "./admin-auth";
+import {queueSystemNotification} from "./system-notifications";
 
 function refreshKitchen(){
   revalidatePath("/admin/restaurante");
@@ -198,6 +199,17 @@ export async function setKitchenItemStatus(formData:FormData){
           toStatus:"READY",
           actorId:session.userId,
           actorName:session.username
+        }
+      });
+      await queueSystemNotification({
+        module:"COZINHA",
+        eventKey:"ORDER_READY",
+        recipient:item.orderId,
+        dedupeKey:"kitchen-ready:"+item.orderId,
+        tx,
+        variables:{
+          order:item.orderId.slice(-6).toUpperCase(),
+          guest:currentOrder.guestName
         }
       });
     }else if(anyStarted&&["NEW","READY"].includes(currentOrder.status)){

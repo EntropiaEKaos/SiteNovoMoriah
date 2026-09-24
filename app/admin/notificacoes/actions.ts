@@ -144,3 +144,47 @@ export async function cancelNotification(formData:FormData){
 
   revalidatePath("/admin/notificacoes");
 }
+
+
+const RULE_CHANNELS=new Set(["IN_APP","WHATSAPP","EMAIL","PUSH"]);
+
+export async function saveNotificationRule(formData:FormData){
+  await requireAdmin();
+  const id=String(formData.get("id")||"").trim();
+  const module=String(formData.get("module")||"").trim().toUpperCase().slice(0,60);
+  const eventKey=String(formData.get("eventKey")||"").trim().toUpperCase().slice(0,80);
+  const label=String(formData.get("label")||"").trim().slice(0,160);
+  const audience=String(formData.get("audience")||"INTERNAL").trim().toUpperCase().slice(0,80)||"INTERNAL";
+  const advanceMinutes=Number(formData.get("advanceMinutes")||0);
+  const channels=formData.getAll("channels")
+    .map(value=>String(value).toUpperCase())
+    .filter(value=>RULE_CHANNELS.has(value));
+  const templateTitle=text(formData,"templateTitle",180);
+  const templateBody=text(formData,"templateBody",4000);
+
+  if(!module||!eventKey||!label||!Number.isInteger(advanceMinutes)||advanceMinutes<0||advanceMinutes>525600){
+    throw new Error("Regra de notificação inválida.");
+  }
+  if(!channels.length)throw new Error("Selecione ao menos um canal.");
+
+  const data={
+    module,eventKey,label,audience,advanceMinutes,
+    channels,
+    templateTitle,
+    templateBody,
+    active:formData.get("active")==="on"
+  };
+
+  if(id)await prisma.notificationRule.update({where:{id},data});
+  else await prisma.notificationRule.create({data});
+
+  revalidatePath("/admin/notificacoes");
+}
+
+export async function deleteNotificationRule(formData:FormData){
+  await requireAdmin();
+  const id=String(formData.get("id")||"");
+  if(!id)return;
+  await prisma.notificationRule.delete({where:{id}});
+  revalidatePath("/admin/notificacoes");
+}

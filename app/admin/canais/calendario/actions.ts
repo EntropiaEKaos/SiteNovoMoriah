@@ -6,6 +6,7 @@ import {requireAdmin} from "../../../../lib/admin-auth";
 import {prisma} from "../../../../lib/prisma";
 import {quoteAccommodation} from "../../../../lib/rate-engine";
 import {syncAccommodationChannels} from "../../../../lib/channel-sync";
+import {pmsBookingAction,setBookingStatus} from "../../actions";
 
 function parseDate(value:FormDataEntryValue|null){
   const raw=String(value||"");
@@ -276,4 +277,62 @@ export async function updateConfirmedBookingDates(formData:FormData){
   bridged.set("checkIn",String(formData.get("checkIn")||""));
   bridged.set("checkOut",String(formData.get("checkOut")||""));
   return updateConfirmedBookingPlacement(bridged);
+}
+
+
+function safeColor(value:FormDataEntryValue|null,fallback:string){
+  const color=String(value||"").trim();
+  return /^#[0-9a-f]{6}$/i.test(color)?color.toLowerCase():fallback;
+}
+
+export async function saveCalendarWidgetSettings(formData:FormData){
+  await requireAdmin();
+  const current=await prisma.calendarWidgetSettings.findUnique({where:{id:"main"}});
+  const token=current?.publicToken||crypto.randomUUID();
+  await prisma.calendarWidgetSettings.upsert({
+    where:{id:"main"},
+    create:{
+      id:"main",
+      publicToken:token,
+      active:formData.get("active")==="on",
+      title:String(formData.get("title")||"Disponibilidade Moriah").trim().slice(0,120)||"Disponibilidade Moriah",
+      subtitle:String(formData.get("subtitle")||"").trim().slice(0,300)||null,
+      primaryColor:safeColor(formData.get("primaryColor"),"#0b607a"),
+      accentColor:safeColor(formData.get("accentColor"),"#ffc845"),
+      showPrices:formData.get("showPrices")==="on",
+      allowBooking:formData.get("allowBooking")==="on",
+      compact:formData.get("compact")==="on"
+    },
+    update:{
+      active:formData.get("active")==="on",
+      title:String(formData.get("title")||"Disponibilidade Moriah").trim().slice(0,120)||"Disponibilidade Moriah",
+      subtitle:String(formData.get("subtitle")||"").trim().slice(0,300)||null,
+      primaryColor:safeColor(formData.get("primaryColor"),"#0b607a"),
+      accentColor:safeColor(formData.get("accentColor"),"#ffc845"),
+      showPrices:formData.get("showPrices")==="on",
+      allowBooking:formData.get("allowBooking")==="on",
+      compact:formData.get("compact")==="on"
+    }
+  });
+  revalidatePath("/admin/canais/calendario");
+}
+
+export async function rotateCalendarWidgetToken(){
+  await requireAdmin();
+  await prisma.calendarWidgetSettings.upsert({
+    where:{id:"main"},
+    create:{id:"main",publicToken:crypto.randomUUID()},
+    update:{publicToken:crypto.randomUUID()}
+  });
+  revalidatePath("/admin/canais/calendario");
+}
+
+export async function calendarPmsAction(formData:FormData){
+  await pmsBookingAction(formData);
+  revalidatePath("/admin/canais/calendario");
+}
+
+export async function calendarBookingStatus(formData:FormData){
+  await setBookingStatus(formData);
+  revalidatePath("/admin/canais/calendario");
 }

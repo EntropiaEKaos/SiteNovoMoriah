@@ -1,4 +1,4 @@
-"use server";import {deleteMediaObject} from "../../lib/media-storage";import {prisma} from "../../lib/prisma";import {revalidatePath} from "next/cache";import {redirect} from "next/navigation";import {requireAdmin} from "../../lib/admin-auth";import {criticalAvailabilityCheck,hasAvailabilityConflict,syncChannelIntegration} from "../../lib/channel-sync";import {quoteAccommodation} from "../../lib/rate-engine";import {createInventoryHold,consumeInventoryHold,releaseInventoryHold} from "../../lib/inventory-holds";import {hasUnitCapacity,maxConcurrentUnits} from "../../lib/shared-inventory";import {normalizeMediaUrl,normalizeMediaUrls} from "../../lib/media-url";
+"use server";import {deleteMediaObject} from "../../lib/media-storage";import {prisma} from "../../lib/prisma";import {revalidatePath} from "next/cache";import {redirect} from "next/navigation";import {requireAdmin} from "../../lib/admin-auth";import {criticalAvailabilityCheck,hasAvailabilityConflict,syncChannelIntegration} from "../../lib/channel-sync";import {quoteAccommodation} from "../../lib/rate-engine";import {createInventoryHold,consumeInventoryHold,releaseInventoryHold} from "../../lib/inventory-holds";import {hasUnitCapacity,maxConcurrentUnits} from "../../lib/shared-inventory";import {normalizeMediaUrl,normalizeMediaUrls} from "../../lib/media-url";import {queueSystemNotification} from "../../lib/system-notifications";
 function readAccommodationForm(formData:FormData){
   const text=(name:string,max=500)=>String(formData.get(name)||"").trim().slice(0,max);
   const integer=(name:string,fallback:number,min:number,max:number)=>{
@@ -225,7 +225,27 @@ export async function createBookingLead(formData:FormData){
     throw error;
   }
 
+  const createdBooking=await prisma.bookingLead.findUnique({
+    where:{publicRequestToken},
+    include:{accommodation:true}
+  });
+  if(createdBooking){
+    await queueSystemNotification({
+      module:"RESERVAS",
+      eventKey:"NEW_REQUEST",
+      recipient:createdBooking.phone,
+      dedupeKey:"booking-new:"+createdBooking.id,
+      variables:{
+        guest:createdBooking.name,
+        accommodation:createdBooking.accommodation?.name||"Hospedagem",
+        checkIn:createdBooking.checkIn?.toLocaleDateString("pt-BR")||"",
+        checkOut:createdBooking.checkOut?.toLocaleDateString("pt-BR")||""
+      }
+    });
+  }
+
   revalidatePath("/admin/reservas");
+  revalidatePath("/admin/notificacoes");
   redirect("/reservar/obrigado");
 }
 
@@ -360,7 +380,29 @@ export async function setBookingStatus(formData:FormData){
     await prisma.bookingLead.update({where:{id},data:{status}});
   }
 
+  if(status==="CONFIRMED"||status==="CANCELLED"){
+    const notifyBooking=await prisma.bookingLead.findUnique({
+      where:{id},
+      include:{accommodation:true}
+    });
+    if(notifyBooking){
+      await queueSystemNotification({
+        module:"RESERVAS",
+        eventKey:status,
+        recipient:notifyBooking.phone,
+        dedupeKey:"booking-status:"+id+":"+status,
+        variables:{
+          guest:notifyBooking.name,
+          accommodation:notifyBooking.accommodation?.name||"Hospedagem",
+          checkIn:notifyBooking.checkIn?.toLocaleDateString("pt-BR")||"",
+          checkOut:notifyBooking.checkOut?.toLocaleDateString("pt-BR")||""
+        }
+      });
+    }
+  }
+
   revalidatePath("/admin/reservas");
+  revalidatePath("/admin/notificacoes");
   revalidatePath("/reservar");
 }
 
@@ -786,10 +828,28 @@ export async function pmsBookingAction(formData:FormData){
     throw new Error("Ação PMS inválida.");
   }
 
+  const notifyPms=await prisma.bookingLead.findUnique({
+    where:{id},
+    include:{accommodation:true}
+  });
+  if(notifyPms&&["CHECK_IN","CHECK_OUT","NO_SHOW"].includes(action)){
+    await queueSystemNotification({
+      module:"PMS",
+      eventKey:action,
+      recipient:notifyPms.phone,
+      dedupeKey:"pms:"+id+":"+action,
+      variables:{
+        guest:notifyPms.name,
+        accommodation:notifyPms.accommodation?.name||"Hospedagem"
+      }
+    });
+  }
+
   revalidatePath("/admin/reservas");
   revalidatePath("/admin/reservas/"+id);
   revalidatePath("/admin/pms");
   revalidatePath("/admin/hospedes");
+  revalidatePath("/admin/notificacoes");
 }
 
 export async function settleRestaurantFolio(formData:FormData){await requireAdmin();const bookingId=String(formData.get("bookingId")||"");const method=String(formData.get("method")||"ROOM_SETTLEMENT");if(!bookingId||!["ROOM_SETTLEMENT","CASH","CARD","PIX","TRANSFER"].includes(method))throw new Error("Liquidação inválida.");await prisma.$transaction(async tx=>{const booking=await tx.bookingLead.findUnique({where:{id:bookingId},select:{id:true}});if(!booking)throw new Error("Hospedagem não encontrada.");const claimed=await tx.restaurantRoomCharge.updateMany({where:{bookingId,status:"OPEN"},data:{status:"SETTLING"}});if(claimed.count===0)return;const charges=await tx.restaurantRoomCharge.findMany({where:{bookingId,status:"SETTLING"}});const total=charges.reduce((s,x)=>s+x.amountCents,0);if(total<=0)throw new Error("Consumo inválido.");await tx.payment.create({data:{bookingId,amountCents:total,method,reference:"RESTAURANT_FOLIO"}});await tx.restaurantRoomCharge.updateMany({where:{bookingId,status:"SETTLING"},data:{status:"SETTLED",settledAt:new Date()}});await tx.restaurantOrder.updateMany({where:{bookingId,paymentMethod:"ROOM",paymentStatus:"ROOM_FOLIO"},data:{paymentStatus:"PAID"}});await tx.bookingAuditLog.create({data:{bookingId,action:"RESTAURANT_FOLIO_SETTLED",details:{amountCents:total,method,charges:claimed.count}}})});revalidatePath("/admin/pms");}
