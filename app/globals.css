@@ -2827,3 +2827,30 @@ body{background:linear-gradient(180deg,#fff 0,#fffdf5 100%)}.nav{box-shadow:0 8p
     scroll-behavior:auto!important;
   }
 }
+
+.systemStatePage{
+  min-height:100vh;
+  display:grid;
+  align-content:center;
+  gap:16px;
+  padding:10vw;
+  background:radial-gradient(circle at 80% 20%,#fff0a8,transparent 28%),#f8f6ef;
+}
+.systemStatePage small{font-size:9px;font-weight:950;letter-spacing:2px}
+.systemStatePage h1{
+  max-width:950px;
+  margin:0;
+  font-size:clamp(54px,8vw,110px);
+  line-height:.88;
+  letter-spacing:-5px;
+}
+.systemStatePage p{max-width:700px;color:#6f695e;font-size:18px;line-height:1.65}
+.systemStatePage>div{display:flex;gap:18px;align-items:center;flex-wrap:wrap}
+.systemStatePage button{border:0;font:inherit;cursor:pointer}
+@supports (animation-timeline:view()){
+  .siteMotion-fade_up,
+  .siteMotion-fade,
+  .siteMotion-slide_left,
+  .siteMotion-slide_right,
+  .siteMotion-zoom{animation-delay:var(--site-section-delay,0ms)}
+}
