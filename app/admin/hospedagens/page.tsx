@@ -11,7 +11,8 @@ export default async function Page(){
 
   const active=rooms.filter(room=>room.active).length;
   const featured=rooms.filter(room=>room.featured).length;
-  const capacity=rooms.reduce((sum,room)=>sum+room.capacity,0);
+  const capacity=rooms.reduce((sum,room)=>sum+(room.sharedRoom?room.bedCount:room.capacity),0);
+  const sharedRooms=rooms.filter(room=>room.sharedRoom).length;
 
   return <main className="adminPage">
     <section className="adminPageHero">
@@ -29,8 +30,8 @@ export default async function Page(){
     <section className="adminMetricStrip">
       <div><small>Total</small><strong>{rooms.length}</strong></div>
       <div><small>Ativas</small><strong>{active}</strong></div>
-      <div><small>Destaques</small><strong>{featured}</strong></div>
-      <div><small>Capacidade total</small><strong>{capacity}</strong></div>
+      <div><small>Compartilhados</small><strong>{sharedRooms}</strong></div>
+      <div><small>Capacidade / camas</small><strong>{capacity}</strong></div>
     </section>
 
     {rooms.length===0?<section className="adminEmptyState">
@@ -52,13 +53,19 @@ export default async function Page(){
               {room.beds||""}
             </p>}
           </div>
-          <b>{room.priceCents==null?"Sob consulta":(room.priceCents/100).toLocaleString("pt-BR",{style:"currency",currency:"BRL"})}</b>
+          <b>{room.priceCents==null
+            ?"Sob consulta"
+            :(room.priceCents/100).toLocaleString("pt-BR",{style:"currency",currency:"BRL"})+(room.sharedRoom?" / cama":"")
+          }</b>
         </div>
 
         <div className="adminMetaRow">
           <span className={"adminChip "+(room.active?"ok":"warn")}>{room.active?"Ativa":"Desativada"}</span>
           {room.featured&&<span className="adminChip">Destaque</span>}
-          <span className="adminChip">{room.capacity} hóspede(s)</span>
+          {room.sharedRoom
+            ?<span className="adminChip ok">Compartilhado • {room.bedCount} cama(s)</span>
+            :<span className="adminChip">{room.capacity} hóspede(s)</span>
+          }
           <span className="adminChip">{room.maxAdults} adulto(s) + {room.maxChildren} criança(s)</span>
           <span className="adminChip">{room.bathrooms} banheiro(s)</span>
           {room.areaSqm&&<span className="adminChip">{room.areaSqm} m²</span>}

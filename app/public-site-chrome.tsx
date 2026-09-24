@@ -1,5 +1,6 @@
 import Link from "next/link";
-import {ArrowRight} from "lucide-react";
+import type {CSSProperties} from "react";
+import {ArrowRight,MapPin,MessageCircle} from "lucide-react";
 import type {SiteSettings} from "@prisma/client";
 
 export default function PublicSiteChrome({
@@ -17,11 +18,28 @@ export default function PublicSiteChrome({
     ?"https://wa.me/"+wa+"?text="+encodeURIComponent("Olá! Vim pelo site da Pousada Moriah e gostaria de informações sobre hospedagem.")
     :null;
 
-  return <main className="siteV4">
+  const style={
+    "--site-blue":settings?.primaryColor||"#0b607a",
+    "--site-blue-dark":settings?.secondaryColor||"#073b4c",
+    "--site-yellow":settings?.accentColor||"#ffc845",
+    "--site-page-bg":settings?.backgroundColor||"#f4f7f8",
+    "--site-text":settings?.textColor||"#1b252b",
+    "--site-button":settings?.buttonColor||settings?.primaryColor||"#0b607a"
+  } as CSSProperties;
+
+  return <main className="siteV4" style={style}>
+    <div className="siteTopBarV6">
+      <span><MapPin size={13}/>{settings?.address||"Praia Grande — SP"}</span>
+      <span>Reserva direta • atendimento da própria pousada</span>
+      {whatsappHref&&<a href={whatsappHref} target="_blank" rel="noreferrer"><MessageCircle size={13}/> WhatsApp</a>}
+    </div>
+
     <header className="siteNavV4">
       <Link className="siteBrandV4" href="/">
-        <span className="siteBrandMarkV4">M</span>
-        <span><b>MORIAH</b><small>POUSADA & HOSTEL</small></span>
+        {settings?.logoUrl
+          ?<img className="siteBrandLogoV6" src={settings.logoUrl} alt={name}/>
+          :<span className="siteBrandMarkV4">M</span>}
+        <span><b>{name}</b><small>{settings?.tagline||"POUSADA • PRAIA GRANDE"}</small></span>
       </Link>
 
       <nav className="siteNavLinksV4" aria-label="Navegação principal">
@@ -34,7 +52,7 @@ export default function PublicSiteChrome({
       </nav>
 
       <Link className="siteBookV4" href="/reservar">
-        Reservar <ArrowRight size={16}/>
+        Ver disponibilidade <ArrowRight size={16}/>
       </Link>
     </header>
 
@@ -42,10 +60,12 @@ export default function PublicSiteChrome({
 
     <footer id="contato" className="siteFooterV4">
       <div className="siteFooterBrand">
-        <span className="siteBrandMarkV4">M</span>
+        {settings?.logoLightUrl||settings?.logoUrl
+          ?<img className="siteBrandLogoV6 isFooter" src={settings.logoLightUrl||settings.logoUrl||""} alt={name}/>
+          :<span className="siteBrandMarkV4">M</span>}
         <div>
-          <b>MORIAH</b>
-          <p>Hospedagem leve, prática e acolhedora em Praia Grande.</p>
+          <b>{name}</b>
+          <p>{settings?.tagline||"Hospedagem leve, prática e acolhedora em Praia Grande."}</p>
         </div>
       </div>
 

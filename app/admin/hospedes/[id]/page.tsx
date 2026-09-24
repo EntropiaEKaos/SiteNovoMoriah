@@ -2,7 +2,7 @@ import Link from "next/link";
 import {notFound} from "next/navigation";
 import {prisma} from "../../../../lib/prisma";
 import {requireAdmin} from "../../../../lib/admin-auth";
-import {linkGuestBooking,updateGuest} from "../actions";
+import {linkGuestBooking,registerMonthlyPayment,updateGuest} from "../actions";
 
 export const dynamic="force-dynamic";
 
@@ -125,6 +125,10 @@ export default async function GuestDetail({
           <label>Contato de emergência
             <input name="emergencyContact" defaultValue={guest.emergencyContact||""}/>
           </label>
+          <label>Próximo pagamento do mensalista
+            <input name="monthlyPaymentDueAt" type="date" defaultValue={guest.monthlyPaymentDueAt?.toISOString().slice(0,10)||""}/>
+            <small>O sistema gera um lembrete interno para os admins quando essa data chegar.</small>
+          </label>
           <div className="span2 guestMarkerGrid">
             <label className="guestMarkerOption">
               <input name="monthlyGuest" type="checkbox" defaultChecked={guest.monthlyGuest}/>
@@ -153,7 +157,16 @@ export default async function GuestDetail({
         <div className="adminStatusLine"><span>Cidade</span><b>{guest.city?guest.city+(guest.state?" / "+guest.state:""):"—"}</b></div>
         <div className="adminStatusLine"><span>Documento</span><b>{guest.document||"—"}</b></div>
         <div className="adminStatusLine"><span>Mensalista</span><b>{guest.monthlyGuest?"SIM":"NÃO"}</b></div>
+        {guest.monthlyGuest&&<div className="adminStatusLine"><span>Próximo pagamento</span><b>{guest.monthlyPaymentDueAt?.toLocaleDateString("pt-BR")||"Não definido"}</b></div>}
+        {guest.monthlyGuest&&<div className="adminStatusLine"><span>Último pagamento</span><b>{guest.monthlyPaymentLastPaidAt?.toLocaleDateString("pt-BR")||"Ainda não registrado"}</b></div>}
         <div className="adminStatusLine"><span>Colaborador</span><b>{guest.employee?"SIM":"NÃO"}</b></div>
+        {guest.monthlyGuest&&<form action={registerMonthlyPayment} className="adminFormGrid" style={{marginTop:16}}>
+          <input type="hidden" name="id" value={guest.id}/>
+          <label>Registrar pagamento
+            <input name="paidAt" type="date" defaultValue={new Date().toISOString().slice(0,10)}/>
+          </label>
+          <button>Confirmar pagamento</button>
+        </form>}
         {guest.preferences&&<div className="adminPageNote" style={{marginTop:16}}>
           <b>Preferências</b><br/>{guest.preferences}
         </div>}

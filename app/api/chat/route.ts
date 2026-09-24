@@ -4,7 +4,19 @@ import {isAccommodationAvailable} from "../../../lib/inventory-engine";
 import {quoteAccommodation} from "../../../lib/rate-engine";
 
 const GROQ_URL="https://api.groq.com/openai/v1/chat/completions";
+const DEFAULT_GROQ_MODEL="openai/gpt-oss-20b";
+const GROQ_MODEL_REPLACEMENTS:Record<string,string>={
+  "llama-3.1-8b-instant":"openai/gpt-oss-20b",
+  "llama-3.3-70b-versatile":"openai/gpt-oss-120b",
+  "groq/compound":"openai/gpt-oss-20b",
+  "groq/compound-mini":"openai/gpt-oss-20b"
+};
 const buckets=new Map<string,{count:number;resetAt:number}>();
+
+function normalizeGroqModel(value:string|null|undefined){
+  const model=String(value||"").trim();
+  return GROQ_MODEL_REPLACEMENTS[model]||model||DEFAULT_GROQ_MODEL;
+}
 
 const SYSTEM=`Você é o assistente virtual da Pousada Moriah, em Praia Grande, SP. Responda em português do Brasil, acolhedor, objetivo e curto. Use SOMENTE o CONTEXTO MORIAH fornecido pelo sistema para afirmar preços, acomodações, capacidades, endereço, promoções, serviços, cardápio, pedidos ou valores financeiros. Nunca invente disponibilidade, saldo ou status de pedido. Nunca confirme uma reserva no chat. Se faltar informação, diga que a equipe precisa confirmar. Nunca peça cartão, senha, documento ou outro dado sensível. Contexto financeiro privado só aparece quando o sistema validou um token ativo da própria hospedagem.`;
 
@@ -49,7 +61,7 @@ function dateRequest(text:string){
   });
 
   const dates=[...iso,...br];
-  const guestMatch=text.match(/(?:para|somos|hóspedes?)\s*(\d{1,2})|(?:\d{1,2})\s*(?:pessoas?|hóspedes?)/i);
+  const guestMatch=text.match(/(?:para|somos|hóspedes?|camas?)\s*(\d{1,2})|(?:\d{1,2})\s*(?:pessoas?|hóspedes?|camas?)/i);
   const guests=guestMatch
     ?Number(guestMatch[1]||guestMatch[0].match(/\d+/)?.[0])
     :null;
@@ -73,20 +85,24 @@ async function liveAvailability(text:string){
     };
   }
 
+  const requestedUnits=request.guests||1;
   const rooms=await prisma.accommodation.findMany({
     where:{
       active:true,
-      ...(request.guests?{capacity:{gte:request.guests}}:{})
+      OR:[
+        {sharedRoom:false,capacity:{gte:requestedUnits}},
+        {sharedRoom:true,bedCount:{gte:requestedUnits}}
+      ]
     },
-    select:{id:true,name:true,capacity:true,priceCents:true},
+    select:{id:true,name:true,capacity:true,sharedRoom:true,bedCount:true,priceCents:true},
     orderBy:[{featured:"desc"},{name:"asc"}],
     take:12
   });
 
   const checks=await Promise.all(rooms.map(async room=>{
     const [free,quote]=await Promise.all([
-      isAccommodationAvailable(room.id,start,end),
-      quoteAccommodation(room.id,start,end)
+      isAccommodationAvailable(room.id,start,end,undefined,requestedUnits),
+      quoteAccommodation(room.id,start,end,null,requestedUnits)
     ]);
     return {...room,free,quote};
   }));
@@ -104,7 +120,7 @@ async function liveAvailability(text:string){
 
   return {
     context:`CONSULTA DE DISPONIBILIDADE REAL (${request.checkIn} até ${request.checkOut}${request.guests?`, ${request.guests} hóspede(s)`:""}): ${free.length
-      ?free.map(room=>`${room.name} (capacidade ${room.capacity}, ${money(room.quote!.totalCents)} no total para ${room.quote!.nights} noite(s), plano ${room.quote!.ratePlan})`).join("; ")
+      ?free.map(room=>`${room.name} (${room.sharedRoom?`quarto compartilhado, ${room.bedCount} camas no total`:`capacidade ${room.capacity}`}, ${money(room.quote!.totalCents)} no total para ${room.quote!.nights} noite(s)${room.sharedRoom?` e ${requestedUnits} cama(s)`:""}, plano ${room.quote!.ratePlan})`).join("; ")
       :"nenhuma hospedagem disponível encontrada"}. A consulta considera reservas confirmadas, hóspedes na casa, canais ativos, holds e bloqueios manuais.`,
     booking:best&&params
       ?{href:"/reservar?"+params.toString(),label:"Solicitar "+best.name}
@@ -149,7 +165,7 @@ async function cmsContext(){
       ?`Promoção ativa: ${promo.title}. ${promo.description||""} ${promo.coupon?`Cupom: ${promo.coupon}`:""}`
       :"Nenhuma promoção ativa cadastrada.",
     rooms.length
-      ?"Hospedagens ativas:\n"+rooms.map(room=>`- ${room.name}: tipo ${room.type}, capacidade ${room.capacity}, ${money(room.priceCents)}, check-in ${room.checkInTime}, check-out ${room.checkOutTime}. ${room.description}`).join("\n")
+      ?"Hospedagens ativas:\n"+rooms.map(room=>`- ${room.name}: ${room.sharedRoom?`quarto compartilhado com ${room.bedCount} camas; preço base por cama ${money(room.priceCents)}`:`tipo ${room.type}, capacidade ${room.capacity}, preço base ${money(room.priceCents)}`}, check-in ${room.checkInTime}, check-out ${room.checkOutTime}. ${room.description}`).join("\n")
       :"Nenhuma hospedagem ativa cadastrada.",
     restaurant
       ?`Moriah Food: ${restaurant.acceptingOrders?"aceitando pedidos":"pedidos pausados"}, atendimento ${restaurant.openTime}–${restaurant.closeTime}, conta do quarto ${restaurant.roomChargeEnabled?"disponível":"indisponível"}.`
@@ -297,32 +313,49 @@ export async function POST(req:NextRequest){
       missingPrivate
     ].join("");
 
-    const response=await fetch(GROQ_URL,{
-      method:"POST",
-      headers:{
-        "content-type":"application/json",
-        "authorization":"Bearer "+key
-      },
-      body:JSON.stringify({
-        model:settings?.groqModel||process.env.GROQ_CHAT_MODEL||"llama-3.1-8b-instant",
-        temperature:settings?.groqTemperature??0.2,
-        max_completion_tokens:500,
-        messages:[
-          {role:"system",content:systemContext},
-          ...messages
-        ]
-      }),
-      signal:AbortSignal.timeout(15_000)
-    });
+    const requestedModel=normalizeGroqModel(settings?.groqModel||process.env.GROQ_CHAT_MODEL);
+    const candidates=[...new Set([requestedModel,DEFAULT_GROQ_MODEL])];
+    let data:{choices?:Array<{message?:{content?:string}}>}|null=null;
+    let lastStatus=502;
+    let lastDetail="";
 
-    if(!response.ok){
-      console.error("GROQ_CHAT_FAILED",response.status);
-      return NextResponse.json({error:"Atendimento temporariamente indisponível."},{status:502});
+    for(const model of candidates){
+      const response=await fetch(GROQ_URL,{
+        method:"POST",
+        headers:{
+          "content-type":"application/json",
+          "authorization":"Bearer "+key
+        },
+        body:JSON.stringify({
+          model,
+          temperature:settings?.groqTemperature??0.2,
+          max_completion_tokens:500,
+          messages:[
+            {role:"system",content:systemContext},
+            ...messages
+          ]
+        }),
+        signal:AbortSignal.timeout(15_000)
+      });
+
+      if(response.ok){
+        data=await response.json() as {choices?:Array<{message?:{content?:string}}>} ;
+        break;
+      }
+
+      lastStatus=response.status;
+      lastDetail=await response.text().catch(()=>"");
+      console.error("GROQ_CHAT_FAILED",model,response.status,lastDetail.slice(0,500));
+
+      if(![400,404,422].includes(response.status)){
+        break;
+      }
     }
 
-    const data=await response.json() as {
-      choices?:Array<{message?:{content?:string}}>
-    };
+    if(!data){
+      console.error("GROQ_CHAT_EXHAUSTED",lastStatus,lastDetail.slice(0,500));
+      return NextResponse.json({error:"Atendimento temporariamente indisponível."},{status:502});
+    }
     const reply=data.choices?.[0]?.message?.content?.trim();
 
     const site=await prisma.siteSettings.findUnique({

@@ -14,6 +14,8 @@ model AdminUser {
   role         String   @default("ADMIN")
   active       Boolean  @default(true)
   lastLoginAt  DateTime?
+  onDuty       Boolean  @default(false)
+  onDutySince  DateTime?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
   auditLogs    AdminAuditLog[]
@@ -45,13 +47,23 @@ model AdminLoginAttempt {
 }
 
 model SiteSettings {
-  id        String   @id @default("main")
-  siteName  String   @default("Pousada Moriah")
-  tagline   String   @default("Seu lugar perto de tudo. Do seu jeito.")
-  whatsapp  String?
-  instagram String?
-  address   String?
-  updatedAt DateTime @updatedAt
+  id                        String   @id @default("main")
+  siteName                  String   @default("Pousada Moriah")
+  tagline                   String   @default("Seu lugar perto de tudo. Do seu jeito.")
+  whatsapp                  String?
+  instagram                 String?
+  address                   String?
+  logoUrl                   String?
+  logoLightUrl              String?
+  faviconUrl                String?
+  defaultBackgroundImageUrl String?
+  primaryColor              String   @default("#0b607a")
+  secondaryColor            String   @default("#073b4c")
+  accentColor               String   @default("#ffc845")
+  backgroundColor           String   @default("#f4f7f8")
+  textColor                 String   @default("#1b252b")
+  buttonColor               String   @default("#0b607a")
+  updatedAt                 DateTime @updatedAt
 }
 
 model SitePage {
@@ -128,6 +140,8 @@ model Accommodation {
   maxAdults           Int                  @default(2)
   maxChildren         Int                  @default(0)
   beds                String?
+  sharedRoom          Boolean              @default(false)
+  bedCount            Int                  @default(0)
   bathrooms           Int                  @default(1)
   areaSqm             Float?
   amenities           String[]             @default([])
@@ -232,7 +246,7 @@ model IntegrationSettings {
   chatName                  String   @default("Moriah Assistente")
   chatWelcome               String   @default("Olá! Sou o assistente virtual da Moriah. Como posso ajudar com sua hospedagem?")
   chatInstructions          String?
-  groqModel                 String   @default("llama-3.1-8b-instant")
+  groqModel                 String   @default("openai/gpt-oss-20b")
   groqTemperature           Float    @default(0.2)
   updatedAt                 DateTime @updatedAt
 }
@@ -286,6 +300,7 @@ model InventoryHold {
   checkOut        DateTime
   token           String        @unique
   expiresAt       DateTime
+  units           Int           @default(1)
   createdAt       DateTime      @default(now())
 
   @@index([accommodationId, checkIn, checkOut])
@@ -385,6 +400,7 @@ model ChatMetric {
 
 model NotificationMessage {
   id          String   @id @default(cuid())
+  dedupeKey   String?  @unique
   channel     String
   audience    String   @default("INTERNAL")
   recipient   String?
@@ -418,8 +434,10 @@ model Guest {
   preferences      String?
   emergencyContact String?
   notes            String?
-  monthlyGuest     Boolean  @default(false)
-  employee         Boolean  @default(false)
+  monthlyGuest             Boolean   @default(false)
+  monthlyPaymentDueAt      DateTime?
+  monthlyPaymentLastPaidAt DateTime?
+  employee                 Boolean   @default(false)
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
   bookings         BookingLead[]
@@ -427,6 +445,7 @@ model Guest {
   @@index([phone])
   @@index([document])
   @@index([monthlyGuest])
+  @@index([monthlyGuest, monthlyPaymentDueAt])
   @@index([employee])
 }
 

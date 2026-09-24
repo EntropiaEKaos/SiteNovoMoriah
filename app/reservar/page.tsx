@@ -1,1 +1,63 @@
-import {createBookingLead} from "../admin/actions";import {prisma} from "../../lib/prisma";import BookingCalendar from "./booking-calendar";export const dynamic="force-dynamic";export default async function Page({searchParams}:{searchParams:Promise<{indisponivel?:string,accommodationId?:string,checkIn?:string,checkOut?:string,guests?:string}>}){const q=await searchParams;const rooms=await prisma.accommodation.findMany({where:{active:true},orderBy:{name:"asc"}});const selected=q.accommodationId&&rooms.some(r=>r.id===q.accommodationId)?q.accommodationId:(rooms[0]?.id||"");return <main className="bookingPage"><a className="bookingBack" href="/">← Voltar para a Moriah</a><div className="bookingHero"><small>POUSADA MORIAH • PRAIA GRANDE</small><h1 style={{fontSize:"clamp(48px,8vw,90px)",margin:"18px 0"}}>Sua estadia<br/>começa aqui<span style={{color:"#ffd400"}}>.</span></h1><p>Escolha sua acomodação e as datas. Nós conferimos a disponibilidade antes de registrar sua solicitação.</p></div>{q.indisponivel&&<p style={{maxWidth:1000,padding:16,background:"#fff3cd",border:"1px solid #ffd400"}}>Esse período não está disponível para a hospedagem escolhida. Selecione outras datas.</p>}<BookingCalendar rooms={rooms.map(r=>({id:r.id,name:r.name}))} selected={selected} initialCheckIn={q.checkIn} initialCheckOut={q.checkOut} initialGuests={q.guests}/></main>}
+import {prisma} from "../../lib/prisma";
+import BookingCalendar from "./booking-calendar";
+
+export const dynamic="force-dynamic";
+
+export default async function Page({
+  searchParams
+}:{
+  searchParams:Promise<{
+    indisponivel?:string;
+    accommodationId?:string;
+    checkIn?:string;
+    checkOut?:string;
+    guests?:string;
+  }>;
+}){
+  const q=await searchParams;
+  const rooms=await prisma.accommodation.findMany({
+    where:{active:true},
+    orderBy:[{featured:"desc"},{name:"asc"}]
+  });
+
+  const selected=q.accommodationId&&rooms.some(room=>room.id===q.accommodationId)
+    ?q.accommodationId
+    :(rooms[0]?.id||"");
+
+  return <main className="bookingPage">
+    <a className="bookingBack" href="/">← Voltar para a Moriah</a>
+
+    <div className="bookingHero">
+      <small>POUSADA MORIAH • PRAIA GRANDE</small>
+      <h1>Sua estadia<br/>começa aqui<span>.</span></h1>
+      <p>
+        Escolha sua hospedagem, datas e quantidade de hóspedes. Para quartos compartilhados,
+        o sistema consulta a quantidade real de camas disponíveis.
+      </p>
+    </div>
+
+    {q.indisponivel&&<p style={{
+      maxWidth:1000,
+      padding:16,
+      background:"#fff3cd",
+      border:"1px solid #e8b600"
+    }}>
+      Não há vagas suficientes para esse período e quantidade de hóspedes.
+      Escolha outras datas ou reduza a quantidade.
+    </p>}
+
+    <BookingCalendar
+      rooms={rooms.map(room=>({
+        id:room.id,
+        name:room.name,
+        sharedRoom:room.sharedRoom,
+        bedCount:room.bedCount,
+        capacity:room.capacity
+      }))}
+      selected={selected}
+      initialCheckIn={q.checkIn}
+      initialCheckOut={q.checkOut}
+      initialGuests={q.guests}
+    />
+  </main>;
+}

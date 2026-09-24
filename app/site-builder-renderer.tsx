@@ -3,15 +3,19 @@ import type {CSSProperties} from "react";
 import {
   ArrowRight,
   BedDouble,
+  CalendarDays,
+  CheckCircle2,
   Coffee,
   HelpCircle,
   MapPin,
   MessageCircle,
   Play,
   Quote,
+  Search,
   ShieldCheck,
   Sparkles,
   Star,
+  Users,
   UtensilsCrossed,
   Wifi
 } from "lucide-react";
@@ -124,7 +128,7 @@ export default function SiteBuilderRenderer({
   return <div className="siteBuilderPublic">
     {sections.map(section=>{
       if(section.type==="HERO"){
-        const image=section.imageUrl||fallbackHeroImage(rooms,media);
+        const image=section.imageUrl||settings?.defaultBackgroundImageUrl||fallbackHeroImage(rooms,media);
         const title=section.title||settings?.tagline||"Seu lugar perto de tudo. Do seu jeito.";
         const body=section.body||(
           promo
@@ -133,30 +137,33 @@ export default function SiteBuilderRenderer({
         );
 
         return <section {...blockProps(section,"siteHeroV4","inicio")} key={section.id}>
+          <div className="siteHeroBackdrop">
+            {image?<img src={image} alt={section.imageAlt||"Pousada Moriah em Praia Grande"}/>:<div className="siteHeroPlaceholder">M</div>}
+          </div>
           <div className="siteHeroCopy">
+            <div className="siteHeroLocation"><MapPin size={15}/> Praia Grande, SP</div>
             {section.eyebrow&&<div className="siteEyebrow">{section.eyebrow}</div>}
-            {section.subtitle&&<div className="siteHeroKicker">{section.subtitle}</div>}
             <h1>{title}</h1>
             <p>{body}</p>
-            <div className="siteHeroActions">
-              {section.ctaLabel&&section.ctaHref&&<Link className="sitePrimaryCta" href={section.ctaHref}>
-                {section.ctaLabel}<ArrowRight size={18}/>
-              </Link>}
-              {section.secondaryCtaLabel&&section.secondaryCtaHref&&<Link className="siteSecondaryCta" href={section.secondaryCtaHref}>
-                {section.secondaryCtaLabel}
-              </Link>}
-            </div>
+            <form action="/reservar" method="get" className="siteSearchBar">
+              <label>
+                <span><CalendarDays size={16}/> Check-in</span>
+                <input type="date" name="checkIn" required/>
+              </label>
+              <label>
+                <span><CalendarDays size={16}/> Check-out</span>
+                <input type="date" name="checkOut" required/>
+              </label>
+              <label>
+                <span><Users size={16}/> Hóspedes</span>
+                <input type="number" name="guests" min="1" max="50" defaultValue="2" required/>
+              </label>
+              <button type="submit"><Search size={18}/> Buscar hospedagem</button>
+            </form>
             <div className="siteHeroSignals">
-              <span><ShieldCheck size={14}/> Reserva direta</span>
-              <span><MapPin size={14}/> Praia Grande</span>
-              <span><Star size={14}/> Experiência Moriah</span>
-            </div>
-          </div>
-          <div className="siteHeroVisual">
-            {image?<img src={image} alt={section.imageAlt||"Pousada Moriah em Praia Grande"}/>:<div className="siteHeroPlaceholder">M</div>}
-            <div className="siteHeroVisualTag">
-              <small>MORIAH / EXPERIENCE</small>
-              <b>Hospedagem com identidade.</b>
+              <span><ShieldCheck size={15}/> Reserva direta</span>
+              <span><CheckCircle2 size={15}/> Atendimento da própria pousada</span>
+              <span><Star size={15}/> Experiência Moriah</span>
             </div>
           </div>
         </section>;
@@ -173,22 +180,33 @@ export default function SiteBuilderRenderer({
           </div>
           <div className="siteStayGrid">
             {rooms.map((room,index)=><article className="siteStayCard" key={room.id}>
-              <div className="siteStayImageWrap">
+              <Link className="siteStayImageWrap" href={"/hospedagens/"+room.id} aria-label={"Ver detalhes de "+room.name}>
                 {room.coverImage?<img src={room.coverImage} alt={room.name}/>:<div className="siteStayImagePlaceholder"><BedDouble size={30}/></div>}
-                <span>{String(index+1).padStart(2,"0")}</span>
-              </div>
+                {room.featured&&<span className="siteStayFeatured">Recomendado</span>}
+                <span className="siteStayIndex">{String(index+1).padStart(2,"0")}</span>
+              </Link>
               <div className="siteStayBody">
                 <div className="siteStayMeta">
-                  <small>{room.type}</small>
-                  <small>até {room.capacity} hóspede(s)</small>
+                  <small>{room.sharedRoom?"Quarto compartilhado":room.type}</small>
+                  <small><Users size={12}/> {room.sharedRoom?room.bedCount+" cama(s)":("até "+room.capacity+" hóspede(s)")}</small>
                 </div>
-                <h3>{room.name}</h3>
+                <h3><Link className="siteStayTitleLink" href={"/hospedagens/"+room.id}>{room.name}</Link></h3>
                 <p>{room.description}</p>
-                <Link href="/reservar">
-                  {room.priceCents!=null
-                    ?"A partir de "+(room.priceCents/100).toLocaleString("pt-BR",{style:"currency",currency:"BRL"})
-                    :"Consultar disponibilidade"} <ArrowRight size={15}/>
-                </Link>
+                {room.amenities.length>0&&<div className="siteStayAmenities">
+                  {room.amenities.slice(0,3).map(item=><span key={item}><CheckCircle2 size={13}/>{item}</span>)}
+                </div>}
+                <div className="siteStayOffer">
+                  <div>
+                    <small>{room.priceCents!=null?"A partir de":"Tarifa"}</small>
+                    <strong>{room.priceCents!=null
+                      ?(room.priceCents/100).toLocaleString("pt-BR",{style:"currency",currency:"BRL"})
+                      :"Sob consulta"}</strong>
+                    <span>{room.sharedRoom?"valor por cama / noite":"Reserva direta com a Moriah"}</span>
+                  </div>
+                  <Link href={"/reservar?accommodationId="+room.id}>
+                    {room.sharedRoom?"Ver camas disponíveis":"Ver disponibilidade"} <ArrowRight size={15}/>
+                  </Link>
+                </div>
               </div>
             </article>)}
           </div>
