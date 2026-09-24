@@ -54,7 +54,7 @@ export default async function BookingDetail({params}:{params:Promise<{id:string}
   if(!booking)notFound();
 
   const paid=booking.payments
-    .filter(payment=>payment.status==="PAID")
+    .filter(payment=>payment.status==="PAID"&&payment.reference!=="RESTAURANT_FOLIO")
     .reduce((sum,payment)=>sum+payment.amountCents,0);
   const lodgingTotal=booking.quotedTotalCents||0;
   const extrasTotal=booking.charges.reduce((sum,charge)=>sum+charge.amountCents,0);
@@ -230,8 +230,8 @@ export default async function BookingDetail({params}:{params:Promise<{id:string}
             </div>)}
           </div>}
 
-          {booking.payments.length>0&&<div className="adminStack" style={{marginTop:18}}>
-            {booking.payments.map(payment=><div className="adminStatusLine" key={payment.id}>
+          {booking.payments.filter(payment=>payment.reference!=="RESTAURANT_FOLIO").length>0&&<div className="adminStack" style={{marginTop:18}}>
+            {booking.payments.filter(payment=>payment.reference!=="RESTAURANT_FOLIO").map(payment=><div className="adminStatusLine" key={payment.id}>
               <span>{payment.method} • {payment.source} • {payment.paidAt.toLocaleString("pt-BR")}{payment.reference?" • "+payment.reference:""}</span>
               <b>{money(payment.amountCents,payment.currency)}</b>
             </div>)}
