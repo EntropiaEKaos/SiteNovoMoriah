@@ -58,7 +58,7 @@ export default function MediaMultiPicker({
       {choices.map(item=>{
         const checked=selected.includes(item.url);
         const blocked=!checked&&selected.length>=maxItems;
-        return <label className="adminMediaCard" key={item.id} style={{cursor:blocked?"not-allowed":"pointer",opacity:blocked?.55:1}}>
+        return <label className="adminMediaCard" key={item.id} style={{cursor:blocked?"not-allowed":"pointer",opacity:blocked?0.55:1}}>
           <img src={item.url} alt={item.alt||""}/>
           <div className="adminMediaCardBody">
             <div style={{display:"flex",alignItems:"center",gap:8}}>
