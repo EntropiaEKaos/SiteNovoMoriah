@@ -23,7 +23,7 @@ export default async function GuestsPage({
     ]
   }:undefined;
 
-  const [guests,total,withBookings,withDocument]=await Promise.all([
+  const [guests,total,monthlyGuests,employees]=await Promise.all([
     prisma.guest.findMany({
       where,
       include:{_count:{select:{bookings:true}}},
@@ -31,8 +31,8 @@ export default async function GuestsPage({
       take:100
     }),
     prisma.guest.count(),
-    prisma.guest.count({where:{bookings:{some:{}}}}),
-    prisma.guest.count({where:{document:{not:null}}})
+    prisma.guest.count({where:{monthlyGuest:true}}),
+    prisma.guest.count({where:{employee:true}})
   ]);
 
   return <main className="adminPage">
@@ -50,8 +50,8 @@ export default async function GuestsPage({
 
     <section className="adminMetricStrip">
       <div><small>Cadastros</small><strong>{total}</strong></div>
-      <div><small>Com histórico</small><strong>{withBookings}</strong></div>
-      <div><small>Com documento</small><strong>{withDocument}</strong></div>
+      <div><small>Mensalistas</small><strong>{monthlyGuests}</strong></div>
+      <div><small>Colaboradores</small><strong>{employees}</strong></div>
       <div><small>Exibidos</small><strong>{guests.length}</strong></div>
     </section>
 
@@ -101,6 +101,16 @@ export default async function GuestsPage({
           <label>Contato de emergência
             <input name="emergencyContact" maxLength={300} placeholder="Nome e telefone"/>
           </label>
+          <div className="span2 guestMarkerGrid">
+            <label className="guestMarkerOption">
+              <input name="monthlyGuest" type="checkbox"/>
+              <span><b>Mensalista</b><small>Pode existir no CRM sem reserva ou hospedagem vinculada.</small></span>
+            </label>
+            <label className="guestMarkerOption">
+              <input name="employee" type="checkbox"/>
+              <span><b>Colaborador</b><small>Cadastro operacional independente de hospedagem.</small></span>
+            </label>
+          </div>
           <label className="span2">Preferências
             <textarea name="preferences" maxLength={4000} rows={3} placeholder="Ex.: quarto térreo, travesseiro extra, restrições alimentares..."/>
           </label>
@@ -133,13 +143,15 @@ export default async function GuestsPage({
       {guests.map(guest=><article className="adminListCard" key={guest.id}>
         <div className="adminListCardHead">
           <div>
-            <small>{guest.documentType||"HÓSPEDE"}</small>
+            <small>{guest.employee?"COLABORADOR":guest.monthlyGuest?"MENSALISTA":guest.documentType||"HÓSPEDE"}</small>
             <h3>{guest.name}</h3>
             <p>{guest.phone}{guest.email?" • "+guest.email:""}</p>
           </div>
           <span className={"adminChip "+(guest._count.bookings?"ok":"")}>{guest._count.bookings} reserva(s)</span>
         </div>
         <div className="adminMetaRow">
+          {guest.monthlyGuest&&<span className="adminChip ok">Mensalista</span>}
+          {guest.employee&&<span className="adminChip">Colaborador</span>}
           {guest.document&&<span className="adminChip">{guest.document}</span>}
           {guest.city&&<span className="adminChip">{guest.city}{guest.state?" / "+guest.state:""}</span>}
           {guest.nationality&&<span className="adminChip">{guest.nationality}</span>}
