@@ -61,7 +61,7 @@ function dateRequest(text:string){
   });
 
   const dates=[...iso,...br];
-  const guestMatch=text.match(/(?:para|somos|hóspedes?)\s*(\d{1,2})|(?:\d{1,2})\s*(?:pessoas?|hóspedes?)/i);
+  const guestMatch=text.match(/(?:para|somos|hóspedes?|camas?)\s*(\d{1,2})|(?:\d{1,2})\s*(?:pessoas?|hóspedes?|camas?)/i);
   const guests=guestMatch
     ?Number(guestMatch[1]||guestMatch[0].match(/\d+/)?.[0])
     :null;
