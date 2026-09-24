@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 const links=[
+  ["Central","/admin/restaurante/cozinha"],
   ["KDS","/admin/restaurante/pedidos"],
   ["Expedição","/admin/restaurante/cozinha/expedicao"],
   ["Estações","/admin/restaurante/cozinha/estacoes"],

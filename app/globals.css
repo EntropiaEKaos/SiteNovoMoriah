@@ -5585,3 +5585,172 @@ body{background:linear-gradient(180deg,#fff 0,#fffdf5 100%)}.nav{box-shadow:0 8p
   .kitchenCancelForm{width:100%}
   .kitchenCancelForm input{flex:1;width:auto}
 }
+
+
+/* Kitchen 4.1 — Command Center, station displays and smart queue UX */
+.kitchenStationDisplayLink{
+  border-color:#0b607a!important;
+  background:#0b2631!important;
+}
+.kitchenStationDisplayLink b{color:#fff!important}
+.kitchenStationDisplayLink span{color:#9cc9d5!important}
+
+.kitchenCommandGrid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:14px;
+  margin-bottom:14px;
+}
+.kitchenPanelHead>a{
+  color:#0b607a;
+  font-size:9px;
+  font-weight:900;
+}
+.kitchenCommandStationList,.kitchenCommandOrders{display:grid;gap:7px}
+.kitchenCommandStationList>a{
+  display:grid;
+  grid-template-columns:8px minmax(0,1fr) 44px 60px;
+  gap:10px;
+  align-items:center;
+  padding:11px 0;
+  border-bottom:1px solid #edf1f2;
+}
+.kitchenCommandStationList>a>i{
+  width:8px;height:34px;border-radius:99px;
+}
+.kitchenCommandStationList b,.kitchenCommandStationList small{display:block}
+.kitchenCommandStationList b{font-size:12px;color:#28454f}
+.kitchenCommandStationList small{margin-top:2px;font-size:8px;color:#849399}
+.kitchenCommandStationList strong{font-size:22px;color:#183842;text-align:center}
+.kitchenCommandStationList span{
+  padding:5px 6px;border-radius:99px;background:#edf2f3;color:#718188;
+  font-size:7px;font-weight:950;text-align:center;
+}
+.kitchenCommandStationList .pressure-alta span,
+.kitchenCommandStationList .pressure-critica span{background:#fff0df;color:#9b5425}
+.kitchenCommandStationList .pressure-critica{background:#fff8f7}
+
+.kitchenCommandOrders>a{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) 55px 62px;
+  gap:10px;
+  align-items:center;
+  padding:10px 11px;
+  border:1px solid #e1e8ea;
+  border-radius:9px;
+  background:#fafcfc;
+}
+.kitchenCommandOrders>a.is-warning{border-color:#e3c16a;background:#fffaf0}
+.kitchenCommandOrders>a.is-critical{border-color:#d99b95;background:#fff6f5}
+.kitchenCommandOrders small,.kitchenCommandOrders b{display:block}
+.kitchenCommandOrders small{font-size:7px;color:#849399;font-weight:900}
+.kitchenCommandOrders b{margin-top:3px;font-size:11px;color:#2c4953}
+.kitchenCommandOrders span{font-size:9px;color:#71848b;text-align:center}
+.kitchenCommandOrders strong{font-size:13px;color:#183842;text-align:right}
+
+.kitchenCommandActions{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:8px;
+}
+.kitchenCommandActions>a{
+  display:grid;gap:4px;padding:15px;
+  border:1px solid #d4dfe2;border-radius:12px;background:#fff;
+  transition:.18s ease;
+}
+.kitchenCommandActions>a:hover{transform:translateY(-2px);border-color:#8fb9c5}
+.kitchenCommandActions b{font-size:12px;color:#254751}
+.kitchenCommandActions span{font-size:8px;color:#7b8e95}
+
+.kitchenStationScreen{padding-bottom:60px}
+.kitchenStationScreenHero{
+  display:flex;justify-content:space-between;align-items:flex-end;gap:30px;
+  margin:28px 0 14px;padding:24px 26px;
+  border:2px solid #0b607a;border-radius:17px;
+  background:linear-gradient(135deg,#092630,#103c49);color:#fff;
+  box-shadow:0 14px 38px rgba(7,31,41,.17);
+}
+.kitchenStationScreenHero small{
+  color:#9cc9d5;font-size:8px;font-weight:950;letter-spacing:1.5px;
+}
+.kitchenStationScreenHero h1{
+  margin:5px 0;font-size:clamp(42px,5vw,70px);line-height:.95;letter-spacing:-3px;
+}
+.kitchenStationScreenHero p{margin:0;color:#bad0d7;font-size:11px}
+.kitchenStationScreenHero>div:last-child{text-align:right}
+.kitchenStationScreenHero>div:last-child strong{
+  display:block;color:#ffc845;font-size:48px;line-height:1;
+}
+.kitchenStationScreenHero>div:last-child span{
+  display:block;margin-top:4px;color:#b7cbd1;font-size:8px;font-weight:900;text-transform:uppercase;
+}
+.kitchenStationScreenTop{
+  display:flex;gap:15px;align-items:center;flex-wrap:wrap;
+  margin:10px 0 14px;padding:10px 13px;border:1px solid #d4dee1;
+  border-radius:10px;background:#fff;color:#74868c;font-size:8px;
+}
+.kitchenStationScreenTop a{margin-left:auto;color:#0b607a;font-weight:900}
+.kitchenStationOrders{
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px;
+}
+.kitchenStationOrder{
+  overflow:hidden;border:1px solid #d5e0e2;border-radius:15px;background:#fff;
+  box-shadow:0 8px 22px rgba(20,50,61,.06);
+}
+.kitchenStationOrder.is-warning{border-color:#dfb650}
+.kitchenStationOrder.is-critical{border-color:#c85b52;box-shadow:0 0 0 3px #c85b5212}
+.kitchenStationOrder.isUrgent{box-shadow:inset 6px 0 0 #d86138,0 8px 22px rgba(20,50,61,.07)}
+.kitchenStationOrder>header{
+  display:flex;justify-content:space-between;gap:15px;align-items:center;padding:15px 16px;
+}
+.kitchenStationOrder header small{font-size:8px;color:#7d8f95;font-weight:900}
+.kitchenStationOrder h2{margin:4px 0 1px;font-size:22px;color:#193741}
+.kitchenStationOrder header p{margin:0;font-size:9px;color:#7b8b91}
+.kitchenStationTimer{
+  width:58px;height:58px;display:grid;place-content:center;text-align:center;
+  border-radius:13px;background:#102e39;color:#fff;
+}
+.kitchenStationTimer b{font-size:24px;line-height:1}
+.kitchenStationTimer span{font-size:6px;letter-spacing:1px}
+.kitchenStationItemList{display:grid;padding:7px 12px 12px;background:#f6f8f9}
+.kitchenStationItem{
+  display:grid;grid-template-columns:minmax(0,1fr) 92px;gap:12px;align-items:center;
+  padding:12px 2px;border-bottom:1px solid #dde6e8;
+}
+.kitchenStationItemTitle{display:flex;justify-content:space-between;gap:10px}
+.kitchenStationItemTitle strong{font-size:15px;color:#1d3d47}
+.kitchenStationItemTitle span{font-size:7px;font-weight:950;color:#718188}
+.kitchenStationItem small{display:block;margin-top:4px;color:#7f9096;font-size:8px}
+.kitchenStationItem p{
+  margin:8px 0 0;padding:8px;border-left:3px solid #0b607a;background:#eaf4f7;
+  color:#3b5660;font-size:9px;line-height:1.45;
+}
+.kitchenStationItem em{
+  display:block;margin-top:6px;padding:7px;border-radius:7px;background:#fff2bc;
+  color:#6c5617;font-size:9px;font-style:normal;font-weight:850;
+}
+.kitchenStationItem button{
+  width:100%;min-height:46px;border:0;border-radius:10px;
+  color:#fff;font-size:10px;font-weight:950;cursor:pointer;
+}
+.kitchenStationItem button.start{background:#0b607a}
+.kitchenStationItem button.ready{background:#17795e}
+.kitchenStationClear{
+  grid-column:1/-1;min-height:300px;display:grid;place-content:center;gap:7px;text-align:center;
+  border:2px dashed #b8c9ce;border-radius:17px;background:#ffffffa8;
+}
+.kitchenStationClear strong{font-size:38px;color:#2b4e59;letter-spacing:-1px}
+.kitchenStationClear span{font-size:11px;color:#7e9096}
+
+@media(max-width:1000px){
+  .kitchenCommandGrid{grid-template-columns:1fr}
+  .kitchenCommandActions{grid-template-columns:1fr 1fr}
+  .kitchenStationOrders{grid-template-columns:1fr}
+}
+@media(max-width:620px){
+  .kitchenCommandActions{grid-template-columns:1fr}
+  .kitchenStationScreenHero{align-items:flex-start;flex-direction:column}
+  .kitchenStationScreenHero>div:last-child{text-align:left}
+  .kitchenStationScreenTop a{margin-left:0}
+  .kitchenStationItem{grid-template-columns:1fr}
+}

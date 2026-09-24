@@ -125,6 +125,9 @@ export default async function Page({
       >
         <b>{station.name}</b><span>{station.pending} un. em carga</span>
       </Link>)}
+      {selectedStation&&<Link className="kitchenStationDisplayLink" href={"/admin/restaurante/cozinha/estacao/"+selectedStation}>
+        <b>Modo estação ↗</b><span>TV / tablet dedicado</span>
+      </Link>}
     </section>
 
     {pendingNotifications>0&&<section className="kdsNotificationBanner">
