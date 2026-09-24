@@ -53,10 +53,17 @@ function fallbackHeroImage(rooms:Accommodation[],media:Media[]){
 }
 
 function blockProps(section:SiteSection,extra:string,fallbackId?:string){
+  const animation=section.animation||"FADE_UP";
+  const animationDelay=Number.isFinite(section.animationDelay)?section.animationDelay:0;
+  const paddingY=Number.isFinite(section.paddingY)?section.paddingY:96;
+  const contentWidth=section.contentWidth||"NORMAL";
+  const theme=section.theme||"LIGHT";
+  const layout=section.layout||"DEFAULT";
+
   const style={
-    "--site-section-delay":section.animationDelay+"ms",
-    paddingTop:section.paddingY,
-    paddingBottom:section.paddingY,
+    "--site-section-delay":animationDelay+"ms",
+    paddingTop:paddingY,
+    paddingBottom:paddingY,
     ...(section.backgroundColor?{backgroundColor:section.backgroundColor}:{}),
     ...(section.textColor?{color:section.textColor}:{}),
     ...(section.backgroundImageUrl?{
@@ -69,10 +76,10 @@ function blockProps(section:SiteSection,extra:string,fallbackId?:string){
 
   const classes=[
     "siteBlock",
-    "siteTheme-"+section.theme.toLowerCase(),
-    "siteLayout-"+section.layout.toLowerCase(),
-    "siteContentWidth-"+section.contentWidth.toLowerCase(),
-    "siteMotion-"+section.animation.toLowerCase(),
+    "siteTheme-"+theme.toLowerCase(),
+    "siteLayout-"+layout.toLowerCase(),
+    "siteContentWidth-"+contentWidth.toLowerCase(),
+    "siteMotion-"+animation.toLowerCase(),
     section.hideMobile?"siteHideMobile":"",
     section.hideDesktop?"siteHideDesktop":"",
     extra
