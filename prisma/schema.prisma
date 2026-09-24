@@ -62,6 +62,9 @@ model SitePage {
   seoTitle       String?
   seoDescription String?
   ogImage        String?
+  navLabel       String?
+  showInNav      Boolean       @default(false)
+  sortOrder      Int           @default(100)
   published      Boolean       @default(true)
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
@@ -84,6 +87,17 @@ model SiteSection {
   ctaHref           String?
   secondaryCtaLabel String?
   secondaryCtaHref  String?
+  videoUrl          String?
+  anchorId          String?
+  backgroundImageUrl String?
+  backgroundColor   String?
+  textColor         String?
+  animation         String   @default("FADE_UP")
+  animationDelay    Int      @default(0)
+  paddingY          Int      @default(96)
+  contentWidth      String   @default("NORMAL")
+  hideMobile        Boolean  @default(false)
+  hideDesktop       Boolean  @default(false)
   theme             String   @default("LIGHT")
   layout            String   @default("DEFAULT")
   sortOrder         Int      @default(100)
@@ -92,6 +106,7 @@ model SiteSection {
   updatedAt         DateTime @updatedAt
 
   @@index([pageId, active, sortOrder])
+  @@index([anchorId])
 }
 
 model Accommodation {
