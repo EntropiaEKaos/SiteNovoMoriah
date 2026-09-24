@@ -4,7 +4,19 @@ import {isAccommodationAvailable} from "../../../lib/inventory-engine";
 import {quoteAccommodation} from "../../../lib/rate-engine";
 
 const GROQ_URL="https://api.groq.com/openai/v1/chat/completions";
+const DEFAULT_GROQ_MODEL="openai/gpt-oss-20b";
+const GROQ_MODEL_REPLACEMENTS:Record<string,string>={
+  "llama-3.1-8b-instant":"openai/gpt-oss-20b",
+  "llama-3.3-70b-versatile":"openai/gpt-oss-120b",
+  "groq/compound":"openai/gpt-oss-20b",
+  "groq/compound-mini":"openai/gpt-oss-20b"
+};
 const buckets=new Map<string,{count:number;resetAt:number}>();
+
+function normalizeGroqModel(value:string|null|undefined){
+  const model=String(value||"").trim();
+  return GROQ_MODEL_REPLACEMENTS[model]||model||DEFAULT_GROQ_MODEL;
+}
 
 const SYSTEM=`Você é o assistente virtual da Pousada Moriah, em Praia Grande, SP. Responda em português do Brasil, acolhedor, objetivo e curto. Use SOMENTE o CONTEXTO MORIAH fornecido pelo sistema para afirmar preços, acomodações, capacidades, endereço, promoções, serviços, cardápio, pedidos ou valores financeiros. Nunca invente disponibilidade, saldo ou status de pedido. Nunca confirme uma reserva no chat. Se faltar informação, diga que a equipe precisa confirmar. Nunca peça cartão, senha, documento ou outro dado sensível. Contexto financeiro privado só aparece quando o sistema validou um token ativo da própria hospedagem.`;
 
@@ -304,7 +316,7 @@ export async function POST(req:NextRequest){
         "authorization":"Bearer "+key
       },
       body:JSON.stringify({
-        model:settings?.groqModel||process.env.GROQ_CHAT_MODEL||"llama-3.1-8b-instant",
+        model:normalizeGroqModel(settings?.groqModel||process.env.GROQ_CHAT_MODEL),
         temperature:settings?.groqTemperature??0.2,
         max_completion_tokens:500,
         messages:[
@@ -316,7 +328,8 @@ export async function POST(req:NextRequest){
     });
 
     if(!response.ok){
-      console.error("GROQ_CHAT_FAILED",response.status);
+      const detail=await response.text().catch(()=>"");
+      console.error("GROQ_CHAT_FAILED",response.status,detail.slice(0,500));
       return NextResponse.json({error:"Atendimento temporariamente indisponível."},{status:502});
     }
 
