@@ -89,7 +89,16 @@ export default async function Page(){
             <input name="chatName" defaultValue={cfg?.chatName||"Moriah Assistente"}/>
           </label>
           <label>Modelo Groq
-            <input name="groqModel" defaultValue={cfg?.groqModel||"llama-3.1-8b-instant"}/>
+            <select name="groqModel" defaultValue={
+              cfg?.groqModel==="llama-3.1-8b-instant"
+                ?"openai/gpt-oss-20b"
+                :cfg?.groqModel==="llama-3.3-70b-versatile"
+                  ?"openai/gpt-oss-120b"
+                  :(cfg?.groqModel||"openai/gpt-oss-20b")
+            }>
+              <option value="openai/gpt-oss-20b">GPT-OSS 20B — rápido / recomendado</option>
+              <option value="openai/gpt-oss-120b">GPT-OSS 120B — respostas mais robustas</option>
+            </select>
           </label>
           <label>Temperatura
             <input name="groqTemperature" type="number" min="0" max="1" step="0.1" defaultValue={cfg?.groqTemperature??0.2}/>
