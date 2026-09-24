@@ -12,6 +12,8 @@ jobs:
         with:
           node-version: 22
       - run: npm install
+      - name: Production dependency security gate
+        run: npm audit --omit=dev --audit-level=critical
       - run: npx prisma validate
         env:
           DATABASE_URL: postgresql://placeholder:placeholder@localhost:5432/moriah
