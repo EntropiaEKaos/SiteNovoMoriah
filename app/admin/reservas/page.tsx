@@ -119,7 +119,9 @@ export default async function Page({
       <p>Ajuste os filtros ou aguarde novas solicitações do site.</p>
     </section>:<section className="adminStack">
       {leads.map((booking,index)=>{
-        const paid=booking.payments.reduce((sum,payment)=>sum+payment.amountCents,0);
+        const paid=booking.payments
+          .filter(payment=>payment.reference!=="RESTAURANT_FOLIO")
+          .reduce((sum,payment)=>sum+payment.amountCents,0);
         const extras=booking.charges.reduce((sum,charge)=>sum+charge.amountCents,0);
         const lodgingTotal=booking.quotedTotalCents||0;
         const totalCents=lodgingTotal+extras;
