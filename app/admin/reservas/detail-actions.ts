@@ -1,8 +1,8 @@
 "use server";
 
 import {revalidatePath} from "next/cache";
-import {requireAdmin} from "../../../../lib/admin-auth";
-import {prisma} from "../../../../lib/prisma";
+import {requireAdmin} from "../../../lib/admin-auth";
+import {prisma} from "../../../lib/prisma";
 
 function text(formData:FormData,name:string,max:number){
   return String(formData.get(name)||"").trim().slice(0,max)||null;
