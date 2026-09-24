@@ -57,7 +57,8 @@ export default async function Page({
       include:{
         accommodation:true,
         guest:true,
-        payments:{where:{status:"PAID"}}
+        payments:{where:{status:"PAID"}},
+        charges:true
       },
       orderBy:{createdAt:"desc"},
       take:150
@@ -118,8 +119,12 @@ export default async function Page({
       <p>Ajuste os filtros ou aguarde novas solicitações do site.</p>
     </section>:<section className="adminStack">
       {leads.map((booking,index)=>{
-        const paid=booking.payments.reduce((sum,payment)=>sum+payment.amountCents,0);
-        const totalCents=booking.quotedTotalCents||0;
+        const paid=booking.payments
+          .filter(payment=>payment.reference!=="RESTAURANT_FOLIO")
+          .reduce((sum,payment)=>sum+payment.amountCents,0);
+        const extras=booking.charges.reduce((sum,charge)=>sum+charge.amountCents,0);
+        const lodgingTotal=booking.quotedTotalCents||0;
+        const totalCents=lodgingTotal+extras;
         const balance=Math.max(0,totalCents-paid);
         const editable=booking.status in editableLabels;
 
@@ -152,7 +157,9 @@ export default async function Page({
             </div>
 
             <div className="adminSectionCard" style={{padding:16}}>
-              <div className="adminStatusLine"><span>Total cotado</span><b>{totalCents?(totalCents/100).toLocaleString("pt-BR",{style:"currency",currency:booking.quotedCurrency||"BRL"}):"—"}</b></div>
+              <div className="adminStatusLine"><span>Hospedagem</span><b>{lodgingTotal?(lodgingTotal/100).toLocaleString("pt-BR",{style:"currency",currency:booking.quotedCurrency||"BRL"}):"—"}</b></div>
+              <div className="adminStatusLine"><span>Adicionais</span><b>{(extras/100).toLocaleString("pt-BR",{style:"currency",currency:"BRL"})}</b></div>
+              <div className="adminStatusLine"><span>Total da conta</span><b>{(totalCents/100).toLocaleString("pt-BR",{style:"currency",currency:booking.quotedCurrency||"BRL"})}</b></div>
               <div className="adminStatusLine"><span>Recebido</span><b>{(paid/100).toLocaleString("pt-BR",{style:"currency",currency:"BRL"})}</b></div>
               <div className="adminStatusLine"><span>Saldo</span><b>{(balance/100).toLocaleString("pt-BR",{style:"currency",currency:"BRL"})}</b></div>
             </div>

@@ -193,6 +193,7 @@ model BookingLead {
   housekeepingTasks HousekeepingTask[]
   restaurantOrders RestaurantOrder[]
   restaurantRoomCharges RestaurantRoomCharge[]
+  charges         BookingCharge[]
   companions      BookingCompanion[]
   internalNotes   String?
   createdAt       DateTime       @default(now())
@@ -399,6 +400,8 @@ model Guest {
   preferences      String?
   emergencyContact String?
   notes            String?
+  monthlyGuest     Boolean  @default(false)
+  employee         Boolean  @default(false)
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
   bookings         BookingLead[]
@@ -426,12 +429,25 @@ model Payment {
   amountCents Int
   currency String @default("BRL")
   method String
+  source String @default("INTERNAL")
   status String @default("PAID")
   reference String?
   paidAt DateTime @default(now())
   createdAt DateTime @default(now())
   @@index([bookingId,status])
 }
+model BookingCharge {
+  id          String      @id @default(cuid())
+  bookingId   String
+  booking     BookingLead @relation(fields:[bookingId],references:[id],onDelete:Cascade)
+  description String
+  amountCents Int
+  category    String      @default("CHECKIN_EXTRA")
+  createdAt   DateTime    @default(now())
+
+  @@index([bookingId,createdAt])
+}
+
 model HousekeepingTask {
   id String @id @default(cuid())
   accommodationId String

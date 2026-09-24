@@ -22,6 +22,8 @@ function readGuest(formData:FormData){
   const preferences=value("preferences",4000);
   const emergencyContact=value("emergencyContact",300);
   const notes=value("notes",4000);
+  const monthlyGuest=formData.get("monthlyGuest")==="on";
+  const employee=formData.get("employee")==="on";
 
   if(!name||!phone)throw new Error("Nome e telefone/WhatsApp são obrigatórios.");
   if(email&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))throw new Error("E-mail inválido.");
@@ -41,7 +43,9 @@ function readGuest(formData:FormData){
     postalCode,
     preferences,
     emergencyContact,
-    notes
+    notes,
+    monthlyGuest,
+    employee
   };
 }
 
@@ -56,10 +60,26 @@ export async function createGuest(formData:FormData){
         {name:data.name,phone:data.phone}
       ]
     },
-    select:{id:true}
+    select:{id:true,monthlyGuest:true,employee:true}
   });
 
-  if(duplicate)redirect("/admin/hospedes/"+duplicate.id);
+  if(duplicate){
+    if(
+      (data.monthlyGuest&&!duplicate.monthlyGuest)||
+      (data.employee&&!duplicate.employee)
+    ){
+      await prisma.guest.update({
+        where:{id:duplicate.id},
+        data:{
+          monthlyGuest:duplicate.monthlyGuest||data.monthlyGuest,
+          employee:duplicate.employee||data.employee
+        }
+      });
+      revalidatePath("/admin/hospedes");
+      revalidatePath("/admin/hospedes/"+duplicate.id);
+    }
+    redirect("/admin/hospedes/"+duplicate.id);
+  }
 
   const guest=await prisma.guest.create({data});
   revalidatePath("/admin/hospedes");

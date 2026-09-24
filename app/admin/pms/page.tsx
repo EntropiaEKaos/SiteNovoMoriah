@@ -7,6 +7,7 @@ import {
   updateHousekeeping,
   settleRestaurantFolio
 } from "../actions";
+import CheckInForm from "./check-in-form";
 
 export const dynamic="force-dynamic";
 
@@ -32,6 +33,7 @@ export default async function PMS(){
         accommodation:true,
         guest:true,
         payments:true,
+        charges:true,
         restaurantRoomCharges:{where:{status:{in:["OPEN","SETTLING"]}}}
       },
       orderBy:{checkIn:"asc"},
@@ -54,9 +56,10 @@ export default async function PMS(){
   const inHouse=bookings.filter(booking=>booking.status==="CHECKED_IN").length;
   const openBalance=bookings.reduce((sum,booking)=>{
     const paid=booking.payments
-      .filter(payment=>payment.status==="PAID")
+      .filter(payment=>payment.status==="PAID"&&payment.reference!=="RESTAURANT_FOLIO")
       .reduce((value,payment)=>value+payment.amountCents,0);
-    return sum+Math.max(0,(booking.quotedTotalCents||0)-paid);
+    const charges=booking.charges.reduce((value,charge)=>value+charge.amountCents,0);
+    return sum+Math.max(0,(booking.quotedTotalCents||0)+charges-paid);
   },0);
 
   return <main className="adminPage">
@@ -86,9 +89,11 @@ export default async function PMS(){
           <p>Reservas confirmadas e hóspedes na casa aparecerão aqui.</p>
         </div>:bookings.map(booking=>{
           const paid=booking.payments
-            .filter(payment=>payment.status==="PAID")
+            .filter(payment=>payment.status==="PAID"&&payment.reference!=="RESTAURANT_FOLIO")
             .reduce((sum,payment)=>sum+payment.amountCents,0);
-          const total=booking.quotedTotalCents||0;
+          const extras=booking.charges.reduce((sum,charge)=>sum+charge.amountCents,0);
+          const lodgingTotal=booking.quotedTotalCents||0;
+          const total=lodgingTotal+extras;
           const balance=Math.max(0,total-paid);
           const openRestaurant=booking.restaurantRoomCharges.length>0;
 
@@ -113,7 +118,9 @@ export default async function PMS(){
 
             <div className="adminTwoCol" style={{marginTop:16}}>
               <div className="adminSectionCard" style={{padding:16}}>
-                <div className="adminStatusLine"><span>Total</span><b>{money(total)}</b></div>
+                <div className="adminStatusLine"><span>Hospedagem</span><b>{money(lodgingTotal)}</b></div>
+                <div className="adminStatusLine"><span>Adicionais</span><b>{money(extras)}</b></div>
+                <div className="adminStatusLine"><span>Total da conta</span><b>{money(total)}</b></div>
                 <div className="adminStatusLine"><span>Pago</span><b>{money(paid)}</b></div>
                 <div className="adminStatusLine"><span>Saldo</span><b>{money(balance)}</b></div>
               </div>
@@ -122,11 +129,7 @@ export default async function PMS(){
                 <div className="adminInlineActions">
                   <Link className="highlight" href={"/admin/reservas/"+booking.id}>Abrir reserva →</Link>
                   {booking.guest&&<Link href={"/admin/hospedes/"+booking.guest.id}>Ficha do hóspede</Link>}
-                  {booking.status==="CONFIRMED"&&<form action={pmsBookingAction}>
-                    <input type="hidden" name="id" value={booking.id}/>
-                    <input type="hidden" name="action" value="CHECK_IN"/>
-                    <button className="highlight">Fazer check-in</button>
-                  </form>}
+
                   {booking.status==="CHECKED_IN"&&<form action={pmsBookingAction}>
                     <input type="hidden" name="id" value={booking.id}/>
                     <input type="hidden" name="action" value="CHECK_OUT"/>
@@ -144,7 +147,11 @@ export default async function PMS(){
                   >Restaurante ↗</a>}
                 </div>
 
-                <form action={registerPayment} className="adminFormGrid" style={{marginTop:12}}>
+                {booking.status==="CONFIRMED"?<CheckInForm
+                  bookingId={booking.id}
+                  lodgingTotalCents={lodgingTotal}
+                  alreadyPaidCents={paid}
+                />:<form action={registerPayment} className="adminFormGrid" style={{marginTop:12}}>
                   <input type="hidden" name="bookingId" value={booking.id}/>
                   <label>Receber valor
                     <input name="amount" inputMode="decimal" required placeholder="R$"/>
@@ -155,10 +162,11 @@ export default async function PMS(){
                       <option value="CARD">Cartão</option>
                       <option value="CASH">Dinheiro</option>
                       <option value="TRANSFER">Transferência</option>
+                      <option value="EXTERNAL">Pagamento externo</option>
                     </select>
                   </label>
                   <button className="span2">Registrar pagamento</button>
-                </form>
+                </form>}
 
                 {booking.status==="CHECKED_IN"&&<form action={settleRestaurantFolio} style={{marginTop:10}}>
                   <input type="hidden" name="bookingId" value={booking.id}/>

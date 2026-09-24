@@ -13,6 +13,7 @@ import {
   deleteBookingCompanion,
   updateBookingProfile
 } from "../detail-actions";
+import CheckInForm from "../../pms/check-in-form";
 
 export const dynamic="force-dynamic";
 
@@ -40,6 +41,7 @@ export default async function BookingDetail({params}:{params:Promise<{id:string}
       accommodation:true,
       guest:true,
       payments:{orderBy:{paidAt:"desc"}},
+      charges:{orderBy:{createdAt:"asc"}},
       auditLogs:{orderBy:{createdAt:"desc"},take:100},
       companions:{orderBy:{createdAt:"asc"}},
       housekeepingTasks:{orderBy:{createdAt:"desc"}},
@@ -52,9 +54,11 @@ export default async function BookingDetail({params}:{params:Promise<{id:string}
   if(!booking)notFound();
 
   const paid=booking.payments
-    .filter(payment=>payment.status==="PAID")
+    .filter(payment=>payment.status==="PAID"&&payment.reference!=="RESTAURANT_FOLIO")
     .reduce((sum,payment)=>sum+payment.amountCents,0);
-  const total=booking.quotedTotalCents||0;
+  const lodgingTotal=booking.quotedTotalCents||0;
+  const extrasTotal=booking.charges.reduce((sum,charge)=>sum+charge.amountCents,0);
+  const total=lodgingTotal+extrasTotal;
   const balance=Math.max(0,total-paid);
   const restaurantOpen=booking.restaurantRoomCharges
     .filter(charge=>["OPEN","SETTLING"].includes(charge.status))
@@ -101,11 +105,7 @@ export default async function BookingDetail({params}:{params:Promise<{id:string}
           <div className="adminStatusLine"><span>Origem</span><b>{booking.source}</b></div>
 
           <div className="adminInlineActions" style={{marginTop:18}}>
-            {booking.status==="CONFIRMED"&&<form action={pmsBookingAction}>
-              <input type="hidden" name="id" value={booking.id}/>
-              <input type="hidden" name="action" value="CHECK_IN"/>
-              <button className="highlight">Fazer check-in</button>
-            </form>}
+
             {booking.status==="CHECKED_IN"&&<form action={pmsBookingAction}>
               <input type="hidden" name="id" value={booking.id}/>
               <input type="hidden" name="action" value="CHECK_OUT"/>
@@ -195,11 +195,17 @@ export default async function BookingDetail({params}:{params:Promise<{id:string}
 
         <article className="adminSectionCard">
           <h2>Financeiro</h2>
-          <div className="adminStatusLine"><span>Total da reserva</span><b>{money(total,booking.quotedCurrency||"BRL")}</b></div>
+          <div className="adminStatusLine"><span>Hospedagem</span><b>{money(lodgingTotal,booking.quotedCurrency||"BRL")}</b></div>
+          <div className="adminStatusLine"><span>Adicionais</span><b>{money(extrasTotal)}</b></div>
+          <div className="adminStatusLine"><span>Total da conta</span><b>{money(total,booking.quotedCurrency||"BRL")}</b></div>
           <div className="adminStatusLine"><span>Recebido</span><b>{money(paid)}</b></div>
           <div className="adminStatusLine"><span>Saldo</span><b>{money(balance)}</b></div>
 
-          <form action={registerPayment} className="adminFormGrid" style={{marginTop:18}}>
+          {booking.status==="CONFIRMED"?<CheckInForm
+            bookingId={booking.id}
+            lodgingTotalCents={lodgingTotal}
+            alreadyPaidCents={paid}
+          />:<form action={registerPayment} className="adminFormGrid" style={{marginTop:18}}>
             <input type="hidden" name="bookingId" value={booking.id}/>
             <label>Valor
               <input name="amount" inputMode="decimal" required placeholder="R$"/>
@@ -210,14 +216,23 @@ export default async function BookingDetail({params}:{params:Promise<{id:string}
                 <option value="CARD">Cartão</option>
                 <option value="CASH">Dinheiro</option>
                 <option value="TRANSFER">Transferência</option>
+                <option value="EXTERNAL">Pagamento externo</option>
               </select>
             </label>
             <button className="span2">Registrar pagamento</button>
-          </form>
+          </form>}
 
-          {booking.payments.length>0&&<div className="adminStack" style={{marginTop:18}}>
-            {booking.payments.map(payment=><div className="adminStatusLine" key={payment.id}>
-              <span>{payment.method} • {payment.paidAt.toLocaleString("pt-BR")}</span>
+          {booking.charges.length>0&&<div className="adminStack" style={{marginTop:18}}>
+            <small>ADICIONAIS DA RESERVA</small>
+            {booking.charges.map(charge=><div className="adminStatusLine" key={charge.id}>
+              <span>{charge.description}<br/><small>{charge.category} • {charge.createdAt.toLocaleString("pt-BR")}</small></span>
+              <b>{money(charge.amountCents)}</b>
+            </div>)}
+          </div>}
+
+          {booking.payments.filter(payment=>payment.reference!=="RESTAURANT_FOLIO").length>0&&<div className="adminStack" style={{marginTop:18}}>
+            {booking.payments.filter(payment=>payment.reference!=="RESTAURANT_FOLIO").map(payment=><div className="adminStatusLine" key={payment.id}>
+              <span>{payment.method} • {payment.source} • {payment.paidAt.toLocaleString("pt-BR")}{payment.reference?" • "+payment.reference:""}</span>
               <b>{money(payment.amountCents,payment.currency)}</b>
             </div>)}
           </div>}

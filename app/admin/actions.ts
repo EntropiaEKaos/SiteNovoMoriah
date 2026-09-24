@@ -198,6 +198,74 @@ export async function deleteRateOverride(formData:FormData){await requireAdmin()
 export async function createRateRule(formData:FormData){await requireAdmin();const accommodationId=String(formData.get("accommodationId")||""),name=String(formData.get("name")||"").trim(),adjustmentType=String(formData.get("adjustmentType")||"PERCENT"),raw=Number(formData.get("adjustmentValue")||0);if(!accommodationId||!name||!["PERCENT","FIXED"].includes(adjustmentType)||!Number.isFinite(raw))throw new Error("Regra dinâmica inválida.");const num=(key:string)=>{const v=String(formData.get(key)||"").trim();if(v==="")return null;const n=Number(v);if(!Number.isFinite(n))throw new Error("Valor numérico inválido.");return n};const minOcc=num("minOccupancyPct"),maxOcc=num("maxOccupancyPct"),minDays=num("daysBeforeMin"),maxDays=num("daysBeforeMax"),priority=num("priority")??100;if((minOcc!=null&&(minOcc<0||minOcc>100))||(maxOcc!=null&&(maxOcc<0||maxOcc>100))||(minOcc!=null&&maxOcc!=null&&minOcc>maxOcc)||(minDays!=null&&minDays<0)||(maxDays!=null&&maxDays<0)||(minDays!=null&&maxDays!=null&&minDays>maxDays))throw new Error("Faixas da regra dinâmica são inválidas.");const starts=String(formData.get("startsAt")||""),ends=String(formData.get("endsAt")||"");const startsAt=starts?new Date(starts+"T00:00:00Z"):null,endsAt=ends?new Date(ends+"T23:59:59Z"):null;if(startsAt&&endsAt&&startsAt>endsAt)throw new Error("Período da regra inválido.");await prisma.rateRule.create({data:{accommodationId,name,adjustmentType,adjustmentValue:adjustmentType==="FIXED"?Math.round(raw*100):Math.round(raw),minOccupancyPct:minOcc==null?null:Math.round(minOcc),maxOccupancyPct:maxOcc==null?null:Math.round(maxOcc),daysBeforeMin:minDays==null?null:Math.round(minDays),daysBeforeMax:maxDays==null?null:Math.round(maxDays),startsAt,endsAt,priority:Math.round(priority)}});revalidatePath("/admin/tarifas");revalidatePath("/admin/preco-dinamico");}
 export async function deleteRateRule(formData:FormData){await requireAdmin();const id=String(formData.get("id")||"");if(id){await prisma.rateRule.delete({where:{id}});revalidatePath("/admin/tarifas");revalidatePath("/admin/preco-dinamico");}}
 
+function readCheckInFinance(formData:FormData){
+  type RawExtra={description?:unknown;amount?:unknown};
+
+  let parsed:unknown=[];
+  const rawExtras=String(formData.get("checkInExtras")||"[]");
+  try{
+    parsed=JSON.parse(rawExtras);
+  }catch{
+    throw new Error("Adicionais do check-in inválidos.");
+  }
+
+  if(!Array.isArray(parsed)||parsed.length>30){
+    throw new Error("Quantidade de adicionais inválida.");
+  }
+
+  const extras=parsed.flatMap((raw,index)=>{
+    if(!raw||typeof raw!=="object")throw new Error("Adicional inválido na posição "+(index+1)+".");
+    const item=raw as RawExtra;
+    const description=typeof item.description==="string"
+      ?item.description.trim().slice(0,160)
+      :"";
+    const amountRaw=typeof item.amount==="string"||typeof item.amount==="number"
+      ?String(item.amount).trim().replace(",",".")
+      :"";
+
+    if(!description&&!amountRaw)return [];
+    const amount=Number(amountRaw);
+    if(!description||!Number.isFinite(amount)||amount<=0||amount>1_000_000){
+      throw new Error("Preencha descrição e valor válido para todos os adicionais.");
+    }
+
+    return [{
+      description,
+      amountCents:Math.round(amount*100)
+    }];
+  });
+
+  const paymentMethod=String(formData.get("paymentMethod")||"PENDING").toUpperCase();
+  const allowedMethods=new Set(["PENDING","PIX","CARD","CASH","TRANSFER","EXTERNAL"]);
+  if(!allowedMethods.has(paymentMethod))throw new Error("Forma de pagamento inválida.");
+
+  const paymentRaw=String(formData.get("paymentAmount")||"").trim().replace(",",".");
+  const paymentValue=paymentRaw?Number(paymentRaw):0;
+  if(!Number.isFinite(paymentValue)||paymentValue<0||paymentValue>1_000_000){
+    throw new Error("Valor pago inválido.");
+  }
+  const paymentAmountCents=Math.round(paymentValue*100);
+
+  if(paymentMethod==="PENDING"&&paymentAmountCents>0){
+    throw new Error("Escolha uma forma de pagamento para registrar valor recebido.");
+  }
+  if(paymentMethod==="EXTERNAL"&&paymentAmountCents<=0){
+    throw new Error("Informe o valor já pago externamente.");
+  }
+
+  const externalReference=String(formData.get("externalReference")||"")
+    .trim()
+    .slice(0,240)||null;
+
+  return {
+    extras,
+    extrasTotalCents:extras.reduce((sum,item)=>sum+item.amountCents,0),
+    paymentMethod,
+    paymentAmountCents,
+    externalReference
+  };
+}
+
 export async function pmsBookingAction(formData:FormData){
   await requireAdmin();
   const id=String(formData.get("id")||"");
@@ -205,18 +273,75 @@ export async function pmsBookingAction(formData:FormData){
   if(!id)throw new Error("Reserva inválida.");
 
   if(action==="CHECK_IN"){
+    const finance=readCheckInFinance(formData);
+
     await prisma.$transaction(async tx=>{
-      const claimed=await tx.bookingLead.updateMany({
-        where:{id,status:"CONFIRMED",checkedInAt:null},
-        data:{checkedInAt:new Date(),status:"CHECKED_IN",restaurantAccessToken:crypto.randomUUID()}
-      });
-      if(claimed.count!==1)throw new Error("Reserva não está disponível para check-in.");
+      await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${id}))`;
 
       const booking=await tx.bookingLead.findUnique({
         where:{id},
-        select:{id:true,name:true,phone:true,email:true,guestId:true}
+        select:{
+          id:true,
+          name:true,
+          phone:true,
+          email:true,
+          guestId:true,
+          status:true,
+          checkedInAt:true,
+          quotedTotalCents:true
+        }
       });
-      if(!booking)throw new Error("Reserva não encontrada após check-in.");
+      if(!booking||booking.status!=="CONFIRMED"||booking.checkedInAt){
+        throw new Error("Reserva não está disponível para check-in.");
+      }
+
+      const existingPaid=await tx.payment.aggregate({
+        where:{bookingId:id,status:"PAID"},
+        _sum:{amountCents:true}
+      });
+
+      const accountTotalCents=
+        (booking.quotedTotalCents||0)+
+        finance.extrasTotalCents;
+      const paidBefore=existingPaid._sum.amountCents||0;
+      const dueBeforeCheckIn=Math.max(0,accountTotalCents-paidBefore);
+
+      if(finance.paymentAmountCents>dueBeforeCheckIn){
+        throw new Error("O valor recebido no check-in é maior que o saldo da conta.");
+      }
+
+      const claimed=await tx.bookingLead.updateMany({
+        where:{id,status:"CONFIRMED",checkedInAt:null},
+        data:{
+          checkedInAt:new Date(),
+          status:"CHECKED_IN",
+          restaurantAccessToken:crypto.randomUUID()
+        }
+      });
+      if(claimed.count!==1)throw new Error("Reserva não está disponível para check-in.");
+
+      if(finance.extras.length){
+        await tx.bookingCharge.createMany({
+          data:finance.extras.map(extra=>({
+            bookingId:id,
+            description:extra.description,
+            amountCents:extra.amountCents,
+            category:"CHECKIN_EXTRA"
+          }))
+        });
+      }
+
+      if(finance.paymentAmountCents>0){
+        await tx.payment.create({
+          data:{
+            bookingId:id,
+            amountCents:finance.paymentAmountCents,
+            method:finance.paymentMethod,
+            source:finance.paymentMethod==="EXTERNAL"?"EXTERNAL":"CHECK_IN",
+            reference:finance.externalReference
+          }
+        });
+      }
 
       if(!booking.guestId){
         let guest=await tx.guest.findFirst({
@@ -238,7 +363,20 @@ export async function pmsBookingAction(formData:FormData){
       }
 
       await tx.bookingAuditLog.create({
-        data:{bookingId:id,action:"CHECK_IN"}
+        data:{
+          bookingId:id,
+          action:"CHECK_IN",
+          details:{
+            lodgingCents:booking.quotedTotalCents||0,
+            extrasTotalCents:finance.extrasTotalCents,
+            accountTotalCents,
+            paidBeforeCents:paidBefore,
+            checkInPaymentCents:finance.paymentAmountCents,
+            paymentMethod:finance.paymentMethod,
+            paymentSource:finance.paymentMethod==="EXTERNAL"?"EXTERNAL":"CHECK_IN",
+            extras:finance.extras
+          }
+        }
       });
     });
   }else if(action==="CHECK_OUT"){
@@ -291,9 +429,73 @@ export async function pmsBookingAction(formData:FormData){
   }
 
   revalidatePath("/admin/reservas");
+  revalidatePath("/admin/reservas/"+id);
   revalidatePath("/admin/pms");
   revalidatePath("/admin/hospedes");
 }
+
 export async function settleRestaurantFolio(formData:FormData){await requireAdmin();const bookingId=String(formData.get("bookingId")||"");const method=String(formData.get("method")||"ROOM_SETTLEMENT");if(!bookingId||!["ROOM_SETTLEMENT","CASH","CARD","PIX","TRANSFER"].includes(method))throw new Error("Liquidação inválida.");await prisma.$transaction(async tx=>{const booking=await tx.bookingLead.findUnique({where:{id:bookingId},select:{id:true}});if(!booking)throw new Error("Hospedagem não encontrada.");const claimed=await tx.restaurantRoomCharge.updateMany({where:{bookingId,status:"OPEN"},data:{status:"SETTLING"}});if(claimed.count===0)return;const charges=await tx.restaurantRoomCharge.findMany({where:{bookingId,status:"SETTLING"}});const total=charges.reduce((s,x)=>s+x.amountCents,0);if(total<=0)throw new Error("Consumo inválido.");await tx.payment.create({data:{bookingId,amountCents:total,method,reference:"RESTAURANT_FOLIO"}});await tx.restaurantRoomCharge.updateMany({where:{bookingId,status:"SETTLING"},data:{status:"SETTLED",settledAt:new Date()}});await tx.restaurantOrder.updateMany({where:{bookingId,paymentMethod:"ROOM",paymentStatus:"ROOM_FOLIO"},data:{paymentStatus:"PAID"}});await tx.bookingAuditLog.create({data:{bookingId,action:"RESTAURANT_FOLIO_SETTLED",details:{amountCents:total,method,charges:claimed.count}}})});revalidatePath("/admin/pms");}
-export async function registerPayment(formData:FormData){await requireAdmin();const bookingId=String(formData.get("bookingId")||"");const amount=Number(String(formData.get("amount")||"").replace(",","."));const method=String(formData.get("method")||"OTHER");if(!bookingId||!Number.isFinite(amount)||amount<=0)throw new Error("Pagamento inválido.");await prisma.$transaction([prisma.payment.create({data:{bookingId,amountCents:Math.round(amount*100),method}}),prisma.bookingAuditLog.create({data:{bookingId,action:"PAYMENT",details:{amountCents:Math.round(amount*100),method}}})]);revalidatePath("/admin/pms");revalidatePath("/admin/reservas");}
+export async function registerPayment(formData:FormData){
+  await requireAdmin();
+
+  const bookingId=String(formData.get("bookingId")||"");
+  const amount=Number(String(formData.get("amount")||"").replace(",","."));
+  const method=String(formData.get("method")||"PIX").toUpperCase();
+  const reference=String(formData.get("reference")||"").trim().slice(0,240)||null;
+  const allowed=new Set(["PIX","CARD","CASH","TRANSFER","EXTERNAL","ROOM_SETTLEMENT"]);
+
+  if(!bookingId||!Number.isFinite(amount)||amount<=0||!allowed.has(method)){
+    throw new Error("Pagamento inválido.");
+  }
+
+  const amountCents=Math.round(amount*100);
+
+  await prisma.$transaction(async tx=>{
+    await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${bookingId}))`;
+
+    const booking=await tx.bookingLead.findUnique({
+      where:{id:bookingId},
+      select:{
+        quotedTotalCents:true,
+        charges:{select:{amountCents:true}},
+        payments:{where:{status:"PAID"},select:{amountCents:true,reference:true}}
+      }
+    });
+    if(!booking)throw new Error("Reserva não encontrada.");
+
+    const total=
+      (booking.quotedTotalCents||0)+
+      booking.charges.reduce((sum,charge)=>sum+charge.amountCents,0);
+    const paid=booking.payments
+      .filter(payment=>payment.reference!=="RESTAURANT_FOLIO")
+      .reduce((sum,payment)=>sum+payment.amountCents,0);
+    const balance=Math.max(0,total-paid);
+
+    if(amountCents>balance){
+      throw new Error("O pagamento informado é maior que o saldo da conta.");
+    }
+
+    const source=method==="EXTERNAL"?"EXTERNAL":"MANUAL";
+    await tx.payment.create({
+      data:{
+        bookingId,
+        amountCents,
+        method,
+        source,
+        reference
+      }
+    });
+    await tx.bookingAuditLog.create({
+      data:{
+        bookingId,
+        action:"PAYMENT",
+        details:{amountCents,method,source,reference}
+      }
+    });
+  });
+
+  revalidatePath("/admin/pms");
+  revalidatePath("/admin/reservas");
+  revalidatePath("/admin/reservas/"+bookingId);
+}
 export async function updateHousekeeping(formData:FormData){await requireAdmin();const id=String(formData.get("id")||"");const status=String(formData.get("status")||"");if(!["PENDING","IN_PROGRESS","DONE"].includes(status))throw new Error("Status inválido.");await prisma.housekeepingTask.update({where:{id},data:{status}});revalidatePath("/admin/pms");}
