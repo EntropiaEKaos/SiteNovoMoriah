@@ -21,6 +21,9 @@ ALTER TABLE "RestaurantProduct"
   ADD COLUMN IF NOT EXISTS "availableUntil" TEXT,
   ADD COLUMN IF NOT EXISTS "availableDays" INTEGER[] NOT NULL DEFAULT ARRAY[]::INTEGER[];
 
+ALTER TABLE "RestaurantOrderItem"
+  ADD COLUMN IF NOT EXISTS "notes" TEXT;
+
 ALTER TABLE "RestaurantSettings"
   ADD COLUMN IF NOT EXISTS "menuTitle" TEXT NOT NULL DEFAULT 'Moriah Food',
   ADD COLUMN IF NOT EXISTS "menuSubtitle" TEXT,
