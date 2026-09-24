@@ -125,6 +125,7 @@ export default async function Page(){
                       {item.modifiers.length>0&&<small>
                         {item.modifiers.map(modifier=>modifier.nameSnapshot).join(" • ")}
                       </small>}
+                      {item.notes&&<small className="kdsItemNote">↳ {item.notes}</small>}
                     </div>
                     <span>{money(item.totalCents)}</span>
                   </div>)}
