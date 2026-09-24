@@ -32,12 +32,12 @@ export async function syncAccommodationChannels(accommodationId:string){
  return {channels:channels.length,failures:failures.length};
 }
 
-export async function criticalAvailabilityCheck(accommodationId:string,checkIn:Date,checkOut:Date){
+export async function criticalAvailabilityCheck(accommodationId:string,checkIn:Date,checkOut:Date,requestedUnits=1){
  const sync=await syncAccommodationChannels(accommodationId);
  if(sync.failures)throw new Error("Não foi possível atualizar todos os canais. Tente novamente em instantes.");
- return !(await isAccommodationAvailable(accommodationId,checkIn,checkOut));
+ return !(await isAccommodationAvailable(accommodationId,checkIn,checkOut,undefined,requestedUnits));
 }
 
-export async function hasAvailabilityConflict(accommodationId:string,checkIn:Date,checkOut:Date){
- return !(await isAccommodationAvailable(accommodationId,checkIn,checkOut));
+export async function hasAvailabilityConflict(accommodationId:string,checkIn:Date,checkOut:Date,requestedUnits=1){
+ return !(await isAccommodationAvailable(accommodationId,checkIn,checkOut,undefined,requestedUnits));
 }
