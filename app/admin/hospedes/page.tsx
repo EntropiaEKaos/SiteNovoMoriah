@@ -23,7 +23,7 @@ export default async function GuestsPage({
     ]
   }:undefined;
 
-  const [guests,total,withBookings]=await Promise.all([
+  const [guests,total,withBookings,withDocument]=await Promise.all([
     prisma.guest.findMany({
       where,
       include:{_count:{select:{bookings:true}}},
@@ -31,15 +31,16 @@ export default async function GuestsPage({
       take:100
     }),
     prisma.guest.count(),
-    prisma.guest.count({where:{bookings:{some:{}}}})
+    prisma.guest.count({where:{bookings:{some:{}}}}),
+    prisma.guest.count({where:{document:{not:null}}})
   ]);
 
   return <main className="adminPage">
     <section className="adminPageHero">
       <div>
-        <small>MORIAH PMS / CRM</small>
+        <small>MORIAH PMS / CRM 2.0</small>
         <h1>Hóspedes</h1>
-        <p>Cadastre hóspedes, mantenha dados de contato organizados e consulte o histórico de reservas vinculadas.</p>
+        <p>Cadastro completo, preferências, documentos, contatos, histórico de estadias e contexto operacional em uma única ficha.</p>
       </div>
       <div className="adminPageHeroActions">
         <Link className="adminSecondaryAction" href="/admin/reservas">Reservas →</Link>
@@ -50,14 +51,14 @@ export default async function GuestsPage({
     <section className="adminMetricStrip">
       <div><small>Cadastros</small><strong>{total}</strong></div>
       <div><small>Com histórico</small><strong>{withBookings}</strong></div>
+      <div><small>Com documento</small><strong>{withDocument}</strong></div>
       <div><small>Exibidos</small><strong>{guests.length}</strong></div>
-      <div><small>Base</small><strong style={{fontSize:18}}>PMS / CRM</strong></div>
     </section>
 
     <section className="adminTwoCol" style={{marginBottom:20}}>
       <article className="adminSectionCard">
         <h2>Novo hóspede</h2>
-        <p>Nome e telefone/WhatsApp são obrigatórios. Documento e e-mail ajudam a evitar cadastros duplicados.</p>
+        <p>Nome e telefone são obrigatórios. Os demais dados enriquecem o CRM e agilizam o atendimento futuro.</p>
         <form action={createGuest} className="adminFormGrid">
           <label className="span2">Nome completo
             <input name="name" required maxLength={160} autoComplete="name"/>
@@ -68,11 +69,43 @@ export default async function GuestsPage({
           <label>E-mail
             <input name="email" type="email" maxLength={200} autoComplete="email"/>
           </label>
-          <label className="span2">CPF / Passaporte / Documento
+          <label>Tipo de documento
+            <select name="documentType" defaultValue="CPF">
+              <option value="CPF">CPF</option>
+              <option value="RG">RG</option>
+              <option value="PASSAPORTE">Passaporte</option>
+              <option value="OUTRO">Outro</option>
+            </select>
+          </label>
+          <label>Documento
             <input name="document" maxLength={100}/>
           </label>
-          <label className="span2">Observações
-            <textarea name="notes" maxLength={4000} rows={4} placeholder="Preferências, necessidades de acessibilidade, observações operacionais..."/>
+          <label>Data de nascimento
+            <input name="birthDate" type="date"/>
+          </label>
+          <label>Nacionalidade
+            <input name="nationality" maxLength={100} placeholder="Brasil"/>
+          </label>
+          <label className="span2">Endereço
+            <input name="address" maxLength={240} autoComplete="street-address"/>
+          </label>
+          <label>Cidade
+            <input name="city" maxLength={120}/>
+          </label>
+          <label>Estado
+            <input name="state" maxLength={80}/>
+          </label>
+          <label>CEP
+            <input name="postalCode" maxLength={30} autoComplete="postal-code"/>
+          </label>
+          <label>Contato de emergência
+            <input name="emergencyContact" maxLength={300} placeholder="Nome e telefone"/>
+          </label>
+          <label className="span2">Preferências
+            <textarea name="preferences" maxLength={4000} rows={3} placeholder="Ex.: quarto térreo, travesseiro extra, restrições alimentares..."/>
+          </label>
+          <label className="span2">Observações internas
+            <textarea name="notes" maxLength={4000} rows={3}/>
           </label>
           <button className="span2">Cadastrar hóspede</button>
         </form>
@@ -80,7 +113,7 @@ export default async function GuestsPage({
 
       <aside className="adminSectionCard">
         <h2>Buscar cadastro</h2>
-        <p>Pesquise por nome, telefone, e-mail ou documento.</p>
+        <p>Pesquise por nome, telefone, e-mail ou documento. Cadastros com mesmo documento ou nome + telefone são reaproveitados.</p>
         <form method="get" className="adminFormGrid">
           <label className="span2">Busca
             <input name="q" defaultValue={q} placeholder="Digite para localizar"/>
@@ -100,7 +133,7 @@ export default async function GuestsPage({
       {guests.map(guest=><article className="adminListCard" key={guest.id}>
         <div className="adminListCardHead">
           <div>
-            <small>HÓSPEDE</small>
+            <small>{guest.documentType||"HÓSPEDE"}</small>
             <h3>{guest.name}</h3>
             <p>{guest.phone}{guest.email?" • "+guest.email:""}</p>
           </div>
@@ -108,6 +141,8 @@ export default async function GuestsPage({
         </div>
         <div className="adminMetaRow">
           {guest.document&&<span className="adminChip">{guest.document}</span>}
+          {guest.city&&<span className="adminChip">{guest.city}{guest.state?" / "+guest.state:""}</span>}
+          {guest.nationality&&<span className="adminChip">{guest.nationality}</span>}
           <span className="adminChip">Atualizado {guest.updatedAt.toLocaleDateString("pt-BR")}</span>
         </div>
         <div className="adminInlineActions">
