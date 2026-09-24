@@ -1,4 +1,4 @@
-"use server";import {deleteMediaObject} from "../../lib/media-storage";import {prisma} from "../../lib/prisma";import {revalidatePath} from "next/cache";import {redirect} from "next/navigation";import {requireAdmin} from "../../lib/admin-auth";import {criticalAvailabilityCheck,hasAvailabilityConflict,syncChannelIntegration} from "../../lib/channel-sync";import {quoteAccommodation} from "../../lib/rate-engine";import {createInventoryHold,consumeInventoryHold,releaseInventoryHold} from "../../lib/inventory-holds";import {hasUnitCapacity} from "../../lib/shared-inventory";
+"use server";import {deleteMediaObject} from "../../lib/media-storage";import {prisma} from "../../lib/prisma";import {revalidatePath} from "next/cache";import {redirect} from "next/navigation";import {requireAdmin} from "../../lib/admin-auth";import {criticalAvailabilityCheck,hasAvailabilityConflict,syncChannelIntegration} from "../../lib/channel-sync";import {quoteAccommodation} from "../../lib/rate-engine";import {createInventoryHold,consumeInventoryHold,releaseInventoryHold} from "../../lib/inventory-holds";import {hasUnitCapacity,maxConcurrentUnits} from "../../lib/shared-inventory";
 function readAccommodationForm(formData:FormData){
   const text=(name:string,max=500)=>String(formData.get(name)||"").trim().slice(0,max);
   const integer=(name:string,fallback:number,min:number,max:number)=>{
@@ -316,7 +316,40 @@ export async function updateAccommodation(formData:FormData){
   await requireAdmin();
   const id=String(formData.get("id")||"");
   if(!id)throw new Error("Hospedagem inválida.");
+
   const data=readAccommodationForm(formData);
+  const activeBookings=await prisma.bookingLead.findMany({
+    where:{
+      accommodationId:id,
+      status:{in:["CONFIRMED","CHECKED_IN"]},
+      checkIn:{not:null},
+      checkOut:{gt:new Date()}
+    },
+    select:{checkIn:true,checkOut:true,guests:true}
+  });
+
+  const intervals=activeBookings
+    .filter(item=>item.checkIn&&item.checkOut)
+    .map(item=>({
+      start:item.checkIn!,
+      end:item.checkOut!,
+      units:data.sharedRoom?Math.max(1,item.guests):1
+    }));
+
+  if(intervals.length){
+    const windowStart=new Date(Math.min(...intervals.map(item=>item.start.getTime())));
+    const windowEnd=new Date(Math.max(...intervals.map(item=>item.end.getTime())));
+    const peak=maxConcurrentUnits(intervals,windowStart,windowEnd);
+    const nextCapacity=data.sharedRoom?data.bedCount:1;
+
+    if(peak>nextCapacity){
+      throw new Error(data.sharedRoom
+        ?`Não é possível reduzir para ${data.bedCount} cama(s): existem até ${peak} cama(s) já comprometidas no mesmo período.`
+        :"Não é possível transformar em quarto privativo enquanto existem reservas simultâneas neste inventário."
+      );
+    }
+  }
+
   await prisma.accommodation.update({where:{id},data});
   revalidatePath("/admin/hospedagens");
   revalidatePath("/admin/hospedagens/"+id);
