@@ -49,7 +49,9 @@ const sections=[
     label:"MORIAH FOOD",
     items:[
       ["Restaurante","/admin/restaurante",UtensilsCrossed],
+      ["Cardápio Studio","/admin/restaurante/cardapio",BookOpen],
       ["Pedidos / Cozinha","/admin/restaurante/pedidos",ChefHat],
+      ["Adicionais","/admin/restaurante/adicionais",Tags],
       ["Insumos / CMV","/admin/restaurante/insumos",ReceiptText],
       ["Inteligência","/admin/restaurante/inteligencia",BarChart3]
     ]

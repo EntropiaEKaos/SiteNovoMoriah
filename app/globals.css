@@ -1741,3 +1741,512 @@ body{background:linear-gradient(180deg,#fff 0,#fffdf5 100%)}.nav{box-shadow:0 8p
     border:0;
   }
 }
+
+
+/* Moriah Food — Cardápio Studio 1.0 */
+.menuStudioHero{
+  position:relative;
+  overflow:hidden;
+}
+.menuStudioHero:after{
+  content:"MENU";
+  position:absolute;
+  right:-10px;
+  bottom:-54px;
+  font-size:120px;
+  line-height:1;
+  font-weight:950;
+  color:#111;
+  opacity:.035;
+  pointer-events:none;
+}
+.menuStudioSectionTitle{
+  display:flex;
+  justify-content:space-between;
+  gap:20px;
+  align-items:flex-start;
+  margin-bottom:18px;
+}
+.menuStudioSectionTitle small{
+  display:block;
+  color:#8a8478;
+  font-size:8px;
+  font-weight:950;
+  letter-spacing:1.2px;
+  margin-bottom:5px;
+}
+.menuStudioSectionTitle h2{margin:0}
+.menuStudioCategories{display:grid;gap:24px}
+.menuStudioCategory{
+  background:#fff;
+  border:1px solid #d7d1c2;
+}
+.menuStudioCategory>header{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  gap:30px;
+  padding:24px;
+  border-bottom:1px solid #e6e1d6;
+}
+.menuStudioCategory>header>div:first-child{max-width:760px}
+.menuStudioCategory>header small{
+  color:#8b8579;
+  font-size:8px;
+  font-weight:950;
+  letter-spacing:1.2px;
+}
+.menuStudioCategory>header h2{
+  margin:6px 0;
+  font-size:34px;
+  letter-spacing:-1.5px;
+}
+.menuStudioCategory>header p{
+  margin:0;
+  color:#716b61;
+  line-height:1.5;
+}
+.menuStudioCategoryEditor{
+  border-bottom:1px solid #e6e1d6;
+}
+.menuStudioCategoryEditor>summary{
+  cursor:pointer;
+  padding:12px 24px;
+  background:#faf8f2;
+  font-size:10px;
+  font-weight:900;
+}
+.menuStudioCategoryEditor>form,
+.menuStudioCategoryEditor>.adminInlineActions{
+  margin-left:24px;
+  margin-right:24px;
+}
+.menuStudioCategoryEditor>form{padding-top:18px}
+.menuStudioCategoryEditor>.adminInlineActions{padding-bottom:18px}
+.menuStudioCategoryMeta{
+  padding:11px 24px;
+  background:#111;
+  color:#aaa;
+  font-size:9px;
+  font-weight:850;
+}
+.menuStudioProductGrid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(285px,1fr));
+  gap:12px;
+  padding:14px;
+}
+.menuStudioProductCard{
+  border:1px solid #d8d2c5;
+  background:#fff;
+  min-width:0;
+  overflow:hidden;
+}
+.menuStudioProductCard.isUnavailable{background:#faf8f3}
+.menuStudioProductCard.isUnavailable .menuStudioProductImage img{filter:grayscale(.35);opacity:.65}
+.menuStudioProductImage{
+  position:relative;
+  height:190px;
+  overflow:hidden;
+  background:#e7e2d8;
+}
+.menuStudioProductImage img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  display:block;
+}
+.menuStudioProductImage>div{
+  height:100%;
+  display:grid;
+  place-items:center;
+  font-size:56px;
+  font-weight:950;
+  color:#b5aea1;
+}
+.menuStudioProductImage>span{
+  position:absolute;
+  top:10px;
+  left:10px;
+  padding:6px 8px;
+  background:var(--y);
+  color:#111;
+  font-size:8px;
+  font-weight:950;
+}
+.menuStudioProductBody{padding:17px}
+.menuStudioProductTop{
+  display:flex;
+  justify-content:space-between;
+  gap:18px;
+  align-items:flex-start;
+}
+.menuStudioProductTop small{
+  color:#8a8478;
+  font-size:8px;
+  font-weight:900;
+}
+.menuStudioProductTop h3{
+  margin:5px 0 0;
+  font-size:22px;
+  letter-spacing:-.8px;
+}
+.menuStudioProductTop>b{
+  font-size:17px;
+  white-space:nowrap;
+}
+.menuStudioProductBody>p{
+  min-height:44px;
+  color:#746e64;
+  font-size:11px;
+  line-height:1.5;
+}
+.menuStudioOldPrice{
+  min-height:0!important;
+  margin:5px 0!important;
+  text-decoration:line-through;
+  color:#999!important;
+}
+.menuStudioSchedule{
+  display:block;
+  margin:10px 0 12px;
+  color:#8b8579;
+  font-size:8px;
+  font-weight:850;
+}
+.menuStudioAddProduct{
+  min-height:260px;
+  border:1px dashed #aaa294;
+  display:grid;
+  place-items:center;
+  align-content:center;
+  gap:6px;
+  text-align:center;
+  background:#faf8f2;
+}
+.menuStudioAddProduct span{
+  width:44px;
+  height:44px;
+  display:grid;
+  place-items:center;
+  background:var(--y);
+  font-size:26px;
+  font-weight:900;
+}
+.menuStudioAddProduct small{color:#847e72}
+.menuStudioSwitchGrid{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:10px;
+}
+.menuStudioSwitchGrid>label,
+.menuStudioChoiceGrid>label{
+  display:flex;
+  gap:10px;
+  align-items:flex-start;
+  padding:14px;
+  border:1px solid #ddd7ca;
+  background:#faf8f2;
+}
+.menuStudioSwitchGrid>label span,
+.menuStudioChoiceGrid>label span{display:grid;gap:3px}
+.menuStudioSwitchGrid small,
+.menuStudioChoiceGrid small{
+  color:#777168;
+  font-size:9px;
+  line-height:1.4;
+}
+.menuStudioChoiceGrid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+  gap:9px;
+}
+.menuStudioChoiceGrid label.isMuted{opacity:.5}
+.menuStudioChoiceGrid em{
+  color:#8c867b;
+  font-size:8px;
+  font-style:normal;
+}
+.menuStudioRecipeGrid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+  gap:8px;
+}
+.menuStudioRecipeGrid>label{
+  display:grid;
+  grid-template-columns:1fr 110px;
+  gap:10px;
+  align-items:center;
+  border:1px solid #e2ddd2;
+  padding:11px;
+}
+.menuStudioRecipeGrid>label span{display:grid;gap:2px}
+.menuStudioRecipeGrid small{color:#817b70;font-size:8px}
+.menuStudioRecipeGrid input{
+  min-width:0;
+  width:100%;
+  padding:9px;
+  border:1px solid #cfc8bb;
+}
+.menuStudioDays{
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
+  align-items:center;
+}
+.menuStudioDays label{
+  display:inline-flex!important;
+  gap:5px!important;
+  align-items:center!important;
+  padding:7px 8px;
+  border:1px solid #d9d3c6;
+  background:#fff;
+  font-size:9px!important;
+}
+.menuStudioDays input{width:auto!important}
+.menuStudioImagePreview{
+  margin-top:16px;
+  height:250px;
+  overflow:hidden;
+  border:1px solid #d8d2c5;
+}
+.menuStudioImagePreview img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+}
+.menuStudioSave{
+  position:sticky;
+  bottom:18px;
+  z-index:20;
+  width:max-content;
+  padding:15px 24px;
+}
+.adminHelp{
+  color:#817b70;
+  font-size:9px;
+  line-height:1.5;
+}
+
+/* Public Moriah Food — Menu Studio renderer */
+.foodMenuHero.hasImage{
+  background-size:cover;
+  background-position:center;
+  color:#fff;
+}
+.foodMenuHero.hasImage p{color:#d8d5cf}
+.foodMenuMain{min-width:0}
+.foodCategoryNav{
+  position:sticky;
+  top:74px;
+  z-index:15;
+  display:flex;
+  gap:8px;
+  overflow:auto;
+  padding:12px 0;
+  margin-bottom:22px;
+  background:#fffdf7ee;
+  backdrop-filter:blur(10px);
+}
+.foodCategoryNav a{
+  white-space:nowrap;
+  border:1px solid #d7d1c4;
+  padding:9px 12px;
+  font-size:10px;
+  font-weight:900;
+  background:#fff;
+}
+.foodCategoryNav a:hover{background:var(--y);border-color:#111}
+.foodCategorySection{
+  scroll-margin-top:145px;
+  margin-bottom:54px;
+}
+.foodCategoryHead{
+  display:grid;
+  grid-template-columns:1fr auto;
+  gap:24px;
+  align-items:end;
+  margin-bottom:18px;
+  padding-bottom:15px;
+  border-bottom:2px solid #111;
+}
+.foodCategoryHead small{
+  font-size:8px;
+  font-weight:950;
+  letter-spacing:1.3px;
+  color:#8b857a;
+}
+.foodCategoryHead h2{
+  margin:5px 0 3px;
+  font-size:38px;
+  letter-spacing:-1.8px;
+}
+.foodCategoryHead p{
+  max-width:650px;
+  margin:0;
+  color:#716b62;
+  line-height:1.5;
+}
+.foodCategoryHead img{
+  width:110px;
+  height:72px;
+  object-fit:cover;
+}
+.foodCardV2{
+  padding:0;
+  overflow:hidden;
+  min-height:0;
+}
+.foodCardV2.isFeatured{border:2px solid #111;box-shadow:7px 7px 0 var(--y)}
+.foodCardV2.isUnavailable{background:#f3f0e8}
+.foodProductVisual{
+  position:relative;
+  height:220px;
+  overflow:hidden;
+  background:#e6e1d6;
+}
+.foodProductVisual img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  display:block;
+  transition:transform .35s ease;
+}
+.foodCardV2:hover .foodProductVisual img{transform:scale(1.035)}
+.foodCardV2.isUnavailable .foodProductVisual img{filter:grayscale(.5);opacity:.6}
+.foodProductPlaceholder{
+  height:100%;
+  display:grid;
+  place-items:center;
+  font-size:62px;
+  font-weight:950;
+  color:#b2ab9e;
+}
+.foodProductBadges{
+  position:absolute;
+  left:10px;
+  top:10px;
+  right:10px;
+  display:flex;
+  gap:5px;
+  flex-wrap:wrap;
+}
+.foodProductBadges span{
+  background:var(--y);
+  color:#111;
+  padding:6px 8px;
+  font-size:8px;
+  font-weight:950;
+}
+.foodProductBadges .isUnavailable{background:#111;color:#fff}
+.foodProductBody{padding:20px}
+.foodProductBody>small{
+  font-size:8px;
+  font-weight:950;
+  letter-spacing:1.3px;
+  color:#8d877b;
+}
+.foodProductBody h2{
+  margin:7px 0 8px;
+  font-size:27px;
+  letter-spacing:-1px;
+}
+.foodProductBody>p{
+  min-height:50px;
+  margin:0 0 13px;
+  color:#69645c;
+  line-height:1.55;
+}
+.foodProductMeta{
+  display:flex;
+  flex-wrap:wrap;
+  gap:5px;
+  margin:10px 0 15px;
+}
+.foodProductMeta span{
+  padding:5px 7px;
+  background:#f2eee5;
+  font-size:8px;
+  font-weight:800;
+  color:#6c665d;
+}
+.foodPriceRow{
+  display:flex;
+  gap:9px;
+  align-items:baseline;
+  margin-bottom:10px;
+}
+.foodPriceRow del{color:#9d978b;font-size:11px}
+.foodChoiceWarning{
+  margin-top:10px;
+  padding:8px 10px;
+  background:#fff5c7;
+  border-left:3px solid var(--y);
+  font-size:9px;
+  font-weight:800;
+}
+.foodLimit{
+  display:block;
+  margin-top:6px;
+  color:#8a8479;
+}
+.foodQty button:disabled{opacity:.3;cursor:not-allowed}
+.foodCartLines{
+  display:grid;
+  gap:7px;
+  margin:0 0 14px;
+  padding:12px 0;
+  border-top:1px solid #333;
+  border-bottom:1px solid #333;
+}
+.foodCartLines>div{
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+  font-size:9px;
+  color:#bbb;
+}
+.foodCartLines b{color:#fff}
+@media(max-width:1050px){
+  .menuStudioSwitchGrid{grid-template-columns:1fr 1fr}
+}
+@media(max-width:760px){
+  .menuStudioCategory>header{flex-direction:column}
+  .menuStudioSwitchGrid{grid-template-columns:1fr}
+  .menuStudioRecipeGrid{grid-template-columns:1fr}
+  .foodCategoryNav{top:0}
+  .foodCategoryHead{grid-template-columns:1fr}
+  .foodCategoryHead img{width:100%;height:150px}
+  .foodProductVisual{height:200px}
+}
+
+.foodItemNote{
+  display:grid;
+  gap:5px;
+  margin-top:12px;
+}
+.foodItemNote span{
+  font-size:8px;
+  font-weight:950;
+  color:#777168;
+  text-transform:uppercase;
+  letter-spacing:.8px;
+}
+.foodItemNote input{
+  width:100%;
+  border:1px solid #d4cdbf;
+  padding:10px;
+  background:#fff;
+  font:inherit;
+}
+.kdsItemNote{
+  margin-top:5px!important;
+  padding:6px 8px;
+  background:#fff3a6;
+  color:#322c17!important;
+  font-weight:850;
+}
+.menuStudioRecipeGrid>label.isMuted{
+  opacity:.6;
+  background:#f2f0eb;
+}

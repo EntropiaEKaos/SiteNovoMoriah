@@ -136,7 +136,9 @@ export async function deleteMedia(formData:FormData){
     roomCoverRefs,
     roomGalleryRefs,
     blogRefs,
-    productRefs
+    productRefs,
+    categoryRefs,
+    menuBannerRefs
   ]=await Promise.all([
     prisma.sitePage.count({where:{ogImage:row.url}}),
     prisma.siteSection.count({where:{imageUrl:row.url}}),
@@ -144,7 +146,9 @@ export async function deleteMedia(formData:FormData){
     prisma.accommodation.count({where:{coverImage:row.url}}),
     prisma.accommodation.count({where:{galleryImages:{has:row.url}}}),
     prisma.blogPost.count({where:{coverImage:row.url}}),
-    prisma.restaurantProduct.count({where:{imageUrl:row.url}})
+    prisma.restaurantProduct.count({where:{imageUrl:row.url}}),
+    prisma.restaurantCategory.count({where:{imageUrl:row.url}}),
+    prisma.restaurantSettings.count({where:{menuBannerUrl:row.url}})
   ]);
 
   const references=
@@ -154,7 +158,9 @@ export async function deleteMedia(formData:FormData){
     roomCoverRefs+
     roomGalleryRefs+
     blogRefs+
-    productRefs;
+    productRefs+
+    categoryRefs+
+    menuBannerRefs;
 
   if(references>0){
     throw new Error("Esta imagem está em uso em "+references+" local(is). Troque ou remova a referência antes de excluir o arquivo.");

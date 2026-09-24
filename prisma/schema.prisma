@@ -460,9 +460,17 @@ model BookingAuditLog {
 model RestaurantCategory {
  id String @id @default(cuid())
  name String
+ description String?
+ imageUrl String?
  sortOrder Int @default(0)
  active Boolean @default(true)
+ featured Boolean @default(false)
+ availableFrom String?
+ availableUntil String?
+ availableDays Int[] @default([])
  products RestaurantProduct[]
+
+ @@index([active,sortOrder])
 }
 model RestaurantProduct {
  id String @id @default(cuid())
@@ -472,9 +480,22 @@ model RestaurantProduct {
  description String?
  imageUrl String?
  priceCents Int
+ promotionalPriceCents Int?
  costCents Int?
  sku String? @unique
  active Boolean @default(true)
+ featured Boolean @default(false)
+ soldOut Boolean @default(false)
+ badge String?
+ tags String[] @default([])
+ allergens String[] @default([])
+ sortOrder Int @default(0)
+ prepMinutes Int?
+ maxPerOrder Int @default(20)
+ allowNotes Boolean @default(true)
+ availableFrom String?
+ availableUntil String?
+ availableDays Int[] @default([])
  trackStock Boolean @default(true)
  stockQty Int @default(0)
  minStockQty Int @default(0)
@@ -484,7 +505,8 @@ model RestaurantProduct {
  stockMovements RestaurantStockMovement[]
  recipes RestaurantRecipeItem[]
  modifierLinks RestaurantProductModifierGroup[]
- @@index([categoryId,active])
+ @@index([categoryId,active,sortOrder])
+ @@index([featured,active])
 }
 model RestaurantOrder {
  id String @id @default(cuid())
@@ -521,6 +543,7 @@ model RestaurantOrderItem {
  unitCostCents Int?
  quantity Int
  totalCents Int
+ notes String?
  modifiers RestaurantOrderItemModifier[]
  @@index([orderId])
  @@index([productId])
@@ -545,6 +568,10 @@ model RestaurantSettings {
  roomChargeEnabled Boolean @default(true)
  prepTargetMinutes Int @default(25)
  kdsSoundEnabled Boolean @default(true)
+ menuTitle String @default("Moriah Food")
+ menuSubtitle String?
+ menuBannerUrl String?
+ showSoldOut Boolean @default(true)
  updatedAt DateTime @updatedAt
 }
 model RestaurantModifierGroup {
