@@ -68,6 +68,7 @@ export default async function Page({searchParams}:{searchParams:Promise<{booking
         available,
         scheduled,
         maxPerOrder:product.maxPerOrder,
+        allowNotes:product.allowNotes,
         groups:product.modifierLinks
           .filter(link=>link.group.active)
           .map(link=>({
