@@ -33,6 +33,7 @@ type Product={
   soldOut:boolean;
   available:boolean;
   maxPerOrder:number;
+  allowNotes:boolean;
   groups:ModifierGroup[];
 };
 
@@ -53,6 +54,7 @@ export default function Menu({
 }){
   const [cart,setCart]=useState<Record<string,number>>({});
   const [mods,setMods]=useState<Record<string,string[]>>({});
+  const [itemNotes,setItemNotes]=useState<Record<string,string>>({});
 
   const categories=useMemo(()=>{
     const map=new Map<string,{
@@ -99,7 +101,7 @@ export default function Menu({
   const payload=JSON.stringify(
     Object.entries(cart)
       .filter(([,quantity])=>quantity>0)
-      .map(([id,quantity])=>({id,q:quantity,options:mods[id]||[]}))
+      .map(([id,quantity])=>({id,q:quantity,options:mods[id]||[],note:(itemNotes[id]||"").trim().slice(0,500)}))
   );
 
   function toggle(product:Product,group:ModifierGroup,id:string){
@@ -232,6 +234,19 @@ export default function Menu({
                 {!validChoices&&product.available&&<div className="foodChoiceWarning">
                   Complete as escolhas obrigatórias para adicionar.
                 </div>}
+
+                {product.allowNotes&&product.available&&<label className="foodItemNote">
+                  <span>Observação deste item</span>
+                  <input
+                    value={itemNotes[product.id]||""}
+                    maxLength={500}
+                    placeholder="Ex.: sem cebola, molho separado..."
+                    onChange={event=>setItemNotes(current=>({
+                      ...current,
+                      [product.id]:event.target.value
+                    }))}
+                  />
+                </label>}
 
                 <div className="foodQty">
                   <button
