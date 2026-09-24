@@ -309,33 +309,49 @@ export async function POST(req:NextRequest){
       missingPrivate
     ].join("");
 
-    const response=await fetch(GROQ_URL,{
-      method:"POST",
-      headers:{
-        "content-type":"application/json",
-        "authorization":"Bearer "+key
-      },
-      body:JSON.stringify({
-        model:normalizeGroqModel(settings?.groqModel||process.env.GROQ_CHAT_MODEL),
-        temperature:settings?.groqTemperature??0.2,
-        max_completion_tokens:500,
-        messages:[
-          {role:"system",content:systemContext},
-          ...messages
-        ]
-      }),
-      signal:AbortSignal.timeout(15_000)
-    });
+    const requestedModel=normalizeGroqModel(settings?.groqModel||process.env.GROQ_CHAT_MODEL);
+    const candidates=[...new Set([requestedModel,DEFAULT_GROQ_MODEL])];
+    let data:{choices?:Array<{message?:{content?:string}}>}|null=null;
+    let lastStatus=502;
+    let lastDetail="";
 
-    if(!response.ok){
-      const detail=await response.text().catch(()=>"");
-      console.error("GROQ_CHAT_FAILED",response.status,detail.slice(0,500));
-      return NextResponse.json({error:"Atendimento temporariamente indisponível."},{status:502});
+    for(const model of candidates){
+      const response=await fetch(GROQ_URL,{
+        method:"POST",
+        headers:{
+          "content-type":"application/json",
+          "authorization":"Bearer "+key
+        },
+        body:JSON.stringify({
+          model,
+          temperature:settings?.groqTemperature??0.2,
+          max_completion_tokens:500,
+          messages:[
+            {role:"system",content:systemContext},
+            ...messages
+          ]
+        }),
+        signal:AbortSignal.timeout(15_000)
+      });
+
+      if(response.ok){
+        data=await response.json() as {choices?:Array<{message?:{content?:string}}>} ;
+        break;
+      }
+
+      lastStatus=response.status;
+      lastDetail=await response.text().catch(()=>"");
+      console.error("GROQ_CHAT_FAILED",model,response.status,lastDetail.slice(0,500));
+
+      if(![400,404,422].includes(response.status)){
+        break;
+      }
     }
 
-    const data=await response.json() as {
-      choices?:Array<{message?:{content?:string}}>
-    };
+    if(!data){
+      console.error("GROQ_CHAT_EXHAUSTED",lastStatus,lastDetail.slice(0,500));
+      return NextResponse.json({error:"Atendimento temporariamente indisponível."},{status:502});
+    }
     const reply=data.choices?.[0]?.message?.content?.trim();
 
     const site=await prisma.siteSettings.findUnique({
