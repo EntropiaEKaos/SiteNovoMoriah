@@ -69,6 +69,8 @@ model SitePage {
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
   sections       SiteSection[]
+
+  @@index([showInNav, sortOrder])
 }
 
 model SiteSection {
@@ -397,6 +399,7 @@ model NotificationMessage {
 
   @@index([status, createdAt])
   @@index([channel, createdAt])
+  @@index([audience, status, createdAt])
 }
 
 model Guest {
@@ -423,6 +426,8 @@ model Guest {
 
   @@index([phone])
   @@index([document])
+  @@index([monthlyGuest])
+  @@index([employee])
 }
 
 model BookingCompanion {
