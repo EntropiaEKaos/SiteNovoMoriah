@@ -156,7 +156,7 @@ export default function SiteBuilderRenderer({
               </label>
               <label>
                 <span><Users size={16}/> Hóspedes</span>
-                <input type="number" name="guests" min="1" max="20" defaultValue="2" required/>
+                <input type="number" name="guests" min="1" max="50" defaultValue="2" required/>
               </label>
               <button type="submit"><Search size={18}/> Buscar hospedagem</button>
             </form>
