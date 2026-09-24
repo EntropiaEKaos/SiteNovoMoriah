@@ -458,7 +458,7 @@ export async function registerPayment(formData:FormData){
       select:{
         quotedTotalCents:true,
         charges:{select:{amountCents:true}},
-        payments:{where:{status:"PAID"},select:{amountCents:true}}
+        payments:{where:{status:"PAID"},select:{amountCents:true,reference:true}}
       }
     });
     if(!booking)throw new Error("Reserva não encontrada.");
@@ -466,7 +466,9 @@ export async function registerPayment(formData:FormData){
     const total=
       (booking.quotedTotalCents||0)+
       booking.charges.reduce((sum,charge)=>sum+charge.amountCents,0);
-    const paid=booking.payments.reduce((sum,payment)=>sum+payment.amountCents,0);
+    const paid=booking.payments
+      .filter(payment=>payment.reference!=="RESTAURANT_FOLIO")
+      .reduce((sum,payment)=>sum+payment.amountCents,0);
     const balance=Math.max(0,total-paid);
 
     if(amountCents>balance){
