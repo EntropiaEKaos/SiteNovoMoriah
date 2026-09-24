@@ -66,7 +66,8 @@ export default async function DynamicSitePage({
     prisma.sitePage.findMany({
       where:{published:true,showInNav:true,slug:{not:"home"}},
       select:{slug:true,title:true,navLabel:true},
-      orderBy:[{sortOrder:"asc"},{createdAt:"asc"}]
+      orderBy:[{sortOrder:"asc"},{createdAt:"asc"}],
+      take:6
     })
   ]);
 
