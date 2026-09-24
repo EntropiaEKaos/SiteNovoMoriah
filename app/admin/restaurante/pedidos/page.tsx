@@ -60,6 +60,7 @@ export default async function Page(){
       </div>
       <div className="adminPageHeroActions">
         <Link className="adminSecondaryAction" href="/admin/restaurante">← Gestão Food</Link>
+        <Link className="adminSecondaryAction" href="/admin/restaurante/pedidos/historico">Histórico →</Link>
         <Link className="adminSecondaryAction" href="/admin/restaurante/bi">BI →</Link>
       </div>
     </section>
