@@ -9,6 +9,7 @@ import {
   BookOpen,
   CalendarDays,
   ChefHat,
+  Clock3,
   Gauge,
   Image,
   Images,
@@ -105,6 +106,11 @@ export default function AdminNavigation({superAdmin}:{superAdmin:boolean}){
       <Link href="/admin/usuarios" className={"adminNavLink adminSuper"+(active(pathname,"/admin/usuarios")?" isActive":"")}>
         <Users size={15} strokeWidth={1.8}/>
         <span>Super Admin</span>
+        <Sparkles size={13}/>
+      </Link>
+      <Link href="/admin/presenca" className={"adminNavLink adminSuper"+(active(pathname,"/admin/presenca")?" isActive":"")}>
+        <Clock3 size={15} strokeWidth={1.8}/>
+        <span>Presença / turnos</span>
         <Sparkles size={13}/>
       </Link>
     </div>}

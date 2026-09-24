@@ -23,11 +23,16 @@ function readGuest(formData:FormData){
   const emergencyContact=value("emergencyContact",300);
   const notes=value("notes",4000);
   const monthlyGuest=formData.get("monthlyGuest")==="on";
+  const monthlyPaymentDueRaw=String(formData.get("monthlyPaymentDueAt")||"").trim();
+  const monthlyPaymentDueAt=monthlyGuest&&monthlyPaymentDueRaw
+    ?new Date(monthlyPaymentDueRaw+"T12:00:00Z")
+    :null;
   const employee=formData.get("employee")==="on";
 
   if(!name||!phone)throw new Error("Nome e telefone/WhatsApp são obrigatórios.");
   if(email&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))throw new Error("E-mail inválido.");
   if(birthDate&&Number.isNaN(birthDate.getTime()))throw new Error("Data de nascimento inválida.");
+  if(monthlyPaymentDueAt&&Number.isNaN(monthlyPaymentDueAt.getTime()))throw new Error("Data de pagamento do mensalista inválida.");
 
   return {
     name,
@@ -45,6 +50,7 @@ function readGuest(formData:FormData){
     emergencyContact,
     notes,
     monthlyGuest,
+    monthlyPaymentDueAt,
     employee
   };
 }
@@ -72,6 +78,7 @@ export async function createGuest(formData:FormData){
         where:{id:duplicate.id},
         data:{
           monthlyGuest:duplicate.monthlyGuest||data.monthlyGuest,
+          monthlyPaymentDueAt:data.monthlyPaymentDueAt||undefined,
           employee:duplicate.employee||data.employee
         }
       });
@@ -115,4 +122,52 @@ export async function linkGuestBooking(formData:FormData){
   revalidatePath("/admin/hospedes/"+guestId);
   revalidatePath("/admin/reservas");
   revalidatePath("/admin/pms");
+}
+
+
+export async function registerMonthlyPayment(formData:FormData){
+  const actor=await requireAdmin();
+  const id=String(formData.get("id")||"");
+  const paidAtRaw=String(formData.get("paidAt")||"").trim();
+  if(!id)throw new Error("Mensalista inválido.");
+
+  const guest=await prisma.guest.findUnique({
+    where:{id},
+    select:{id:true,name:true,monthlyGuest:true,monthlyPaymentDueAt:true}
+  });
+  if(!guest?.monthlyGuest)throw new Error("Este cadastro não está marcado como mensalista.");
+
+  const paidAt=paidAtRaw?new Date(paidAtRaw+"T12:00:00Z"):new Date();
+  if(Number.isNaN(paidAt.getTime()))throw new Error("Data de pagamento inválida.");
+
+  const base=guest.monthlyPaymentDueAt&&guest.monthlyPaymentDueAt>paidAt
+    ?guest.monthlyPaymentDueAt
+    :paidAt;
+  const nextDueAt=new Date(base);
+  nextDueAt.setUTCMonth(nextDueAt.getUTCMonth()+1);
+
+  await prisma.$transaction([
+    prisma.guest.update({
+      where:{id},
+      data:{monthlyPaymentLastPaidAt:paidAt,monthlyPaymentDueAt:nextDueAt}
+    }),
+    prisma.adminAuditLog.create({
+      data:{
+        actorId:actor.userId,
+        action:"MONTHLY_GUEST_PAYMENT_RECORDED",
+        targetType:"Guest",
+        targetId:id,
+        details:{
+          guestName:guest.name,
+          paidAt:paidAt.toISOString(),
+          previousDueAt:guest.monthlyPaymentDueAt?.toISOString()||null,
+          nextDueAt:nextDueAt.toISOString()
+        }
+      }
+    })
+  ]);
+
+  revalidatePath("/admin/hospedes");
+  revalidatePath("/admin/hospedes/"+id);
+  revalidatePath("/admin/notificacoes");
 }

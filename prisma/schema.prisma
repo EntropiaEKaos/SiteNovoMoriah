@@ -14,6 +14,8 @@ model AdminUser {
   role         String   @default("ADMIN")
   active       Boolean  @default(true)
   lastLoginAt  DateTime?
+  onDuty       Boolean  @default(false)
+  onDutySince  DateTime?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
   auditLogs    AdminAuditLog[]
@@ -388,6 +390,7 @@ model ChatMetric {
 
 model NotificationMessage {
   id          String   @id @default(cuid())
+  dedupeKey   String?  @unique
   channel     String
   audience    String   @default("INTERNAL")
   recipient   String?
@@ -421,8 +424,10 @@ model Guest {
   preferences      String?
   emergencyContact String?
   notes            String?
-  monthlyGuest     Boolean  @default(false)
-  employee         Boolean  @default(false)
+  monthlyGuest             Boolean   @default(false)
+  monthlyPaymentDueAt      DateTime?
+  monthlyPaymentLastPaidAt DateTime?
+  employee                 Boolean   @default(false)
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
   bookings         BookingLead[]
@@ -430,6 +435,7 @@ model Guest {
   @@index([phone])
   @@index([document])
   @@index([monthlyGuest])
+  @@index([monthlyGuest, monthlyPaymentDueAt])
   @@index([employee])
 }
 

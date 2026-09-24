@@ -180,17 +180,17 @@ export default function SiteBuilderRenderer({
           </div>
           <div className="siteStayGrid">
             {rooms.map((room,index)=><article className="siteStayCard" key={room.id}>
-              <div className="siteStayImageWrap">
+              <Link className="siteStayImageWrap" href={"/hospedagens/"+room.id} aria-label={"Ver detalhes de "+room.name}>
                 {room.coverImage?<img src={room.coverImage} alt={room.name}/>:<div className="siteStayImagePlaceholder"><BedDouble size={30}/></div>}
                 {room.featured&&<span className="siteStayFeatured">Recomendado</span>}
                 <span className="siteStayIndex">{String(index+1).padStart(2,"0")}</span>
-              </div>
+              </Link>
               <div className="siteStayBody">
                 <div className="siteStayMeta">
                   <small>{room.sharedRoom?"Quarto compartilhado":room.type}</small>
                   <small><Users size={12}/> {room.sharedRoom?room.bedCount+" cama(s)":("até "+room.capacity+" hóspede(s)")}</small>
                 </div>
-                <h3>{room.name}</h3>
+                <h3><Link className="siteStayTitleLink" href={"/hospedagens/"+room.id}>{room.name}</Link></h3>
                 <p>{room.description}</p>
                 {room.amenities.length>0&&<div className="siteStayAmenities">
                   {room.amenities.slice(0,3).map(item=><span key={item}><CheckCircle2 size={13}/>{item}</span>)}

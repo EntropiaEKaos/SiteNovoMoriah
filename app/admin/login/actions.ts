@@ -2,9 +2,10 @@
 import {createHash} from "node:crypto";
 import {headers} from "next/headers";
 import {redirect} from "next/navigation";
-import {clearAdminSession,createAdminSession} from "../../../lib/admin-auth";
+import {clearAdminSession,createAdminSession,getAdminSession} from "../../../lib/admin-auth";
 import {verifyAdminPassword} from "../../../lib/admin-password";
 import {prisma} from "../../../lib/prisma";
+import {closeStaffPresence} from "../../../lib/staff-presence";
 
 const WINDOW_MS=15*60*1000;
 const MAX_ATTEMPTS=8;
@@ -36,4 +37,11 @@ export async function loginAdmin(formData:FormData){
   await createAdminSession({id:admin!.id,username:admin!.username,role:admin!.role});
   redirect("/admin");
 }
-export async function logoutAdmin(){await clearAdminSession();redirect("/admin/login")}
+export async function logoutAdmin(){
+  const session=await getAdminSession();
+  if(session){
+    try{await closeStaffPresence(session.userId,"LOGOUT")}catch(error){console.error("STAFF_PRESENCE_LOGOUT_FAILED",error)}
+  }
+  await clearAdminSession();
+  redirect("/admin/login");
+}

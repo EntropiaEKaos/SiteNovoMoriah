@@ -106,6 +106,10 @@ export default async function GuestsPage({
           <label>Contato de emergência
             <input name="emergencyContact" maxLength={300} placeholder="Nome e telefone"/>
           </label>
+          <label>Próximo pagamento do mensalista
+            <input name="monthlyPaymentDueAt" type="date"/>
+            <small>Preencha quando o cadastro for mensalista. A central avisará os admins na data.</small>
+          </label>
           <div className="span2 guestMarkerGrid">
             <label className="guestMarkerOption">
               <input name="monthlyGuest" type="checkbox"/>
@@ -163,6 +167,7 @@ export default async function GuestsPage({
         </div>
         <div className="adminMetaRow">
           {guest.monthlyGuest&&<span className="adminChip ok">Mensalista</span>}
+          {guest.monthlyGuest&&guest.monthlyPaymentDueAt&&<span className={"adminChip "+(guest.monthlyPaymentDueAt<new Date()?"warn":"")}>Próx. pagamento {guest.monthlyPaymentDueAt.toLocaleDateString("pt-BR")}</span>}
           {guest.employee&&<span className="adminChip">Colaborador</span>}
           {guest.document&&<span className="adminChip">{guest.document}</span>}
           {guest.city&&<span className="adminChip">{guest.city}{guest.state?" / "+guest.state:""}</span>}
