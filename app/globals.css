@@ -5754,3 +5754,241 @@ body{background:linear-gradient(180deg,#fff 0,#fffdf5 100%)}.nav{box-shadow:0 8p
   .kitchenStationScreenTop a{margin-left:0}
   .kitchenStationItem{grid-template-columns:1fr}
 }
+
+
+/* =========================================================
+   MORIAH Calendar 5.0 / Notifications / Rentals
+   ========================================================= */
+.reservationMap50{position:relative}
+.reservationMap50.isSaving:after{
+  content:"Salvando alteração…";
+  position:fixed;right:24px;top:82px;z-index:1000;
+  padding:11px 14px;border-radius:10px;background:#0b2631;color:#fff;
+  box-shadow:0 10px 30px rgba(0,0,0,.2);font-size:10px;font-weight:900;
+}
+.reservationMapSearch{
+  min-width:175px;padding:9px 11px;border:1px solid #d5dfe2;border-radius:9px;background:#fff;
+  color:#28434d;font:inherit;font-size:10px;
+}
+.calendarDirectCommandBar{
+  display:grid;grid-template-columns:auto auto minmax(220px,1fr);gap:15px;align-items:center;
+  margin:0 0 14px;padding:13px 15px;border:1px solid #cfe0e4;border-radius:13px;
+  background:linear-gradient(135deg,#eef8fa,#fff);
+}
+.calendarDirectCommandBar>div:first-child{display:grid;gap:2px}
+.calendarDirectCommandBar small{font-size:7px;font-weight:950;letter-spacing:1px;color:#7b8e95}
+.calendarDirectCommandBar b{font-size:13px;color:#244650}
+.calendarDirectCommandBar>div:nth-child(2){display:flex;gap:5px}
+.calendarDirectCommandBar button{
+  border:1px solid #cbdadd;border-radius:8px;background:#fff;color:#506770;
+  padding:8px 10px;font-size:9px;font-weight:900;cursor:pointer;
+}
+.calendarDirectCommandBar button.isActive{background:#0b607a;border-color:#0b607a;color:#fff}
+.calendarDirectCommandBar p{margin:0;color:#71858c;font-size:9px;line-height:1.45}
+.reservationMapEvent.isDraggable{cursor:grab}
+.reservationMapEvent.isDraggable:active{cursor:grabbing}
+.reservationMapCell.isDropAllowed{
+  box-shadow:inset 0 0 0 2px rgba(23,121,94,.22);
+  background:#effaf5!important;
+}
+.reservationMapCell.isDropHover{
+  box-shadow:inset 0 0 0 3px #17795e!important;
+  background:#dff3e8!important;
+}
+.calendarDragBanner{
+  position:fixed;left:50%;bottom:28px;z-index:90;transform:translateX(-50%);
+  display:flex;gap:10px;align-items:center;padding:12px 16px;border-radius:12px;
+  background:#102f3a;color:#fff;box-shadow:0 18px 44px rgba(7,31,41,.25);
+}
+.calendarDragBanner b{font-size:10px}.calendarDragBanner span{font-size:8px;color:#b8cdd4}
+.calendarQuickCommands{
+  display:flex;gap:7px;flex-wrap:wrap;margin-top:16px;padding:12px;
+  border:1px solid #dce5e7;border-radius:10px;background:#f7fafb;
+}
+.calendarQuickCommands a,.calendarQuickCommands button{
+  border:1px solid #d1dcdf;border-radius:8px;background:#fff;color:#3f5963;
+  padding:8px 10px;font-size:9px;font-weight:850;cursor:pointer;
+}
+.calendarQuickCommands .highlight{background:#0b607a;border-color:#0b607a;color:#fff}
+.calendarQuickCommands .danger{color:#993d35;border-color:#e0bdb9}
+.calendarMoveForm{margin-top:16px;padding-top:16px;border-top:1px solid #e3e9eb}
+
+.calendarWidgetAdmin{margin:0 0 18px}
+.calendarWidgetCheck{
+  display:flex!important;align-items:center;gap:7px!important;padding:9px 10px;
+  border-radius:8px;background:#f4f7f8;
+}
+.calendarWidgetCheck input{width:auto!important}
+.calendarEmbedCode{
+  display:grid;gap:8px;margin-top:16px;padding:14px;border-radius:11px;background:#0b2631;color:#fff;
+}
+.calendarEmbedCode>div{display:grid;gap:5px}
+.calendarEmbedCode small{font-size:7px;color:#93b7c1;font-weight:900;letter-spacing:1px}
+.calendarEmbedCode code{
+  display:block;overflow:auto;padding:8px;border-radius:6px;background:#06191f;color:#cde6ed;
+  font-size:8px;white-space:nowrap;
+}
+.calendarEmbedCode button{
+  justify-self:start;border:0;border-radius:8px;background:#ffc845;color:#193741;padding:8px 11px;
+  font-size:9px;font-weight:950;cursor:pointer;
+}
+
+/* External embeddable calendar */
+body:has(.externalCalendarWidget){background:#f3f6f7}
+body:has(.externalCalendarWidget) .supportChat,
+body:has(.externalCalendarWidget) .whatsappFloat{display:none!important}
+.externalCalendarWidget{
+  --widget-primary:#0b607a;--widget-accent:#ffc845;
+  min-height:100vh;padding:24px;background:
+  radial-gradient(circle at 95% 0,color-mix(in srgb,var(--widget-primary) 12%,transparent),transparent 30%),
+  #f5f8f8;color:#1d333c;font-family:inherit;
+}
+.externalCalendarWidget>header{max-width:940px;margin:0 auto 18px}
+.externalCalendarWidget>header small{color:var(--widget-primary);font-size:8px;font-weight:950;letter-spacing:1.5px}
+.externalCalendarWidget>header h1{margin:5px 0;font-size:clamp(32px,5vw,58px);line-height:1;letter-spacing:-2px}
+.externalCalendarWidget>header p{margin:8px 0 0;color:#71848b;font-size:12px}
+.externalWidgetRooms{
+  max-width:940px;margin:0 auto 14px;display:flex;gap:7px;overflow-x:auto;padding-bottom:3px;
+}
+.externalWidgetRooms button{
+  min-width:210px;display:grid;grid-template-columns:54px 1fr;gap:9px;align-items:center;
+  padding:8px;border:1px solid #d5e0e2;border-radius:12px;background:#fff;text-align:left;cursor:pointer;
+}
+.externalWidgetRooms button.isActive{border:2px solid var(--widget-primary);box-shadow:0 6px 18px rgba(21,57,69,.08)}
+.externalWidgetRooms button>span{width:54px;height:54px;border-radius:9px;overflow:hidden;background:#e7eef0}
+.externalWidgetRooms img{width:100%;height:100%;object-fit:cover}
+.externalWidgetRooms i{display:block;width:100%;height:100%;background:linear-gradient(135deg,#d9e6e9,#edf3f4)}
+.externalWidgetRooms b,.externalWidgetRooms small{display:block}
+.externalWidgetRooms b{font-size:11px;color:#284650}
+.externalWidgetRooms small{margin-top:3px;font-size:8px;color:#809197;line-height:1.3}
+.externalWidgetCalendar{
+  max-width:940px;margin:0 auto;border:1px solid #d2dee1;border-radius:15px;background:#fff;overflow:hidden;
+  box-shadow:0 12px 35px rgba(20,52,64,.08);
+}
+.externalWidgetCalendarHead{
+  display:flex;justify-content:space-between;gap:20px;align-items:center;padding:16px 18px;
+  border-bottom:1px solid #e1e8ea;
+}
+.externalWidgetCalendarHead small{font-size:7px;color:#849499;font-weight:950;letter-spacing:1px}
+.externalWidgetCalendarHead h2{margin:3px 0 0;font-size:20px;color:#21414c}
+.externalWidgetCalendarHead>span{color:var(--widget-primary);font-size:9px;font-weight:900}
+.externalWidgetDays{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;background:#e2e9eb}
+.externalWidgetDays button{
+  min-height:78px;border:0;background:#fff;display:grid;place-content:center;gap:2px;text-align:center;cursor:pointer;
+}
+.externalWidgetDays button:hover:not(:disabled){background:#f0f8fa}
+.externalWidgetDays button.isSelected{background:color-mix(in srgb,var(--widget-primary) 12%,#fff);box-shadow:inset 0 -4px 0 var(--widget-primary)}
+.externalWidgetDays button.isBlocked{background:#f2f3f3;color:#a5adaf;cursor:not-allowed}
+.externalWidgetDays small{font-size:7px;text-transform:uppercase}
+.externalWidgetDays b{font-size:17px}
+.externalWidgetDays span{font-size:7px;color:#8d9a9e}
+.externalCalendarWidget>footer{
+  max-width:940px;margin:12px auto 0;display:flex;justify-content:space-between;gap:15px;align-items:center;
+  padding:14px 16px;border:1px solid #d5dfe2;border-radius:12px;background:#fff;
+}
+.externalCalendarWidget>footer div{display:grid;gap:3px}
+.externalCalendarWidget>footer b{font-size:11px}.externalCalendarWidget>footer span{font-size:8px;color:#819197}
+.externalCalendarWidget>footer a,.externalCalendarWidget>footer button{
+  border:0;border-radius:9px;background:var(--widget-primary);color:#fff;padding:11px 14px;
+  font-size:10px;font-weight:950;
+}
+.externalCalendarWidget>footer button:disabled{opacity:.35}
+
+/* Notification rules */
+.notificationRulesSection{
+  margin-bottom:20px;padding:20px;border:1px solid #d4dfe2;border-radius:16px;background:#f8fafb;
+}
+.notificationModuleGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:15px}
+.notificationModuleCard{border:1px solid #d9e3e5;border-radius:13px;background:#fff;overflow:hidden}
+.notificationModuleCard>header{padding:13px 15px;background:#0b2631;color:#fff}
+.notificationModuleCard>header small{font-size:7px;color:#8eb3be;font-weight:950}
+.notificationModuleCard h3{margin:3px 0 0;font-size:17px}
+.notificationRuleStack{display:grid}
+.notificationRuleCard{display:grid;gap:9px;padding:14px;border-bottom:1px solid #e7edef}
+.notificationRuleHead{display:flex;justify-content:space-between;gap:12px;align-items:center}
+.notificationRuleHead>div{display:grid;gap:3px;flex:1}
+.notificationRuleHead small{font-size:7px;color:#86959a;font-weight:950}
+.notificationRuleHead input,.notificationRuleCard>label input,.notificationRuleCard textarea,.notificationRuleGrid input{
+  width:100%;border:1px solid #d4dee1;border-radius:8px;background:#fbfcfc;padding:8px 9px;color:#304b55;font:inherit;font-size:9px;
+}
+.notificationRuleCard>label{display:grid;gap:4px;color:#61757c;font-size:8px;font-weight:850}
+.notificationRuleToggle{display:flex!important;align-items:center;gap:6px!important;white-space:nowrap}
+.notificationRuleToggle input{width:auto!important}
+.notificationChannelChecks{display:flex;gap:5px;flex-wrap:wrap}
+.notificationChannelChecks label{
+  display:flex;align-items:center;gap:4px;padding:5px 7px;border-radius:99px;background:#eef3f4;color:#526970;font-size:7px;font-weight:900;
+}
+.notificationChannelChecks input{width:auto}
+.notificationRuleGrid{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.notificationRuleGrid label{display:grid;gap:4px;color:#667a82;font-size:8px;font-weight:850}
+.notificationRuleActions button{
+  border:0;border-radius:8px;background:#0b607a;color:#fff;padding:8px 10px;font-size:8px;font-weight:900;cursor:pointer;
+}
+.notificationNewRule{margin-top:12px;border:1px dashed #bfd0d4;border-radius:11px;background:#fff}
+.notificationNewRule summary{cursor:pointer;padding:12px 14px;color:#0b607a;font-size:9px;font-weight:900}
+.notificationNewRule form{padding:0 14px 14px}
+.notificationNewChannels>span{display:flex;gap:5px;flex-wrap:wrap;margin-top:5px}
+.notificationNewChannels>span label{display:flex;align-items:center;gap:4px}
+
+/* Rentals */
+.rentalsHero h1{letter-spacing:-3px}
+.rentalPresetBar{
+  display:flex;justify-content:space-between;gap:18px;align-items:center;margin-bottom:16px;padding:15px 17px;
+  border:1px solid #cadddf;border-radius:13px;background:#eaf6f8;
+}
+.rentalPresetBar>div{display:grid;gap:3px}
+.rentalPresetBar b{font-size:12px;color:#254852}.rentalPresetBar span{font-size:9px;color:#71858b}
+.rentalsSetup{align-items:start;margin-bottom:20px}
+.rentalActiveCheck{display:flex!important;align-items:center;gap:7px!important;padding:9px;border-radius:8px;background:#f2f6f7}
+.rentalActiveCheck input{width:auto!important}
+.rentalItemGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:16px}
+.rentalItemCard{
+  overflow:hidden;border:1px solid #d5dfe2;border-radius:14px;background:#fff;box-shadow:0 7px 20px rgba(22,48,58,.05);
+}
+.rentalItemCard.isDisabled{opacity:.6}
+.rentalItemCard>img,.rentalItemPlaceholder{width:100%;height:160px;object-fit:cover;background:#e9eff1}
+.rentalItemPlaceholder{display:grid;place-items:center;color:#89999e;font-size:9px;font-weight:900;letter-spacing:1px}
+.rentalItemBody{display:grid;gap:8px;padding:14px}
+.rentalItemHead{display:flex;justify-content:space-between;gap:10px;color:#71848b;font-size:8px}
+.rentalItemHead span{font-weight:950}.rentalItemHead b{color:#17795e}
+.rentalItemName{
+  width:100%;border:0!important;background:transparent!important;padding:0!important;box-shadow:none!important;
+  color:#1f3c46!important;font-size:20px!important;font-weight:900!important;
+}
+.rentalItemBody textarea,.rentalItemEditGrid input{
+  width:100%;border:1px solid #d6e0e2;border-radius:7px;background:#fbfcfc;padding:8px;color:#415b64;font:inherit;font-size:9px;
+}
+.rentalItemEditGrid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.rentalItemEditGrid label{display:grid;gap:4px;color:#74878e;font-size:7px;font-weight:850}
+.rentalItemBody>button{border:0;border-radius:8px;background:#0b607a;color:#fff;padding:9px;font-size:9px;font-weight:900;cursor:pointer}
+.rentalOrderGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-top:15px}
+.rentalOrderCard{padding:15px;border:1px solid #d6e0e2;border-radius:13px;background:#fff}
+.rentalOrderCard.isLate{border-color:#d88d84;box-shadow:inset 5px 0 0 #b83d34}
+.rentalOrderCard>header{display:flex;justify-content:space-between;gap:14px}
+.rentalOrderCard header small{font-size:7px;color:#819297;font-weight:950}
+.rentalOrderCard h3{margin:4px 0;font-size:18px;color:#213f49}
+.rentalOrderCard header p{margin:0;color:#75888f;font-size:9px}
+.rentalOrderMeta{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:12px 0}
+.rentalOrderMeta>div{padding:9px;border-radius:8px;background:#f3f6f7}
+.rentalOrderMeta small,.rentalOrderMeta b{display:block}
+.rentalOrderMeta small{font-size:7px;color:#819096}.rentalOrderMeta b{margin-top:3px;font-size:9px;color:#38525b}
+
+/* responsive */
+@media(max-width:1100px){
+  .notificationModuleGrid,.rentalOrderGrid{grid-template-columns:1fr}
+  .rentalItemGrid{grid-template-columns:1fr 1fr}
+  .calendarDirectCommandBar{grid-template-columns:1fr auto}
+  .calendarDirectCommandBar p{grid-column:1/-1}
+}
+@media(max-width:720px){
+  .calendarDirectCommandBar{grid-template-columns:1fr}
+  .calendarDirectCommandBar>div:nth-child(2){justify-content:flex-start}
+  .rentalPresetBar{align-items:flex-start;flex-direction:column}
+  .rentalItemGrid{grid-template-columns:1fr}
+  .rentalOrderMeta{grid-template-columns:1fr 1fr}
+  .notificationModuleGrid{grid-template-columns:1fr}
+  .notificationRuleGrid{grid-template-columns:1fr}
+  .externalCalendarWidget{padding:14px}
+  .externalWidgetDays{grid-template-columns:repeat(4,1fr)}
+  .externalCalendarWidget>footer{align-items:flex-start;flex-direction:column}
+}

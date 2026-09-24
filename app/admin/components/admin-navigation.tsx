@@ -6,6 +6,7 @@ import {
   BarChart3,
   BedDouble,
   Bell,
+  Bike,
   BookOpen,
   Briefcase,
   CalendarDays,
@@ -37,7 +38,8 @@ const sections=[
       ["Hóspedes","/admin/hospedes",Users],
       ["Cargos de colaboradores","/admin/colaboradores/cargos",Briefcase],
       ["PMS / Front Desk","/admin/pms",BedDouble],
-      ["Mapa de Reservas","/admin/canais/calendario",CalendarDays],
+      ["Calendário 5.0 / Widget","/admin/canais/calendario",CalendarDays],
+      ["Locações","/admin/locacoes",Bike],
       ["Hospedagens","/admin/hospedagens",BedDouble],
       ["Canais","/admin/canais",Plug]
     ]
