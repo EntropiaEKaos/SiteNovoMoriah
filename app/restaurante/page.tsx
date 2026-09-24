@@ -1,4 +1,5 @@
 import {prisma} from "../../lib/prisma";
+import {loadPublicSiteSettings} from "../../lib/public-site-settings";
 import {
   effectiveRestaurantPrice,
   isMenuScheduleAvailable,
@@ -34,7 +35,7 @@ export default async function Page({searchParams}:{searchParams:Promise<{booking
       ]
     }),
     prisma.restaurantSettings.findUnique({where:{id:"main"}}),
-    prisma.siteSettings.findUnique({where:{id:"main"}}),
+    loadPublicSiteSettings(),
     prisma.sitePage.findMany({
       where:{published:true,showInNav:true,slug:{not:"home"}},
       select:{slug:true,title:true,navLabel:true},

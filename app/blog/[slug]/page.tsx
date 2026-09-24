@@ -2,6 +2,7 @@ import type {Metadata} from "next";
 import Link from "next/link";
 import {notFound} from "next/navigation";
 import {prisma} from "../../../lib/prisma";
+import {loadPublicSiteSettings} from "../../../lib/public-site-settings";
 import PublicSiteChrome from "../../public-site-chrome";
 import BlogContent from "../blog-content";
 
@@ -25,7 +26,7 @@ export default async function Page({params}:{params:Promise<{slug:string}>}){
   const {slug}=await params;
   const [post,settings,navPages]=await Promise.all([
     prisma.blogPost.findUnique({where:{slug}}),
-    prisma.siteSettings.findUnique({where:{id:"main"}}),
+    loadPublicSiteSettings(),
     prisma.sitePage.findMany({
       where:{published:true,showInNav:true,slug:{not:"home"}},
       select:{slug:true,title:true,navLabel:true},

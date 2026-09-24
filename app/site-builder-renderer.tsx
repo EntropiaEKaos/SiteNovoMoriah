@@ -24,13 +24,13 @@ import type {
   BlogPost,
   Media,
   Promotion,
-  SiteSection,
-  SiteSettings
+  SiteSection
 } from "@prisma/client";
+import type {PublicSiteSettings} from "../lib/public-site-settings";
 
 type Props={
   sections:SiteSection[];
-  settings:SiteSettings|null;
+  settings:PublicSiteSettings|null;
   rooms:Accommodation[];
   promo:Promotion|null;
   posts:BlogPost[];

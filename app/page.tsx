@@ -5,10 +5,10 @@ import type {
   Media,
   Promotion,
   SitePage,
-  SiteSection,
-  SiteSettings
+  SiteSection
 } from "@prisma/client";
 import {prisma} from "../lib/prisma";
+import {loadPublicSiteSettings,type PublicSiteSettings} from "../lib/public-site-settings";
 import SiteBuilderRenderer from "./site-builder-renderer";
 import PublicSiteChrome from "./public-site-chrome";
 
@@ -82,7 +82,7 @@ type HomePageWithSections=SitePage&{sections:SiteSection[]};
 type NavPage={slug:string;title:string;navLabel:string|null};
 
 export default async function Home(){
-  let settings:SiteSettings|null=null;
+  let settings:PublicSiteSettings|null=null;
   let rooms:Accommodation[]=[];
   let promo:Promotion|null=null;
   let posts:BlogPost[]=[];
@@ -92,7 +92,7 @@ export default async function Home(){
 
   try{
     [settings,rooms,promo,posts,media,page,navPages]=await Promise.all([
-      prisma.siteSettings.findUnique({where:{id:"main"}}),
+      loadPublicSiteSettings(),
       prisma.accommodation.findMany({
         where:{active:true},
         orderBy:[{featured:"desc"},{createdAt:"desc"}],

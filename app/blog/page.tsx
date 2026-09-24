@@ -1,5 +1,6 @@
 import Link from "next/link";
 import {prisma} from "../../lib/prisma";
+import {loadPublicSiteSettings} from "../../lib/public-site-settings";
 import PublicSiteChrome from "../public-site-chrome";
 
 export const dynamic="force-dynamic";
@@ -10,7 +11,7 @@ export default async function Page(){
       where:{published:true},
       orderBy:{publishedAt:"desc"}
     }),
-    prisma.siteSettings.findUnique({where:{id:"main"}}),
+    loadPublicSiteSettings(),
     prisma.sitePage.findMany({
       where:{published:true,showInNav:true,slug:{not:"home"}},
       select:{slug:true,title:true,navLabel:true},
