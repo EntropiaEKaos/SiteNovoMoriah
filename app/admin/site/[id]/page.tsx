@@ -15,6 +15,8 @@ export default async function EditSiteSection({params}:{params:Promise<{id:strin
     prisma.media.findMany({orderBy:{createdAt:"desc"},take:200})
   ]);
   if(!section)notFound();
+  const backHref=section.page.slug==="home"?"/admin/site":"/admin/site/paginas/"+section.pageId;
+  const previewHref=section.page.slug==="home"?"/":"/"+section.page.slug;
 
   return <main className="adminPage">
     <section className="adminPageHero">
@@ -24,8 +26,8 @@ export default async function EditSiteSection({params}:{params:Promise<{id:strin
         <p>{section.title||section.eyebrow||section.type} • alterações publicadas aparecem na Home após salvar.</p>
       </div>
       <div className="adminPageHeroActions">
-        <Link className="adminSecondaryAction" href="/admin/site">← Editor do site</Link>
-        <Link className="adminSecondaryAction" href="/" target="_blank">Preview ↗</Link>
+        <Link className="adminSecondaryAction" href={backHref}>← {section.page.title}</Link>
+        <Link className="adminSecondaryAction" href={previewHref} target="_blank">Preview ↗</Link>
       </div>
     </section>
     <SiteSectionForm action={updateSiteSection} pageId={section.pageId} media={media} section={section}/>
