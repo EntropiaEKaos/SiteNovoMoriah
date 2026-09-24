@@ -4,7 +4,8 @@ import {
   cancelNotification,
   createNotification,
   dispatchNotification,
-  markNotificationSent
+  markNotificationSent,
+  saveNotificationRule
 } from "./actions";
 
 export const dynamic="force-dynamic";
@@ -19,12 +20,13 @@ const statusClass=(status:string)=>{
 export default async function Page(){
   await requireAdmin();
 
-  const [messages,cfg]=await Promise.all([
+  const [messages,cfg,rules]=await Promise.all([
     prisma.notificationMessage.findMany({
       orderBy:{createdAt:"desc"},
       take:120
     }),
-    prisma.integrationSettings.findUnique({where:{id:"main"}})
+    prisma.integrationSettings.findUnique({where:{id:"main"}}),
+    prisma.notificationRule.findMany({orderBy:[{module:"asc"},{label:"asc"}]})
   ]);
 
   const sent=messages.filter(message=>message.status==="SENT").length;
@@ -55,6 +57,65 @@ export default async function Page(){
       <div><small>Enviadas</small><strong>{sent}</strong></div>
       <div><small>Prontas</small><strong>{ready}</strong></div>
       <div><small>Bloqueadas / falhas</small><strong>{blocked}</strong></div>
+    </section>
+
+    <section className="notificationRulesSection">
+      <div className="adminListCardHead">
+        <div>
+          <small>AUTOMAÇÕES / POR MÓDULO</small>
+          <h2>Regras de notificação</h2>
+          <p>Defina exatamente quais partes do sistema avisam, por qual canal e com qual antecedência.</p>
+        </div>
+        <span className="adminChip ok">{rules.filter(rule=>rule.active).length} ativas</span>
+      </div>
+
+      <div className="notificationModuleGrid">
+        {Array.from(new Set(rules.map(rule=>rule.module))).map(module=><article className="notificationModuleCard" key={module}>
+          <header><small>MÓDULO</small><h3>{module}</h3></header>
+          <div className="notificationRuleStack">
+            {rules.filter(rule=>rule.module===module).map(rule=><form action={saveNotificationRule} className="notificationRuleCard" key={rule.id}>
+              <input type="hidden" name="id" value={rule.id}/>
+              <input type="hidden" name="module" value={rule.module}/>
+              <input type="hidden" name="eventKey" value={rule.eventKey}/>
+              <div className="notificationRuleHead">
+                <div><small>{rule.eventKey}</small><input name="label" defaultValue={rule.label}/></div>
+                <label className="notificationRuleToggle"><input name="active" type="checkbox" defaultChecked={rule.active}/><span>Ativa</span></label>
+              </div>
+              <div className="notificationChannelChecks">
+                {["IN_APP","WHATSAPP","EMAIL","PUSH"].map(channel=><label key={channel}>
+                  <input name="channels" type="checkbox" value={channel} defaultChecked={rule.channels.includes(channel)}/>
+                  {channel}
+                </label>)}
+              </div>
+              <div className="notificationRuleGrid">
+                <label>Público<input name="audience" defaultValue={rule.audience}/></label>
+                <label>Antecedência (min)<input name="advanceMinutes" type="number" min="0" max="525600" defaultValue={rule.advanceMinutes}/></label>
+              </div>
+              <label>Título<input name="templateTitle" defaultValue={rule.templateTitle||""}/></label>
+              <label>Mensagem<textarea name="templateBody" rows={3} defaultValue={rule.templateBody||""}/></label>
+              <div className="notificationRuleActions"><button>Salvar regra</button></div>
+            </form>)}
+          </div>
+        </article>)}
+      </div>
+
+      <details className="notificationNewRule">
+        <summary>+ Criar regra personalizada</summary>
+        <form action={saveNotificationRule} className="adminFormGrid cols3">
+          <label>Módulo<input name="module" required placeholder="Ex.: LOCACOES"/></label>
+          <label>Evento<input name="eventKey" required placeholder="Ex.: DAMAGE_REPORTED"/></label>
+          <label>Nome<input name="label" required placeholder="Ex.: Avaria registrada"/></label>
+          <label>Público<input name="audience" defaultValue="INTERNAL"/></label>
+          <label>Antecedência (min)<input name="advanceMinutes" type="number" min="0" defaultValue="0"/></label>
+          <label className="notificationNewChannels">Canais
+            <span>{["IN_APP","WHATSAPP","EMAIL","PUSH"].map(channel=><label key={channel}><input name="channels" type="checkbox" value={channel} defaultChecked={channel==="IN_APP"}/>{channel}</label>)}</span>
+          </label>
+          <label className="span2">Título<input name="templateTitle"/></label>
+          <label className="span2">Mensagem<textarea name="templateBody" rows={3}/></label>
+          <label className="notificationRuleToggle"><input name="active" type="checkbox" defaultChecked/><span>Ativa</span></label>
+          <button className="span2">Criar regra</button>
+        </form>
+      </details>
     </section>
 
     <section className="adminTwoCol" style={{marginBottom:20}}>
