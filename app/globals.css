@@ -1478,3 +1478,266 @@ body{background:linear-gradient(180deg,#fff 0,#fffdf5 100%)}.nav{box-shadow:0 8p
   }
   .receiptPage>footer{background:transparent!important}
 }
+
+
+/* Map 3.0 + Moriah Food KDS 3.0 */
+.reservationMapCellButton{
+  appearance:none;
+  border:0;
+  border-right:1px solid #efebe2;
+  background:#fff;
+  cursor:pointer;
+  padding:0;
+}
+.reservationMapCellButton:hover:not(:disabled){
+  background:#fff3a6;
+  box-shadow:inset 0 0 0 1px #d7bd00;
+}
+.reservationMapCellButton.isToday{background:#fffceb}
+.reservationMapCellButton.isOccupied{
+  cursor:not-allowed;
+  background:#f4f1e9;
+}
+.reservationMapHint{
+  margin-left:auto;
+  color:#777167;
+  font-weight:700;
+}
+.reservationDraft{
+  border-left:7px solid var(--y);
+}
+.kdsPage{max-width:none}
+.kdsLiveBar{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+  margin:-2px 0 18px;
+  padding:10px 14px;
+  background:#111;
+  color:#fff;
+  font-size:10px;
+  font-weight:850;
+}
+.kdsLiveBar span{display:flex;align-items:center;gap:8px}
+.kdsLiveBar i{
+  width:8px;
+  height:8px;
+  border-radius:50%;
+  background:#7ce38b;
+  box-shadow:0 0 0 4px #7ce38b22;
+}
+.kdsLiveBar button{
+  border:1px solid #4a4a46;
+  background:#1d1d1b;
+  color:#fff;
+  padding:7px 10px;
+  font-weight:850;
+}
+.kdsBoard{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:14px;
+  align-items:start;
+}
+.kdsColumn{
+  min-width:0;
+  background:#ebe7dd;
+  border:1px solid #d8d2c5;
+}
+.kdsColumn>header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:18px;
+  padding:16px;
+  border-bottom:1px solid #d8d2c5;
+}
+.kdsColumn>header small{
+  display:block;
+  color:#777167;
+  font-size:8px;
+  font-weight:950;
+  letter-spacing:1.2px;
+}
+.kdsColumn>header h2{
+  margin:4px 0 0;
+  font-size:24px;
+  letter-spacing:-1px;
+}
+.kdsColumn>header>strong{
+  min-width:38px;
+  height:38px;
+  display:grid;
+  place-items:center;
+  background:#111;
+  color:#fff;
+}
+.kdsColumn.is-new>header{background:#fff3a6}
+.kdsColumn.is-preparing>header{background:#e8f2ff}
+.kdsColumn.is-ready>header{background:#dff2df}
+.kdsColumnBody{
+  display:grid;
+  gap:10px;
+  padding:10px;
+}
+.kdsEmpty{
+  padding:28px 16px;
+  text-align:center;
+  color:#777167;
+  font-size:11px;
+}
+.kdsTicket{
+  background:#fff;
+  border:1px solid #d8d2c5;
+  box-shadow:0 3px 0 #0000000b;
+}
+.kdsTicket.isLate{
+  border:2px solid #bd3e33;
+  box-shadow:0 0 0 4px #bd3e3312;
+}
+.kdsTicketHead{
+  display:grid;
+  grid-template-columns:1fr auto;
+  gap:14px;
+  padding:15px;
+  border-bottom:1px solid #ece7dc;
+}
+.kdsTicketHead small{
+  font-size:8px;
+  color:#777167;
+  font-weight:900;
+  letter-spacing:.6px;
+}
+.kdsTicketHead h3{
+  margin:5px 0 2px;
+  font-size:22px;
+  letter-spacing:-.8px;
+}
+.kdsTicketHead p{
+  margin:0;
+  color:#746f65;
+  font-size:10px;
+}
+.kdsTimer{
+  min-width:55px;
+  display:grid;
+  place-items:center;
+  align-content:center;
+  background:#111;
+  color:#fff;
+  padding:7px;
+}
+.kdsTimer strong{font-size:24px;line-height:1}
+.kdsTimer small{color:#aaa;margin-top:3px}
+.kdsAlert{
+  padding:7px 12px;
+  background:#bd3e33;
+  color:#fff;
+  font-size:8px;
+  font-weight:950;
+  letter-spacing:1px;
+}
+.kdsItems{display:grid;padding:10px 15px}
+.kdsItem{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  gap:14px;
+  padding:9px 0;
+  border-bottom:1px dashed #ddd7ca;
+}
+.kdsItem:last-child{border-bottom:0}
+.kdsItem b{font-size:13px}
+.kdsItem small{
+  display:block;
+  margin-top:3px;
+  color:#797369;
+  font-size:9px;
+}
+.kdsItem>span{font-size:10px;font-weight:850;white-space:nowrap}
+.kdsNotes{
+  margin:0 15px 12px;
+  padding:10px;
+  background:#fff5c7;
+  border-left:4px solid var(--y);
+  font-size:10px;
+  line-height:1.45;
+}
+.kdsTicketFooter{
+  display:flex;
+  justify-content:space-between;
+  gap:12px;
+  align-items:flex-end;
+  padding:13px 15px;
+  background:#f8f6ef;
+  border-top:1px solid #e3ded1;
+}
+.kdsTicketFooter>div:first-child small{
+  display:block;
+  font-size:7px;
+  font-weight:950;
+  color:#827c72;
+}
+.kdsTicketFooter>div:first-child strong{font-size:18px}
+.kdsTicketFooter .adminInlineActions{justify-content:flex-end}
+.kitchenPrint{
+  max-width:420px;
+  margin:30px auto;
+  padding:26px;
+  background:#fff;
+  color:#111;
+  border:1px solid #ccc;
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+.kitchenPrint header{
+  text-align:center;
+  border-bottom:2px dashed #111;
+  padding-bottom:18px;
+}
+.kitchenPrint header small{font-size:9px}
+.kitchenPrint header h1{font-size:24px;margin:8px 0 4px}
+.kitchenPrint header p{margin:0;font-size:10px}
+.kitchenPrint section{margin-top:18px}
+.kitchenPrintItems>div{
+  position:relative;
+  display:grid;
+  gap:4px;
+  padding:10px 0;
+  border-bottom:1px dashed #aaa;
+}
+.kitchenPrintItems>div>b{position:absolute;right:0;top:10px}
+.kitchenPrintItems small{max-width:75%;font-size:9px}
+.kitchenPrintNotes{
+  padding:12px!important;
+  background:#f2f2f2;
+  border:1px solid #111;
+}
+.kitchenPrintNotes small{display:block;margin-bottom:5px}
+.kitchenPrint>footer{
+  display:flex;
+  justify-content:space-between;
+  gap:20px;
+  margin-top:20px;
+  padding-top:16px;
+  border-top:3px double #111;
+  background:transparent;
+  color:#111;
+  font-size:18px;
+}
+@media(max-width:1050px){
+  .kdsBoard{grid-template-columns:1fr}
+}
+@media(max-width:680px){
+  .reservationMapHint{width:100%;margin-left:0}
+  .kdsLiveBar{align-items:flex-start;flex-direction:column}
+  .kdsTicketFooter{align-items:flex-start;flex-direction:column}
+}
+@media print{
+  .kitchenPrint{
+    max-width:none;
+    margin:0;
+    padding:0;
+    border:0;
+  }
+}
