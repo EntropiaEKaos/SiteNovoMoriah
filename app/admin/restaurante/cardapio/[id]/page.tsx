@@ -18,7 +18,7 @@ export default async function EditMenuProduct({
   await requireAdmin();
   const {id}=await params;
 
-  const [product,categories,media,modifierGroups,ingredients]=await Promise.all([
+  const [product,categories,media,modifierGroups,ingredients,stations]=await Promise.all([
     prisma.restaurantProduct.findUnique({
       where:{id},
       include:{modifierLinks:true,recipes:true}
@@ -31,6 +31,9 @@ export default async function EditMenuProduct({
     }),
     prisma.restaurantIngredient.findMany({
       orderBy:[{active:"desc"},{name:"asc"}]
+    }),
+    prisma.restaurantStation.findMany({
+      orderBy:[{active:"desc"},{sortOrder:"asc"},{name:"asc"}]
     })
   ]);
 
@@ -59,6 +62,7 @@ export default async function EditMenuProduct({
       media={media}
       modifierGroups={modifierGroups}
       ingredients={ingredients}
+      stations={stations}
     />
   </main>;
 }

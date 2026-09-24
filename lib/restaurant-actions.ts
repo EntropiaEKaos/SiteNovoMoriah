@@ -324,6 +324,7 @@ function menuProductData(formData:FormData){
   const prepRaw=String(formData.get("prepMinutes")||"").trim();
   const prepMinutes=prepRaw===""?null:menuInteger(formData,"prepMinutes",0,1,240);
   const maxPerOrder=menuInteger(formData,"maxPerOrder",20,1,100);
+  const priorityWeight=menuInteger(formData,"priorityWeight",100,0,1000);
 
   if(!categoryId||!name)throw new Error("Categoria e nome são obrigatórios.");
   if(promotionalPriceCents!=null&&promotionalPriceCents>=priceCents){
@@ -347,6 +348,10 @@ function menuProductData(formData:FormData){
     allergens:menuList(formData,"allergens"),
     sortOrder,
     prepMinutes,
+    priorityWeight,
+    stationId:menuText(formData,"stationId",100),
+    kitchenInstructions:menuText(formData,"kitchenInstructions",4000),
+    platingNotes:menuText(formData,"platingNotes",2000),
     maxPerOrder,
     allowNotes:formData.get("allowNotes")==="on",
     availableFrom:menuTime(formData,"availableFrom"),
@@ -504,6 +509,11 @@ export async function duplicateMenuProduct(formData:FormData){
       allergens:product.allergens,
       sortOrder:product.sortOrder+1,
       prepMinutes:product.prepMinutes,
+      priorityWeight:product.priorityWeight,
+      stationId:product.stationId,
+      kitchenInstructions:product.kitchenInstructions,
+      platingNotes:product.platingNotes,
+      pauseUntil:null,
       maxPerOrder:product.maxPerOrder,
       allowNotes:product.allowNotes,
       availableFrom:product.availableFrom,
