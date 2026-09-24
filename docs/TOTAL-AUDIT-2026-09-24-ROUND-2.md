@@ -88,3 +88,26 @@ Algumas rotas e actions antigas ainda estão compactadas em linhas únicas. Func
 7. Smoke: cadastrar cargo → marcar colaborador → escolher cargo → editar descrição → desativar cargo.
 8. Smoke Site Studio: logo, favicon, imagem principal, fundo, galeria, OG e preview.
 9. Smoke Chat: abrir após branding com e sem schema novo.
+
+
+## Adendo — persistência de imagens
+
+### P1 — Galeria de quartos descartava mídia interna
+A leitura de `galleryImages` aceitava somente URLs `http/https`. O storage atual gera URLs internas `/api/media/file?key=...`, portanto imagens selecionadas podiam ser descartadas silenciosamente ao criar ou editar uma hospedagem.
+
+**Correção:** normalização central de mídia aceita URLs internas `/api/media/...` e `http/https`, com deduplicação e limite de itens.
+
+### P1 — Edição podia remover imagens antigas fora da janela recente
+`MediaMultiPicker` recebia apenas as mídias mais recentes. Uma imagem já vinculada, mas fora desse recorte, deixava de ser renderizada e não era reenviada no formulário, podendo desaparecer no save.
+
+**Correção:** imagens vinculadas ausentes da lista recente agora são reinseridas como opções preservadas e podem ser mantidas ou removidas conscientemente. Isso vale para quartos e Site Studio.
+
+### P2 — Identidade visual não participava da proteção de exclusão
+A Galeria bloqueava exclusão de imagens usadas em quartos, Blog, Site Studio e Moriah Food, mas não contava referências de logo principal, logo clara, favicon e fundo padrão.
+
+**Correção:** referências de branding agora também impedem exclusão acidental; em schema de Preview ainda pendente, a checagem degrada sem derrubar a Galeria.
+
+### P2 — Normalização inconsistente entre módulos
+Blog, Site Studio, quartos, branding e Moriah Food tratavam URLs de mídia de formas diferentes.
+
+**Correção:** novo helper `lib/media-url.ts` centraliza a normalização; quartos, Blog, branding, Site Studio e Moriah Food passam a aceitar o mesmo formato de mídia interna/externa.

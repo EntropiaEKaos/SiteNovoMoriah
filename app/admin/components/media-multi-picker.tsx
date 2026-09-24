@@ -1,3 +1,5 @@
+type MediaItem={id:string;url:string;alt:string|null};
+
 export default function MediaMultiPicker({
   name,
   media,
@@ -5,18 +7,31 @@ export default function MediaMultiPicker({
   label="GALERIA / MÚLTIPLAS IMAGENS"
 }:{
   name:string;
-  media:{id:string;url:string;alt:string|null}[];
+  media:MediaItem[];
   defaultValues?:string[];
   label?:string;
 }){
-  if(media.length===0)return <div className="adminPageNote">
-    Nenhuma imagem disponível. Envie imagens pela Galeria antes de montar a galeria do quarto.
+  const known=new Set(media.map(item=>item.url));
+  const preserved:MediaItem[]=defaultValues
+    .filter(url=>url&&!known.has(url))
+    .map((url,index)=>({
+      id:"preserved-"+index,
+      url,
+      alt:"Imagem já vinculada"
+    }));
+  const choices=[...preserved,...media];
+
+  if(choices.length===0)return <div className="adminPageNote">
+    Nenhuma imagem disponível. Envie imagens pela Galeria antes de montar esta galeria.
   </div>;
 
-  return <fieldset style={{border:"1px solid #ddd7c8",padding:16,margin:0}}>
-    <legend style={{padding:"0 8px",fontSize:10,fontWeight:900}}>{label}</legend>
+  return <fieldset className="mediaMultiPicker">
+    <legend>{label}</legend>
+    {preserved.length>0&&<div className="adminPageNote mediaMultiPickerNotice">
+      {preserved.length} imagem(ns) já vinculada(s) não estão entre as mídias mais recentes. Elas foram preservadas abaixo para não desaparecerem ao salvar.
+    </div>}
     <div className="adminImageGrid">
-      {media.map(item=><label className="adminMediaCard" key={item.id} style={{cursor:"pointer"}}>
+      {choices.map(item=><label className="adminMediaCard" key={item.id} style={{cursor:"pointer"}}>
         <img src={item.url} alt={item.alt||""}/>
         <div className="adminMediaCardBody">
           <div style={{display:"flex",alignItems:"center",gap:8}}>

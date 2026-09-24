@@ -4,6 +4,7 @@ import {revalidatePath} from "next/cache";
 import {redirect} from "next/navigation";
 import {requireAdmin} from "../../../lib/admin-auth";
 import {prisma} from "../../../lib/prisma";
+import {normalizeMediaUrl,normalizeMediaUrls} from "../../../lib/media-url";
 
 const SECTION_TYPES=[
   "HERO",
@@ -49,15 +50,7 @@ function safeHref(value:string|null){
 }
 
 function safeMediaHref(value:string|null){
-  if(!value)return null;
-  if(value.startsWith("/api/media/file?key="))return value.slice(0,2000);
-  try{
-    const url=new URL(value);
-    if(!["http:","https:"].includes(url.protocol))return null;
-    return url.toString().slice(0,2000);
-  }catch{
-    return null;
-  }
+  return normalizeMediaUrl(value);
 }
 
 function safeColor(value:string|null){
@@ -103,10 +96,7 @@ function readSection(formData:FormData){
   if(!ANIMATIONS.includes(animation as typeof ANIMATIONS[number]))throw new Error("Animação inválida.");
   if(!WIDTHS.includes(contentWidth as typeof WIDTHS[number]))throw new Error("Largura de conteúdo inválida.");
 
-  const mediaUrls=formData.getAll("mediaUrls")
-    .map(value=>safeMediaHref(String(value).trim()))
-    .filter((value):value is string=>Boolean(value))
-    .slice(0,20);
+  const mediaUrls=normalizeMediaUrls(formData.getAll("mediaUrls"),20);
 
   return {
     type,

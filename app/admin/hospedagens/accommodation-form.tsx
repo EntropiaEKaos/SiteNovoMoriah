@@ -167,13 +167,25 @@ export default function AccommodationForm({
     <section className="adminSectionCard">
       <h2>Imagem principal</h2>
       <p>Escolha a foto de capa da hospedagem.</p>
-      <MediaPicker name="coverImage" media={media} defaultValue={room?.coverImage||""}/>
+      <MediaPicker
+        name="coverImage"
+        media={media}
+        defaultValue={room?.coverImage||""}
+        label="Foto de capa do quarto"
+        help="Aparece no card de hospedagem, na página do quarto e na reserva."
+        recommended="Horizontal • alta resolução"
+      />
     </section>
 
     <section className="adminSectionCard">
       <h2>Galeria do quarto</h2>
       <p>Selecione até 20 imagens da biblioteca.</p>
-      <MediaMultiPicker name="galleryImages" media={media} defaultValues={room?.galleryImages||[]}/>
+      <MediaMultiPicker
+        name="galleryImages"
+        media={media}
+        defaultValues={room?.galleryImages||[]}
+        label="GALERIA DO QUARTO — FOTOS ADICIONAIS"
+      />
     </section>
 
     <button className="adminPrimaryAction" style={{border:0,fontSize:13,padding:"15px 22px"}}>
