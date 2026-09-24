@@ -22,6 +22,8 @@ function readGuest(formData:FormData){
   const preferences=value("preferences",4000);
   const emergencyContact=value("emergencyContact",300);
   const notes=value("notes",4000);
+  const monthlyGuest=formData.get("monthlyGuest")==="on";
+  const employee=formData.get("employee")==="on";
 
   if(!name||!phone)throw new Error("Nome e telefone/WhatsApp são obrigatórios.");
   if(email&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))throw new Error("E-mail inválido.");
@@ -41,7 +43,9 @@ function readGuest(formData:FormData){
     postalCode,
     preferences,
     emergencyContact,
-    notes
+    notes,
+    monthlyGuest,
+    employee
   };
 }
 
