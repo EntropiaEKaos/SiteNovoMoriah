@@ -54,6 +54,46 @@ model SiteSettings {
   updatedAt DateTime @updatedAt
 }
 
+model SitePage {
+  id             String        @id @default(cuid())
+  slug           String        @unique
+  title          String
+  description    String?
+  seoTitle       String?
+  seoDescription String?
+  ogImage        String?
+  published      Boolean       @default(true)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  sections       SiteSection[]
+}
+
+model SiteSection {
+  id                String   @id @default(cuid())
+  pageId            String
+  page              SitePage @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  type              String
+  eyebrow           String?
+  title             String?
+  subtitle          String?
+  body              String?
+  imageUrl          String?
+  imageAlt          String?
+  mediaUrls         String[] @default([])
+  ctaLabel          String?
+  ctaHref           String?
+  secondaryCtaLabel String?
+  secondaryCtaHref  String?
+  theme             String   @default("LIGHT")
+  layout            String   @default("DEFAULT")
+  sortOrder         Int      @default(100)
+  active            Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([pageId, active, sortOrder])
+}
+
 model Accommodation {
   id                  String               @id @default(cuid())
   name                String
