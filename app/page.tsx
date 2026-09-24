@@ -1,5 +1,13 @@
 import type {Metadata} from "next";
-import type {SiteSection} from "@prisma/client";
+import type {
+  Accommodation,
+  BlogPost,
+  Media,
+  Promotion,
+  SitePage,
+  SiteSection,
+  SiteSettings
+} from "@prisma/client";
 import {prisma} from "../lib/prisma";
 import SiteBuilderRenderer from "./site-builder-renderer";
 import PublicSiteChrome from "./public-site-chrome";
@@ -70,28 +78,43 @@ const fallbackSections=[
   }
 ] as unknown as SiteSection[];
 
+type HomePageWithSections=SitePage&{sections:SiteSection[]};
+type NavPage={slug:string;title:string;navLabel:string|null};
+
 export default async function Home(){
-  const [settings,rooms,promo,posts,media,page,navPages]=await Promise.all([
-    prisma.siteSettings.findUnique({where:{id:"main"}}),
-    prisma.accommodation.findMany({
-      where:{active:true},
-      orderBy:[{featured:"desc"},{createdAt:"desc"}],
-      take:6
-    }),
-    prisma.promotion.findFirst({where:{active:true},orderBy:{createdAt:"desc"}}),
-    prisma.blogPost.findMany({where:{published:true},orderBy:{publishedAt:"desc"},take:3}),
-    prisma.media.findMany({orderBy:{createdAt:"desc"},take:20}),
-    prisma.sitePage.findUnique({
-      where:{slug:"home"},
-      include:{sections:{where:{active:true},orderBy:[{sortOrder:"asc"},{createdAt:"asc"}]}}
-    }),
-    prisma.sitePage.findMany({
-      where:{published:true,showInNav:true,slug:{not:"home"}},
-      select:{slug:true,title:true,navLabel:true},
-      orderBy:[{sortOrder:"asc"},{createdAt:"asc"}],
-      take:6
-    })
-  ]);
+  let settings:SiteSettings|null=null;
+  let rooms:Accommodation[]=[];
+  let promo:Promotion|null=null;
+  let posts:BlogPost[]=[];
+  let media:Media[]=[];
+  let page:HomePageWithSections|null=null;
+  let navPages:NavPage[]=[];
+
+  try{
+    [settings,rooms,promo,posts,media,page,navPages]=await Promise.all([
+      prisma.siteSettings.findUnique({where:{id:"main"}}),
+      prisma.accommodation.findMany({
+        where:{active:true},
+        orderBy:[{featured:"desc"},{createdAt:"desc"}],
+        take:6
+      }),
+      prisma.promotion.findFirst({where:{active:true},orderBy:{createdAt:"desc"}}),
+      prisma.blogPost.findMany({where:{published:true},orderBy:{publishedAt:"desc"},take:3}),
+      prisma.media.findMany({orderBy:{createdAt:"desc"},take:20}),
+      prisma.sitePage.findUnique({
+        where:{slug:"home"},
+        include:{sections:{where:{active:true},orderBy:[{sortOrder:"asc"},{createdAt:"asc"}]}}
+      }),
+      prisma.sitePage.findMany({
+        where:{published:true,showInNav:true,slug:{not:"home"}},
+        select:{slug:true,title:true,navLabel:true},
+        orderBy:[{sortOrder:"asc"},{createdAt:"asc"}],
+        take:6
+      })
+    ]);
+  }catch(error){
+    console.error("HOME_DATA_LOAD_FAILED",error);
+  }
 
   const wa=settings?.whatsapp?.replace(/\D/g,"");
   const whatsappHref=wa
