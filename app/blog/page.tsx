@@ -1,42 +1,72 @@
 import Link from "next/link";
 import {prisma} from "../../lib/prisma";
-import PublicSubNav from "../public-sub-nav";
+import {loadPublicSiteSettings} from "../../lib/public-site-settings";
+import PublicSiteChrome from "../public-site-chrome";
 
 export const dynamic="force-dynamic";
 
 export default async function Page(){
-  const posts=await prisma.blogPost.findMany({
-    where:{published:true},
-    orderBy:{publishedAt:"desc"}
-  });
+  const [posts,settings,navPages]=await Promise.all([
+    prisma.blogPost.findMany({
+      where:{published:true},
+      orderBy:{publishedAt:"desc"}
+    }),
+    loadPublicSiteSettings(),
+    prisma.sitePage.findMany({
+      where:{published:true,showInNav:true,slug:{not:"home"}},
+      select:{slug:true,title:true,navLabel:true},
+      orderBy:[{sortOrder:"asc"},{createdAt:"asc"}],
+      take:6
+    })
+  ]);
 
-  return <main className="publicSubpage">
-    <PublicSubNav/>
-    <section className="publicHero">
-      <small>MORIAH JOURNAL • PRAIA GRANDE</small>
-      <h1>Histórias, dicas<br/>e novidades<span style={{color:"#ffd400"}}>.</span></h1>
-      <p>Conteúdo para aproveitar melhor a estadia, descobrir a região e acompanhar as novidades da Pousada Moriah.</p>
-      <div className="publicHeroMeta">
-        <span>{posts.length} PUBLICAÇÃO(ÕES)</span>
-        <span>PRAIA GRANDE • SP</span>
+  const [lead,...rest]=posts;
+
+  return <PublicSiteChrome settings={settings} navPages={navPages}>
+    <section className="siteSubpageHeroV6 journalHeroV6">
+      <div>
+        <small>MORIAH JOURNAL • PRAIA GRANDE</small>
+        <h1>Histórias para viver<br/>melhor a sua estadia.</h1>
+        <p>Dicas da região, novidades da pousada e conteúdo para aproveitar Praia Grande com mais praticidade.</p>
+      </div>
+      <div className="siteSubpageHeroStats">
+        <span><b>{posts.length}</b><small>PUBLICAÇÕES</small></span>
+        <span><b>MORIAH</b><small>JOURNAL</small></span>
       </div>
     </section>
 
-    <section className="blogIndex">
-      {posts.length===0?<div className="blogEmpty">
+    <section className="journalIndexV6">
+      {posts.length===0?<div className="journalEmptyV6">
+        <small>MORIAH JOURNAL</small>
         <h2>Novas histórias em breve.</h2>
-        <p>O blog da Moriah está sendo preparado.</p>
-      </div>:<div className="blogGrid">
-        {posts.map((p,index)=><article className="blogCard" key={p.id}>
-          {p.coverImage&&<img src={p.coverImage} alt={p.title}/>}
-          <div className="blogCardBody">
-            <small>{String(index+1).padStart(2,"0")} • MORIAH JOURNAL</small>
-            <h2>{p.title}</h2>
-            <p>{p.excerpt||"Leia a publicação completa no Journal Moriah."}</p>
-            <Link href={"/blog/"+p.slug}>Ler publicação →</Link>
+        <p>Estamos preparando conteúdos para ajudar você a aproveitar melhor sua estadia.</p>
+      </div>:<>
+        {lead&&<article className="journalLeadCardV6">
+          <Link className="journalLeadImageV6" href={"/blog/"+lead.slug}>
+            {lead.coverImage?<img src={lead.coverImage} alt={lead.title}/>:<div className="journalImagePlaceholderV6">M</div>}
+          </Link>
+          <div>
+            <small>DESTAQUE • {lead.publishedAt?.toLocaleDateString("pt-BR")||"MORIAH JOURNAL"}</small>
+            <h2><Link href={"/blog/"+lead.slug}>{lead.title}</Link></h2>
+            <p>{lead.excerpt||"Leia a publicação completa no Journal Moriah."}</p>
+            <Link className="sitePrimaryCta" href={"/blog/"+lead.slug}>Ler publicação →</Link>
           </div>
-        </article>)}
-      </div>}
+        </article>}
+
+        {rest.length>0&&<div className="journalGridV6">
+          {rest.map(post=><article className="journalCardV6" key={post.id}>
+            <Link className="journalCardImageV6" href={"/blog/"+post.slug}>
+              {post.coverImage?<img src={post.coverImage} alt={post.title}/>:<div className="journalImagePlaceholderV6">M</div>}
+            </Link>
+            <div>
+              <small>{post.publishedAt?.toLocaleDateString("pt-BR")||"MORIAH JOURNAL"}</small>
+              <h2><Link href={"/blog/"+post.slug}>{post.title}</Link></h2>
+              <p>{post.excerpt||"Leia a publicação completa no Journal Moriah."}</p>
+              <Link href={"/blog/"+post.slug}>Continuar lendo →</Link>
+            </div>
+          </article>)}
+        </div>}
+      </>}
     </section>
-  </main>;
+  </PublicSiteChrome>;
 }

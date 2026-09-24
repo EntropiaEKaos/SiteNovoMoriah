@@ -1,14 +1,14 @@
 import Link from "next/link";
 import type {CSSProperties} from "react";
 import {ArrowRight,MapPin,MessageCircle} from "lucide-react";
-import type {SiteSettings} from "@prisma/client";
+import type {PublicSiteSettings} from "../lib/public-site-settings";
 
 export default function PublicSiteChrome({
   settings,
   navPages,
   children
 }:{
-  settings:SiteSettings|null;
+  settings:PublicSiteSettings|null;
   navPages:Array<{slug:string;title:string;navLabel:string|null}>;
   children:React.ReactNode;
 }){

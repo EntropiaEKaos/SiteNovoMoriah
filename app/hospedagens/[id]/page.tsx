@@ -3,6 +3,7 @@ import Link from "next/link";
 import {notFound} from "next/navigation";
 import {Bath,BedDouble,Clock3,Maximize2,ShieldCheck,Users} from "lucide-react";
 import {prisma} from "../../../lib/prisma";
+import {loadPublicSiteSettings} from "../../../lib/public-site-settings";
 import PublicSiteChrome from "../../public-site-chrome";
 export const dynamic="force-dynamic";
 
@@ -17,7 +18,7 @@ export default async function RoomDetail({params}:{params:Promise<{id:string}>})
   const {id}=await params;
   const [room,settings,navPages]=await Promise.all([
     prisma.accommodation.findFirst({where:{id,active:true}}),
-    prisma.siteSettings.findUnique({where:{id:"main"}}),
+    loadPublicSiteSettings(),
     prisma.sitePage.findMany({where:{published:true,showInNav:true,slug:{not:"home"}},select:{slug:true,title:true,navLabel:true},orderBy:[{sortOrder:"asc"},{createdAt:"asc"}],take:6})
   ]);
   if(!room)notFound();

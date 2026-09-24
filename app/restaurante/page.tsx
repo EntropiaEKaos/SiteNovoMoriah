@@ -1,10 +1,11 @@
 import {prisma} from "../../lib/prisma";
+import {loadPublicSiteSettings} from "../../lib/public-site-settings";
 import {
   effectiveRestaurantPrice,
   isMenuScheduleAvailable,
   restaurantProductAvailable
 } from "../../lib/restaurant-menu";
-import PublicSubNav from "../public-sub-nav";
+import PublicSiteChrome from "../public-site-chrome";
 import Menu from "./menu";
 
 export const dynamic="force-dynamic";
@@ -12,7 +13,7 @@ export const dynamic="force-dynamic";
 export default async function Page({searchParams}:{searchParams:Promise<{booking?:string}>}){
   const q=await searchParams;
 
-  const [products,settings]=await Promise.all([
+  const [products,settings,siteSettings,navPages]=await Promise.all([
     prisma.restaurantProduct.findMany({
       where:{active:true,category:{active:true}},
       include:{
@@ -33,7 +34,14 @@ export default async function Page({searchParams}:{searchParams:Promise<{booking
         {name:"asc"}
       ]
     }),
-    prisma.restaurantSettings.findUnique({where:{id:"main"}})
+    prisma.restaurantSettings.findUnique({where:{id:"main"}}),
+    loadPublicSiteSettings(),
+    prisma.sitePage.findMany({
+      where:{published:true,showInNav:true,slug:{not:"home"}},
+      select:{slug:true,title:true,navLabel:true},
+      orderBy:[{sortOrder:"asc"},{createdAt:"asc"}],
+      take:6
+    })
   ]);
 
   const now=new Date();
@@ -85,43 +93,37 @@ export default async function Page({searchParams}:{searchParams:Promise<{booking
           }))
       };
     })
-    .filter(product=>
-      product.scheduled&&
-      (product.available||settings?.showSoldOut!==false)
-    );
+    .filter(product=>product.scheduled&&(product.available||settings?.showSoldOut!==false));
 
   const accepting=settings?.acceptingOrders!==false;
   const hours=(settings?.openTime||"07:00")+"–"+(settings?.closeTime||"22:00");
   const title=settings?.menuTitle||"Moriah Food";
   const subtitle=settings?.menuSubtitle||"Cardápio da casa conectado à sua hospedagem.";
 
-  return <main className="publicSubpage foodPublicV2">
-    <PublicSubNav/>
-
+  return <PublicSiteChrome settings={siteSettings} navPages={navPages}>
     <section
-      className={"publicHero foodMenuHero"+(settings?.menuBannerUrl?" hasImage":"")}
+      className={"siteSubpageHeroV6 foodHeroV6"+(settings?.menuBannerUrl?" hasImage":"")}
       style={settings?.menuBannerUrl?{
         backgroundImage:
-          "linear-gradient(90deg,rgba(10,10,10,.88),rgba(10,10,10,.45)),url("+settings.menuBannerUrl+")"
+          "linear-gradient(90deg,rgba(4,35,46,.92),rgba(4,35,46,.42)),url("+settings.menuBannerUrl+")"
       }:undefined}
     >
-      <small>MORIAH FOOD • PRAIA GRANDE</small>
-      <h1>{title}<span style={{color:"#ffd400"}}>.</span></h1>
-      <p>{subtitle}</p>
-      <div className="publicHeroMeta">
-        <span>{accepting?"PEDIDOS ABERTOS":"PEDIDOS PAUSADOS"}</span>
-        <span>ATENDIMENTO {hours}</span>
-        <span>{menuProducts.filter(product=>product.available).length} ITEM(NS) DISPONÍVEIS</span>
-        {q.booking&&<span>HOSPEDAGEM IDENTIFICADA</span>}
+      <div>
+        <small>MORIAH FOOD • PRAIA GRANDE</small>
+        <h1>{title}</h1>
+        <p>{subtitle}</p>
+      </div>
+      <div className="siteSubpageHeroStats">
+        <span><b>{accepting?"ABERTO":"PAUSADO"}</b><small>PEDIDOS</small></span>
+        <span><b>{hours}</b><small>ATENDIMENTO</small></span>
+        <span><b>{menuProducts.filter(product=>product.available).length}</b><small>ITENS DISPONÍVEIS</small></span>
       </div>
     </section>
 
-    <section className="foodShell">
-      <Menu
-        products={menuProducts}
-        bookingToken={q.booking||""}
-        accepting={accepting}
-      />
+    {q.booking&&<div className="foodBookingIdentifiedV6">Hospedagem identificada • pedidos podem ser vinculados à sua conta.</div>}
+
+    <section className="foodShell foodShellV6">
+      <Menu products={menuProducts} bookingToken={q.booking||""} accepting={accepting}/>
     </section>
-  </main>;
+  </PublicSiteChrome>;
 }
