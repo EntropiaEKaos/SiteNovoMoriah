@@ -12,6 +12,7 @@ export function saoPauloClock(now=new Date()){
     minute:"2-digit",
     hour12:false
   });
+
   const parts=formatter.formatToParts(now);
   const weekday=parts.find(part=>part.type==="weekday")?.value||"Sun";
   const hour=parts.find(part=>part.type==="hour")?.value||"00";
@@ -19,6 +20,7 @@ export function saoPauloClock(now=new Date()){
   const dayMap:Record<string,number>={
     Sun:0,Mon:1,Tue:2,Wed:3,Thu:4,Fri:5,Sat:6
   };
+
   return {
     day:dayMap[weekday]??0,
     time:hour+":"+minute
@@ -30,21 +32,28 @@ export function isMenuScheduleAvailable(
   now=new Date()
 ){
   const {day,time}=saoPauloClock(now);
+  const from=schedule.availableFrom;
+  const until=schedule.availableUntil;
+  const overnight=Boolean(from&&until&&from>until);
 
-  if(schedule.availableDays.length>0&&!schedule.availableDays.includes(day)){
+  // Em janelas que atravessam a meia-noite, 00:00–"until" pertence
+  // operacionalmente ao dia anterior.
+  const scheduleDay=overnight&&until&&time<until
+    ?(day+6)%7
+    :day;
+
+  if(schedule.availableDays.length>0&&!schedule.availableDays.includes(scheduleDay)){
     return false;
   }
 
-  const from=schedule.availableFrom;
-  const until=schedule.availableUntil;
   if(!from&&!until)return true;
   if(from&&!until)return time>=from;
   if(!from&&until)return time<until;
 
-  if(from!&&until!){
-    return from<=until
-      ?time>=from&&time<until
-      :time>=from||time<until;
+  if(from&&until){
+    return overnight
+      ?time>=from||time<until
+      :time>=from&&time<until;
   }
 
   return true;
