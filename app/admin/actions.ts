@@ -132,6 +132,7 @@ export async function deleteMedia(formData:FormData){
   const [
     pageRefs,
     sectionMainRefs,
+    sectionBackgroundRefs,
     sectionGalleryRefs,
     roomCoverRefs,
     roomGalleryRefs,
@@ -142,6 +143,7 @@ export async function deleteMedia(formData:FormData){
   ]=await Promise.all([
     prisma.sitePage.count({where:{ogImage:row.url}}),
     prisma.siteSection.count({where:{imageUrl:row.url}}),
+    prisma.siteSection.count({where:{backgroundImageUrl:row.url}}),
     prisma.siteSection.count({where:{mediaUrls:{has:row.url}}}),
     prisma.accommodation.count({where:{coverImage:row.url}}),
     prisma.accommodation.count({where:{galleryImages:{has:row.url}}}),
@@ -154,6 +156,7 @@ export async function deleteMedia(formData:FormData){
   const references=
     pageRefs+
     sectionMainRefs+
+    sectionBackgroundRefs+
     sectionGalleryRefs+
     roomCoverRefs+
     roomGalleryRefs+

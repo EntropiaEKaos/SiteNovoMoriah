@@ -77,6 +77,10 @@ export async function setRestaurantOrderStatus(formData:FormData){
           data:{status:"CANCELLED"}
         });
       }
+      await tx.notificationMessage.updateMany({
+        where:{audience:"KITCHEN",recipient:id,status:"READY"},
+        data:{status:"CANCELLED"}
+      });
       return;
     }
 
@@ -91,15 +95,23 @@ export async function setRestaurantOrderStatus(formData:FormData){
     }
 
     if(status!==order.status){
+      const changedAt=new Date();
       await tx.restaurantOrder.update({
         where:{id},
         data:{
           status,
-          ...(status==="PREPARING"?{preparingAt:new Date()}:{}),
-          ...(status==="READY"?{readyAt:new Date()}:{ }),
-          ...(status==="DELIVERED"?{deliveredAt:new Date()}:{ })
+          ...(status==="PREPARING"?{preparingAt:changedAt}:{}),
+          ...(status==="READY"?{readyAt:changedAt}:{ }),
+          ...(status==="DELIVERED"?{deliveredAt:changedAt}:{ })
         }
       });
+
+      if(status==="PREPARING"){
+        await tx.notificationMessage.updateMany({
+          where:{audience:"KITCHEN",recipient:id,status:"READY"},
+          data:{status:"SENT",sentAt:changedAt}
+        });
+      }
     }
   });
 

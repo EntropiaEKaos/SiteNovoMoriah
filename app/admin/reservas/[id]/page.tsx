@@ -74,7 +74,8 @@ export default async function BookingDetail({params}:{params:Promise<{id:string}
       </div>
       <div className="adminPageHeroActions">
         <Link className="adminSecondaryAction" href="/admin/reservas">← Reservas</Link>
-        <Link className="adminSecondaryAction" href={"/admin/reservas/"+booking.id+"/recibo"} target="_blank">Recibo / imprimir ↗</Link>
+        <Link className="adminSecondaryAction" href={"/admin/reservas/"+booking.id+"/recibo"} target="_blank">Resumo / imprimir ↗</Link>
+        {booking.checkedInAt&&<Link className="adminSecondaryAction" href={"/admin/reservas/"+booking.id+"/checkin-recibo"} target="_blank">Recibo check-in ↗</Link>}
         {booking.guest&&<Link className="adminSecondaryAction" href={"/admin/hospedes/"+booking.guest.id}>Ficha do hóspede →</Link>}
       </div>
     </section>

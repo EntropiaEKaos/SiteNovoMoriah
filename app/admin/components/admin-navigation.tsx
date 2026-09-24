@@ -51,6 +51,7 @@ const sections=[
       ["Restaurante","/admin/restaurante",UtensilsCrossed],
       ["Cardápio Studio","/admin/restaurante/cardapio",BookOpen],
       ["Pedidos / Cozinha","/admin/restaurante/pedidos",ChefHat],
+      ["Histórico / Recibos","/admin/restaurante/pedidos/historico",ReceiptText],
       ["Adicionais","/admin/restaurante/adicionais",Tags],
       ["Insumos / CMV","/admin/restaurante/insumos",ReceiptText],
       ["Inteligência","/admin/restaurante/inteligencia",BarChart3]
@@ -60,6 +61,7 @@ const sections=[
     label:"CONTEÚDO",
     items:[
       ["Editor do site","/admin/site",LayoutDashboard],
+      ["Páginas do site","/admin/site/paginas",BookOpen],
       ["Galeria","/admin/galeria",Images],
       ["Mídia","/admin/midia",Image],
       ["Blog","/admin/blog",BookOpen]

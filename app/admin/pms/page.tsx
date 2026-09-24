@@ -129,6 +129,7 @@ export default async function PMS(){
                 <div className="adminInlineActions">
                   <Link className="highlight" href={"/admin/reservas/"+booking.id}>Abrir reserva →</Link>
                   {booking.guest&&<Link href={"/admin/hospedes/"+booking.guest.id}>Ficha do hóspede</Link>}
+                  {booking.checkedInAt&&<Link href={"/admin/reservas/"+booking.id+"/checkin-recibo"} target="_blank">Recibo check-in ↗</Link>}
 
                   {booking.status==="CHECKED_IN"&&<form action={pmsBookingAction}>
                     <input type="hidden" name="id" value={booking.id}/>

@@ -6,26 +6,34 @@ import SiteSectionForm from "../site-section-form";
 
 export const dynamic="force-dynamic";
 
-export default async function NewSiteSection(){
+export default async function NewSiteSection({
+  searchParams
+}:{
+  searchParams:Promise<{pageId?:string}>
+}){
+  const params=await searchParams;
   await requireAdmin();
   const [page,media]=await Promise.all([
-    prisma.sitePage.upsert({
-      where:{slug:"home"},
-      update:{},
-      create:{id:"home",slug:"home",title:"Home",description:"Página inicial da Pousada Moriah"}
-    }),
+    params.pageId
+      ?prisma.sitePage.findUnique({where:{id:params.pageId}})
+      :prisma.sitePage.upsert({
+          where:{slug:"home"},
+          update:{},
+          create:{id:"home",slug:"home",title:"Home",description:"Página inicial da Pousada Moriah"}
+        }),
     prisma.media.findMany({orderBy:{createdAt:"desc"},take:200})
   ]);
+  if(!page)throw new Error("Página não encontrada.");
 
   return <main className="adminPage">
     <section className="adminPageHero">
       <div>
         <small>MORIAH CMS / SITE BUILDER</small>
         <h1>Nova seção</h1>
-        <p>Crie um novo bloco para a Home e configure conteúdo, mídia, layout e ações.</p>
+        <p>Crie um novo bloco para <b>{page.title}</b> e configure conteúdo, mídia, movimento, responsividade e ações.</p>
       </div>
       <div className="adminPageHeroActions">
-        <Link className="adminSecondaryAction" href="/admin/site">← Editor do site</Link>
+        <Link className="adminSecondaryAction" href={page.slug==="home"?"/admin/site":"/admin/site/paginas/"+page.id}>← Voltar à página</Link>
         <Link className="adminSecondaryAction" href="/admin/galeria">Gerenciar mídia →</Link>
       </div>
     </section>

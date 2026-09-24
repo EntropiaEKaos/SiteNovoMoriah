@@ -3,6 +3,7 @@ import {prisma} from "../../../lib/prisma";
 import {requireAdmin} from "../../../lib/admin-auth";
 import {
   deleteSiteSection,
+  duplicateSiteSection,
   moveSiteSection,
   saveSitePageMeta,
   toggleSiteSection
@@ -20,7 +21,12 @@ const typeLabels:Record<string,string>={
   BLOG:"Blog",
   CTA:"CTA",
   RICH_TEXT:"Texto",
-  FOOD:"Moriah Food"
+  FOOD:"Moriah Food",
+  STATS:"Números",
+  FAQ:"FAQ",
+  TESTIMONIALS:"Depoimentos",
+  CONTACT:"Contato",
+  VIDEO:"Vídeo"
 };
 
 export default async function SiteEditor(){
@@ -57,6 +63,7 @@ export default async function SiteEditor(){
         <p>Controle a Home por seções: conteúdo, imagens, ordem, tema, layout, CTAs e SEO sem editar código.</p>
       </div>
       <div className="adminPageHeroActions">
+        <Link className="adminSecondaryAction" href="/admin/site/paginas">Páginas →</Link>
         <Link className="adminSecondaryAction" href="/" target="_blank">Preview do site ↗</Link>
         <Link className="adminPrimaryAction" href="/admin/site/nova">+ Nova seção</Link>
       </div>
@@ -78,6 +85,8 @@ export default async function SiteEditor(){
           <label className="span2">Nome interno
             <input name="title" required defaultValue={page.title}/>
           </label>
+          <input type="hidden" name="slug" value="home"/>
+          <input type="hidden" name="sortOrder" value={page.sortOrder}/>
           <label className="span2">Descrição interna
             <textarea name="description" rows={3} defaultValue={page.description||""}/>
           </label>
@@ -128,7 +137,7 @@ export default async function SiteEditor(){
           <div className="siteBuilderSectionMain">
             <div className="adminListCardHead">
               <div>
-                <small>{typeLabels[section.type]||section.type} • {section.theme} • {section.layout}</small>
+                <small>{typeLabels[section.type]||section.type} • {section.theme} • {section.layout} • {section.animation}</small>
                 <h3>{section.title||section.eyebrow||"Seção sem título"}</h3>
                 <p>{section.body?.slice(0,180)||"Sem texto adicional."}</p>
               </div>
@@ -153,6 +162,10 @@ export default async function SiteEditor(){
                 <input type="hidden" name="id" value={section.id}/>
                 <input type="hidden" name="direction" value="DOWN"/>
                 <button disabled={index===page.sections.length-1}>↓ Descer</button>
+              </form>
+              <form action={duplicateSiteSection}>
+                <input type="hidden" name="id" value={section.id}/>
+                <button>Duplicar</button>
               </form>
               <form action={toggleSiteSection}>
                 <input type="hidden" name="id" value={section.id}/>
