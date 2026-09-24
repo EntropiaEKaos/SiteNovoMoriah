@@ -30,8 +30,7 @@ export default async function EditMenuProduct({
       orderBy:{name:"asc"}
     }),
     prisma.restaurantIngredient.findMany({
-      where:{active:true},
-      orderBy:{name:"asc"}
+      orderBy:[{active:"desc"},{name:"asc"}]
     })
   ]);
 
