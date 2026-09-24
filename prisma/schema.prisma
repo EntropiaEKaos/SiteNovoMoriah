@@ -232,7 +232,7 @@ model IntegrationSettings {
   chatName                  String   @default("Moriah Assistente")
   chatWelcome               String   @default("Olá! Sou o assistente virtual da Moriah. Como posso ajudar com sua hospedagem?")
   chatInstructions          String?
-  groqModel                 String   @default("llama-3.1-8b-instant")
+  groqModel                 String   @default("openai/gpt-oss-20b")
   groqTemperature           Float    @default(0.2)
   updatedAt                 DateTime @updatedAt
 }
