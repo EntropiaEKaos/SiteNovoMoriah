@@ -1,5 +1,5 @@
 import Link from "next/link";
-import {ArrowRight} from "lucide-react";
+import {ArrowRight,MapPin,MessageCircle} from "lucide-react";
 import type {SiteSettings} from "@prisma/client";
 
 export default function PublicSiteChrome({
@@ -18,10 +18,15 @@ export default function PublicSiteChrome({
     :null;
 
   return <main className="siteV4">
+    <div className="siteTopBarV6">
+      <span><MapPin size={13}/>{settings?.address||"Praia Grande — SP"}</span>
+      <span>Reserva direta • atendimento da própria pousada</span>
+      {whatsappHref&&<a href={whatsappHref} target="_blank" rel="noreferrer"><MessageCircle size={13}/> WhatsApp</a>}
+    </div>
     <header className="siteNavV4">
       <Link className="siteBrandV4" href="/">
         <span className="siteBrandMarkV4">M</span>
-        <span><b>MORIAH</b><small>POUSADA & HOSTEL</small></span>
+        <span><b>MORIAH</b><small>POUSADA • PRAIA GRANDE</small></span>
       </Link>
 
       <nav className="siteNavLinksV4" aria-label="Navegação principal">
@@ -34,7 +39,7 @@ export default function PublicSiteChrome({
       </nav>
 
       <Link className="siteBookV4" href="/reservar">
-        Reservar <ArrowRight size={16}/>
+        Ver disponibilidade <ArrowRight size={16}/>
       </Link>
     </header>
 
