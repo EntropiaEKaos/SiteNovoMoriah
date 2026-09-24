@@ -85,20 +85,24 @@ async function liveAvailability(text:string){
     };
   }
 
+  const requestedUnits=request.guests||1;
   const rooms=await prisma.accommodation.findMany({
     where:{
       active:true,
-      ...(request.guests?{capacity:{gte:request.guests}}:{})
+      OR:[
+        {sharedRoom:false,capacity:{gte:requestedUnits}},
+        {sharedRoom:true,bedCount:{gte:requestedUnits}}
+      ]
     },
-    select:{id:true,name:true,capacity:true,priceCents:true},
+    select:{id:true,name:true,capacity:true,sharedRoom:true,bedCount:true,priceCents:true},
     orderBy:[{featured:"desc"},{name:"asc"}],
     take:12
   });
 
   const checks=await Promise.all(rooms.map(async room=>{
     const [free,quote]=await Promise.all([
-      isAccommodationAvailable(room.id,start,end),
-      quoteAccommodation(room.id,start,end)
+      isAccommodationAvailable(room.id,start,end,undefined,requestedUnits),
+      quoteAccommodation(room.id,start,end,null,requestedUnits)
     ]);
     return {...room,free,quote};
   }));
@@ -116,7 +120,7 @@ async function liveAvailability(text:string){
 
   return {
     context:`CONSULTA DE DISPONIBILIDADE REAL (${request.checkIn} até ${request.checkOut}${request.guests?`, ${request.guests} hóspede(s)`:""}): ${free.length
-      ?free.map(room=>`${room.name} (capacidade ${room.capacity}, ${money(room.quote!.totalCents)} no total para ${room.quote!.nights} noite(s), plano ${room.quote!.ratePlan})`).join("; ")
+      ?free.map(room=>`${room.name} (${room.sharedRoom?`quarto compartilhado, ${room.bedCount} camas no total`:`capacidade ${room.capacity}`}, ${money(room.quote!.totalCents)} no total para ${room.quote!.nights} noite(s)${room.sharedRoom?` e ${requestedUnits} cama(s)`:""}, plano ${room.quote!.ratePlan})`).join("; ")
       :"nenhuma hospedagem disponível encontrada"}. A consulta considera reservas confirmadas, hóspedes na casa, canais ativos, holds e bloqueios manuais.`,
     booking:best&&params
       ?{href:"/reservar?"+params.toString(),label:"Solicitar "+best.name}
@@ -161,7 +165,7 @@ async function cmsContext(){
       ?`Promoção ativa: ${promo.title}. ${promo.description||""} ${promo.coupon?`Cupom: ${promo.coupon}`:""}`
       :"Nenhuma promoção ativa cadastrada.",
     rooms.length
-      ?"Hospedagens ativas:\n"+rooms.map(room=>`- ${room.name}: tipo ${room.type}, capacidade ${room.capacity}, ${money(room.priceCents)}, check-in ${room.checkInTime}, check-out ${room.checkOutTime}. ${room.description}`).join("\n")
+      ?"Hospedagens ativas:\n"+rooms.map(room=>`- ${room.name}: ${room.sharedRoom?`quarto compartilhado com ${room.bedCount} camas; preço base por cama ${money(room.priceCents)}`:`tipo ${room.type}, capacidade ${room.capacity}, preço base ${money(room.priceCents)}`}, check-in ${room.checkInTime}, check-out ${room.checkOutTime}. ${room.description}`).join("\n")
       :"Nenhuma hospedagem ativa cadastrada.",
     restaurant
       ?`Moriah Food: ${restaurant.acceptingOrders?"aceitando pedidos":"pedidos pausados"}, atendimento ${restaurant.openTime}–${restaurant.closeTime}, conta do quarto ${restaurant.roomChargeEnabled?"disponível":"indisponível"}.`
