@@ -104,7 +104,18 @@ export async function updateAccommodation(formData:FormData){
   revalidatePath("/reservar");
   revalidatePath("/");
 }
-export async function addMedia(formData:FormData){await requireAdmin();const url=String(formData.get("url")||"").trim();const alt=String(formData.get("alt")||"").trim()||null;if(!url)throw new Error("URL da imagem obrigatória.");await prisma.media.create({data:{url,alt}});revalidatePath("/admin/galeria");revalidatePath("/admin/midia");}
+export async function addMedia(formData:FormData){
+  await requireAdmin();
+  const url=String(formData.get("url")||"").trim();
+  const alt=String(formData.get("alt")||"").trim().slice(0,300)||null;
+  const label=String(formData.get("label")||"").trim().slice(0,160)||null;
+  const folder=String(formData.get("folder")||"").trim().slice(0,80)||null;
+  if(!/^https?:\/\//i.test(url))throw new Error("URL da imagem inválida.");
+  await prisma.media.create({data:{url,alt,label,folder}});
+  revalidatePath("/admin/galeria");
+  revalidatePath("/admin/midia");
+  revalidatePath("/admin/site");
+}
 export async function deleteMedia(formData:FormData){await requireAdmin();const id=String(formData.get("id")||"");if(!id)return;const row=await prisma.media.findUnique({where:{id}});if(!row)return;if(row.storageKey){await deleteMediaObject(row.storageKey);}await prisma.media.delete({where:{id}});revalidatePath("/admin/galeria");revalidatePath("/admin/midia");}
 
 export async function saveFirebaseSettings(formData:FormData){await requireAdmin();const data={firebaseApiKey:String(formData.get("firebaseApiKey")||"").trim()||null,firebaseAuthDomain:String(formData.get("firebaseAuthDomain")||"").trim()||null,firebaseProjectId:String(formData.get("firebaseProjectId")||"").trim()||null,firebaseStorageBucket:String(formData.get("firebaseStorageBucket")||"").trim()||null,firebaseMessagingSenderId:String(formData.get("firebaseMessagingSenderId")||"").trim()||null,firebaseAppId:String(formData.get("firebaseAppId")||"").trim()||null,firebaseVapidKey:String(formData.get("firebaseVapidKey")||"").trim()||null};await prisma.integrationSettings.upsert({where:{id:"main"},update:data,create:{id:"main",...data}});revalidatePath("/admin/integracoes");}
