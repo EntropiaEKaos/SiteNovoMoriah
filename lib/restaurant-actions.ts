@@ -482,7 +482,11 @@ export async function toggleMenuProduct(formData:FormData){
 
   await prisma.restaurantProduct.update({
     where:{id},
-    data:{[field]:!current}
+    data:field==="active"
+      ?{active:!current}
+      :field==="featured"
+        ?{featured:!current}
+        :{soldOut:!current}
   });
 
   revalidateMenu();
