@@ -121,7 +121,53 @@ export async function addMedia(formData:FormData){
   revalidatePath("/admin/midia");
   revalidatePath("/admin/site");
 }
-export async function deleteMedia(formData:FormData){await requireAdmin();const id=String(formData.get("id")||"");if(!id)return;const row=await prisma.media.findUnique({where:{id}});if(!row)return;if(row.storageKey){await deleteMediaObject(row.storageKey);}await prisma.media.delete({where:{id}});revalidatePath("/admin/galeria");revalidatePath("/admin/midia");}
+export async function deleteMedia(formData:FormData){
+  await requireAdmin();
+  const id=String(formData.get("id")||"");
+  if(!id)return;
+
+  const row=await prisma.media.findUnique({where:{id}});
+  if(!row)return;
+
+  const [
+    pageRefs,
+    sectionMainRefs,
+    sectionGalleryRefs,
+    roomCoverRefs,
+    roomGalleryRefs,
+    blogRefs,
+    productRefs
+  ]=await Promise.all([
+    prisma.sitePage.count({where:{ogImage:row.url}}),
+    prisma.siteSection.count({where:{imageUrl:row.url}}),
+    prisma.siteSection.count({where:{mediaUrls:{has:row.url}}}),
+    prisma.accommodation.count({where:{coverImage:row.url}}),
+    prisma.accommodation.count({where:{galleryImages:{has:row.url}}}),
+    prisma.blogPost.count({where:{coverImage:row.url}}),
+    prisma.restaurantProduct.count({where:{imageUrl:row.url}})
+  ]);
+
+  const references=
+    pageRefs+
+    sectionMainRefs+
+    sectionGalleryRefs+
+    roomCoverRefs+
+    roomGalleryRefs+
+    blogRefs+
+    productRefs;
+
+  if(references>0){
+    throw new Error("Esta imagem está em uso em "+references+" local(is). Troque ou remova a referência antes de excluir o arquivo.");
+  }
+
+  if(row.storageKey)await deleteMediaObject(row.storageKey);
+  await prisma.media.delete({where:{id}});
+
+  revalidatePath("/admin/galeria");
+  revalidatePath("/admin/midia");
+  revalidatePath("/admin/site");
+  revalidatePath("/");
+}
 
 export async function saveFirebaseSettings(formData:FormData){await requireAdmin();const data={firebaseApiKey:String(formData.get("firebaseApiKey")||"").trim()||null,firebaseAuthDomain:String(formData.get("firebaseAuthDomain")||"").trim()||null,firebaseProjectId:String(formData.get("firebaseProjectId")||"").trim()||null,firebaseStorageBucket:String(formData.get("firebaseStorageBucket")||"").trim()||null,firebaseMessagingSenderId:String(formData.get("firebaseMessagingSenderId")||"").trim()||null,firebaseAppId:String(formData.get("firebaseAppId")||"").trim()||null,firebaseVapidKey:String(formData.get("firebaseVapidKey")||"").trim()||null};await prisma.integrationSettings.upsert({where:{id:"main"},update:data,create:{id:"main",...data}});revalidatePath("/admin/integracoes");}
 
