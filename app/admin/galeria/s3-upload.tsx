@@ -13,26 +13,51 @@ type UploadState={
 
 async function optimizeImage(file:File){
   if(file.size<=SERVER_LIMIT)return file;
+
   try{
     const bitmap=await createImageBitmap(file);
-    const maxSide=2200;
-    const scale=Math.min(1,maxSide/Math.max(bitmap.width,bitmap.height));
-    const width=Math.max(1,Math.round(bitmap.width*scale));
-    const height=Math.max(1,Math.round(bitmap.height*scale));
-    const canvas=document.createElement("canvas");
-    canvas.width=width;
-    canvas.height=height;
-    const ctx=canvas.getContext("2d");
-    if(!ctx)throw new Error("Canvas indisponível.");
-    ctx.drawImage(bitmap,0,0,width,height);
+    const plans=[
+      {maxSide:2200,quality:.84},
+      {maxSide:1900,quality:.78},
+      {maxSide:1700,quality:.72},
+      {maxSide:1500,quality:.66}
+    ];
+
+    let best:File=file;
+
+    for(const plan of plans){
+      const scale=Math.min(1,plan.maxSide/Math.max(bitmap.width,bitmap.height));
+      const width=Math.max(1,Math.round(bitmap.width*scale));
+      const height=Math.max(1,Math.round(bitmap.height*scale));
+      const canvas=document.createElement("canvas");
+      canvas.width=width;
+      canvas.height=height;
+
+      const ctx=canvas.getContext("2d");
+      if(!ctx)continue;
+
+      ctx.drawImage(bitmap,0,0,width,height);
+
+      const blob=await new Promise<Blob|null>(
+        resolve=>canvas.toBlob(resolve,"image/webp",plan.quality)
+      );
+      if(!blob)continue;
+
+      const candidate=new File(
+        [blob],
+        file.name.replace(/\.[^.]+$/,"")+".webp",
+        {type:"image/webp"}
+      );
+
+      if(candidate.size<best.size)best=candidate;
+      if(candidate.size<=SERVER_LIMIT){
+        bitmap.close();
+        return candidate;
+      }
+    }
+
     bitmap.close();
-    const blob=await new Promise<Blob|null>(resolve=>canvas.toBlob(resolve,"image/webp",0.88));
-    if(!blob)return file;
-    return new File(
-      [blob],
-      file.name.replace(/\.[^.]+$/,"")+".webp",
-      {type:"image/webp"}
-    );
+    return best;
   }catch{
     return file;
   }

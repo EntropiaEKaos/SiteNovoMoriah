@@ -476,6 +476,10 @@ model RestaurantOrder {
  roomLabel String?
  phone String?
  status String @default("NEW")
+ preparingAt DateTime?
+ readyAt DateTime?
+ deliveredAt DateTime?
+ cancelledAt DateTime?
  paymentMethod String @default("ROOM")
  paymentStatus String @default("PENDING")
  subtotalCents Int
@@ -521,6 +525,8 @@ model RestaurantSettings {
  closeTime String @default("22:00")
  acceptingOrders Boolean @default(true)
  roomChargeEnabled Boolean @default(true)
+ prepTargetMinutes Int @default(25)
+ kdsSoundEnabled Boolean @default(true)
  updatedAt DateTime @updatedAt
 }
 model RestaurantModifierGroup {
