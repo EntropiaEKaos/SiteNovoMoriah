@@ -92,7 +92,11 @@ export async function setKitchenItemStatus(formData:FormData){
   await prisma.$transaction(async tx=>{
     const item=await tx.restaurantOrderItem.findUnique({
       where:{id:itemId},
-      include:{order:true,station:true}
+      include:{
+        order:true,
+        station:true,
+        product:{include:{recipes:true}}
+      }
     });
     if(!item)throw new Error("Item não encontrado.");
     if(["CANCELLED","DELIVERED"].includes(item.order.status))throw new Error("Pedido encerrado.");
@@ -108,6 +112,45 @@ export async function setKitchenItemStatus(formData:FormData){
     if(nextStatus===item.kitchenStatus)return;
 
     const now=new Date();
+    const rework=nextStatus==="PREPARING"&&item.kitchenStatus==="READY";
+
+    if(rework){
+      if(item.product.trackStock){
+        const reserved=await tx.restaurantProduct.updateMany({
+          where:{id:item.productId,stockQty:{gte:item.quantity}},
+          data:{stockQty:{decrement:item.quantity}}
+        });
+        if(reserved.count!==1)throw new Error("Estoque insuficiente para refação.");
+        await tx.restaurantStockMovement.create({
+          data:{
+            productId:item.productId,
+            type:"REWORK",
+            quantity:-item.quantity,
+            reason:"Refação do pedido "+item.orderId,
+            orderId:item.orderId
+          }
+        });
+      }
+
+      for(const recipe of item.product.recipes){
+        const quantity=recipe.quantity*item.quantity;
+        const consumed=await tx.restaurantIngredient.updateMany({
+          where:{id:recipe.ingredientId,stockQty:{gte:quantity}},
+          data:{stockQty:{decrement:quantity}}
+        });
+        if(consumed.count!==1)throw new Error("Insumo insuficiente para refação.");
+        await tx.restaurantIngredientMovement.create({
+          data:{
+            ingredientId:recipe.ingredientId,
+            type:"REWORK",
+            quantity:-quantity,
+            reason:"Refação do pedido "+item.orderId,
+            orderId:item.orderId
+          }
+        });
+      }
+    }
+
     await tx.restaurantOrderItem.update({
       where:{id:itemId},
       data:{
@@ -122,7 +165,7 @@ export async function setKitchenItemStatus(formData:FormData){
       data:{
         orderId:item.orderId,
         itemId:item.id,
-        eventType:nextStatus==="PREPARING"&&item.kitchenStatus==="READY"?"ITEM_REWORK":"ITEM_STATUS",
+        eventType:rework?"ITEM_REWORK":"ITEM_STATUS",
         fromStatus:item.kitchenStatus,
         toStatus:nextStatus,
         notes:note,

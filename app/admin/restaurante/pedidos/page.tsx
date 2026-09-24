@@ -248,11 +248,12 @@ export default async function Page({
                   <div className="kdsTicketActions">
                     {order.status==="READY"?<Link className="kitchenExpedite" href="/admin/restaurante/cozinha/expedicao">Ir para expedição →</Link>:null}
                     <div className="kdsSecondaryActions">
-                      <Link href={"/admin/restaurante/pedidos/"+order.id+"/cozinha"} target="_blank">Produção ↗</Link>
+                      <Link href={"/admin/restaurante/pedidos/"+order.id+"/cozinha"+(selectedStation?"?station="+selectedStation:"")} target="_blank">Produção ↗</Link>
                       <Link href={"/admin/restaurante/pedidos/"+order.id+"/comanda"} target="_blank">Comanda ↗</Link>
-                      <form action={setRestaurantOrderStatus}>
+                      <form action={setRestaurantOrderStatus} className="kitchenCancelForm">
                         <input type="hidden" name="id" value={order.id}/>
                         <input type="hidden" name="status" value="CANCELLED"/>
+                        {order.status!=="NEW"&&<input name="cancelReason" required placeholder="Motivo do cancelamento"/>}
                         <button className="danger">Cancelar</button>
                       </form>
                     </div>

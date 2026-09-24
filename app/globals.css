@@ -5563,3 +5563,25 @@ body{background:linear-gradient(180deg,#fff 0,#fffdf5 100%)}.nav{box-shadow:0 8p
   }
   .kitchenLabelPrint{width:100%}
 }
+
+
+/* Kitchen 4.0 final operational hardening */
+.kitchenCancelForm{
+  display:flex;
+  gap:5px;
+  align-items:center;
+}
+.kitchenCancelForm input{
+  width:125px;
+  min-width:0;
+  border:1px solid #e0c3bf;
+  border-radius:7px;
+  background:#fff8f7;
+  color:#6f3a34;
+  padding:7px 8px;
+  font-size:8px;
+}
+@media(max-width:680px){
+  .kitchenCancelForm{width:100%}
+  .kitchenCancelForm input{flex:1;width:auto}
+}

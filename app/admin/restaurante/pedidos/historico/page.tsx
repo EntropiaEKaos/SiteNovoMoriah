@@ -90,6 +90,9 @@ export default async function FoodOrderHistory({
         <div className="adminMetaRow">
           <span className="adminChip">{order.paymentMethod}</span>
           <span className="adminChip">{order.paymentStatus}</span>
+          <span className={"adminChip "+(order.priority==="URGENT"?"bad":"")}>{order.priority}</span>
+          <span className="adminChip">{order.source.replaceAll("_"," ")}</span>
+          <span className="adminChip">Expedição {order.expeditionStatus}</span>
           {order.preparingAt&&<span className="adminChip">Preparo {order.preparingAt.toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"})}</span>}
           {order.readyAt&&<span className="adminChip">Pronto {order.readyAt.toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"})}</span>}
           {order.deliveredAt&&<span className="adminChip ok">Entregue {order.deliveredAt.toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"})}</span>}
@@ -98,6 +101,7 @@ export default async function FoodOrderHistory({
         <div className="adminInlineActions">
           <Link className="highlight" href={"/admin/restaurante/pedidos/"+order.id+"/recibo"} target="_blank">Recibo ↗</Link>
           <Link href={"/admin/restaurante/pedidos/"+order.id+"/comanda"} target="_blank">Comanda ↗</Link>
+          <Link href={"/admin/restaurante/pedidos/"+order.id+"/cozinha"} target="_blank">Produção ↗</Link>
         </div>
       </article>)}
     </section>}
