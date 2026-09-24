@@ -104,7 +104,7 @@ export default function AccommodationForm({
         <label>Número de camas
           <input name="bedCount" type="number" min="0" max="50" defaultValue={room?.bedCount??0} placeholder="Ex.: 8"/>
         </label>
-        <label>Capacidade total
+        <label>Capacidade total (quarto privativo)
           <input name="capacity" type="number" min="1" max="50" defaultValue={room?.capacity??2} required/>
         </label>
         <label>Máx. adultos
@@ -113,7 +113,7 @@ export default function AccommodationForm({
         <label>Máx. crianças
           <input name="maxChildren" type="number" min="0" max="30" defaultValue={room?.maxChildren??0} required/>
         </label>
-        <label>Diária base {room?.sharedRoom?"por cama":""}
+        <label>Diária base (por quarto; por cama se compartilhado)
           <input name="price" inputMode="decimal" defaultValue={room?.priceCents==null?"":(room.priceCents/100).toFixed(2)} placeholder="R$ 0,00"/>
         </label>
         <label>Banheiros
