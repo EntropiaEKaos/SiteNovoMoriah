@@ -1,10 +1,8 @@
 import type {Metadata} from "next";
-import Link from "next/link";
 import type {SiteSection} from "@prisma/client";
-import {ArrowRight} from "lucide-react";
 import {prisma} from "../lib/prisma";
-import SupportChat from "./support-chat";
 import SiteBuilderRenderer from "./site-builder-renderer";
+import PublicSiteChrome from "./public-site-chrome";
 
 export const dynamic="force-dynamic";
 
@@ -73,7 +71,7 @@ const fallbackSections=[
 ] as unknown as SiteSection[];
 
 export default async function Home(){
-  const [settings,rooms,promo,posts,media,page]=await Promise.all([
+  const [settings,rooms,promo,posts,media,page,navPages]=await Promise.all([
     prisma.siteSettings.findUnique({where:{id:"main"}}),
     prisma.accommodation.findMany({
       where:{active:true},
@@ -86,10 +84,14 @@ export default async function Home(){
     prisma.sitePage.findUnique({
       where:{slug:"home"},
       include:{sections:{where:{active:true},orderBy:[{sortOrder:"asc"},{createdAt:"asc"}]}}
+    }),
+    prisma.sitePage.findMany({
+      where:{published:true,showInNav:true,slug:{not:"home"}},
+      select:{slug:true,title:true,navLabel:true},
+      orderBy:[{sortOrder:"asc"},{createdAt:"asc"}]
     })
   ]);
 
-  const name=settings?.siteName||"Pousada Moriah";
   const wa=settings?.whatsapp?.replace(/\D/g,"");
   const whatsappHref=wa
     ?"https://wa.me/"+wa+"?text="+encodeURIComponent("Olá! Vim pelo site da Pousada Moriah e gostaria de informações sobre hospedagem.")
@@ -97,28 +99,7 @@ export default async function Home(){
 
   const sections=page?.published!==false&&page?.sections.length?page.sections:fallbackSections;
 
-  return <main className="siteV4">
-    <SupportChat/>
-
-    <header className="siteNavV4">
-      <Link className="siteBrandV4" href="/">
-        <span className="siteBrandMarkV4">M</span>
-        <span><b>MORIAH</b><small>POUSADA & HOSTEL</small></span>
-      </Link>
-
-      <nav className="siteNavLinksV4" aria-label="Navegação principal">
-        <a href="#hospedagem">Hospedagem</a>
-        <a href="#estrutura">Estrutura</a>
-        <Link href="/restaurante">Moriah Food</Link>
-        <Link href="/blog">Journal</Link>
-        <a href="#contato">Contato</a>
-      </nav>
-
-      <Link className="siteBookV4" href="/reservar">
-        Reservar <ArrowRight size={16}/>
-      </Link>
-    </header>
-
+  return <PublicSiteChrome settings={settings} navPages={navPages}>
     <SiteBuilderRenderer
       sections={sections}
       settings={settings}
@@ -128,39 +109,5 @@ export default async function Home(){
       media={media}
       whatsappHref={whatsappHref}
     />
-
-    <footer id="contato" className="siteFooterV4">
-      <div className="siteFooterBrand">
-        <span className="siteBrandMarkV4">M</span>
-        <div>
-          <b>MORIAH</b>
-          <p>Hospedagem leve, prática e acolhedora em Praia Grande.</p>
-        </div>
-      </div>
-
-      <div className="siteFooterColumn">
-        <small>EXPLORE</small>
-        <a href="#hospedagem">Hospedagem</a>
-        <Link href="/reservar">Reservar</Link>
-        <Link href="/restaurante">Moriah Food</Link>
-        <Link href="/blog">Journal</Link>
-      </div>
-
-      <div className="siteFooterColumn">
-        <small>CONTATO</small>
-        <p>{settings?.address||"Praia Grande — SP"}</p>
-        {settings?.instagram&&<a
-          href={settings.instagram.startsWith("http")?settings.instagram:"https://instagram.com/"+settings.instagram.replace("@","")}
-          target="_blank"
-          rel="noreferrer"
-        >Instagram ↗</a>}
-        {whatsappHref&&<a href={whatsappHref} target="_blank" rel="noreferrer">WhatsApp ↗</a>}
-      </div>
-
-      <div className="siteFooterBottom">
-        <small>© 2026 {name}</small>
-        <small>RESERVA DIRETA • PRAIA GRANDE</small>
-      </div>
-    </footer>
-  </main>;
+  </PublicSiteChrome>;
 }
