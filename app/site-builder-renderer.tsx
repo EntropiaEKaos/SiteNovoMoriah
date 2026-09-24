@@ -54,10 +54,11 @@ function fallbackHeroImage(rooms:Accommodation[],media:Media[]){
 
 function blockProps(section:SiteSection,extra:string,fallbackId?:string){
   const style={
-    "--site-section-pad":section.paddingY+"px",
     "--site-section-delay":section.animationDelay+"ms",
-    ...(section.backgroundColor?{"--site-section-bg":section.backgroundColor}:{}),
-    ...(section.textColor?{"--site-section-color":section.textColor}:{}),
+    paddingTop:section.paddingY,
+    paddingBottom:section.paddingY,
+    ...(section.backgroundColor?{backgroundColor:section.backgroundColor}:{}),
+    ...(section.textColor?{color:section.textColor}:{}),
     ...(section.backgroundImageUrl?{
       backgroundImage:
         "linear-gradient(90deg,rgba(0,0,0,.10),rgba(0,0,0,.10)),url("+section.backgroundImageUrl+")",
