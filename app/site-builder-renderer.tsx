@@ -355,7 +355,7 @@ export default function SiteBuilderRenderer({
       }
 
       if(section.type==="CONTACT"){
-        return <section {...blockProps(section,"siteContactV5","contato")} key={section.id}>
+        return <section {...blockProps(section,"siteContactV5","fale-conosco")} key={section.id}>
           <div>
             {section.eyebrow&&<div className="siteEyebrow">{section.eyebrow}</div>}
             <h2>{section.title||"Fale com a Moriah."}</h2>
