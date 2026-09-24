@@ -29,7 +29,7 @@ export default function CheckInForm({
   alreadyPaidCents:number;
 }){
   const [extras,setExtras]=useState<ExtraRow[]>([
-    {id:crypto.randomUUID(),description:"",amount:""}
+    {id:"extra-initial",description:"",amount:""}
   ]);
   const [paymentMethod,setPaymentMethod]=useState("PENDING");
   const [paymentAmount,setPaymentAmount]=useState("");
@@ -64,7 +64,7 @@ export default function CheckInForm({
   function removeExtra(id:string){
     setExtras(current=>{
       const next=current.filter(item=>item.id!==id);
-      return next.length?next:[{id:crypto.randomUUID(),description:"",amount:""}];
+      return next.length?next:[{id:"extra-reset",description:"",amount:""}];
     });
   }
 
@@ -124,7 +124,11 @@ export default function CheckInForm({
         <select
           name="paymentMethod"
           value={paymentMethod}
-          onChange={event=>setPaymentMethod(event.target.value)}
+          onChange={event=>{
+            const next=event.target.value;
+            setPaymentMethod(next);
+            if(next==="PENDING")setPaymentAmount("");
+          }}
         >
           <option value="PENDING">Pendente / pagar depois</option>
           <option value="PIX">PIX</option>
@@ -142,6 +146,8 @@ export default function CheckInForm({
           value={paymentAmount}
           onChange={event=>setPaymentAmount(event.target.value)}
           placeholder="R$ 0,00"
+          disabled={paymentMethod==="PENDING"}
+          required={paymentMethod==="EXTERNAL"}
         />
       </label>
 
