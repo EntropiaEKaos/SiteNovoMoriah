@@ -543,6 +543,7 @@ model RestaurantOrderItem {
  unitCostCents Int?
  quantity Int
  totalCents Int
+ notes String?
  modifiers RestaurantOrderItemModifier[]
  @@index([orderId])
  @@index([productId])
