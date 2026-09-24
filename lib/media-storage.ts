@@ -1,5 +1,5 @@
 import "server-only";
-import {DeleteObjectCommand,HeadObjectCommand,PutObjectCommand,S3Client} from "@aws-sdk/client-s3";
+import {DeleteObjectCommand,GetObjectCommand,HeadObjectCommand,PutObjectCommand,S3Client} from "@aws-sdk/client-s3";
 import {getSignedUrl} from "@aws-sdk/s3-request-presigner";
 
 const ALLOWED_MEDIA_TYPES=new Set(["image/jpeg","image/png","image/webp"]);
@@ -70,13 +70,32 @@ export async function uploadMediaBuffer(input:{
   return {key,publicUrl:mediaPublicUrl(key)};
 }
 
-export function mediaPublicUrl(key:string){
+export function validateMediaKey(key:string){
   if(!/^media\/[0-9]{4}\/[0-9]{2}\/[0-9a-f-]+\.(jpg|jpeg|png|webp)$/i.test(key)){
     throw new Error("Chave de mídia inválida.");
   }
-  const {bucket,region}=cfg();
-  const base=(process.env.AWS_CLOUDFRONT_URL||"").replace(/\/$/,"");
-  return base?base+"/"+key:"https://"+bucket+".s3."+region+".amazonaws.com/"+key;
+  return key;
+}
+
+export function mediaPublicUrl(key:string){
+  validateMediaKey(key);
+  return "/api/media/file?key="+encodeURIComponent(key);
+}
+
+export async function readMediaObject(key:string){
+  validateMediaKey(key);
+  const {bucket}=cfg();
+  const out=await client().send(new GetObjectCommand({Bucket:bucket,Key:key}));
+  if(!out.Body)throw new Error("Objeto de mídia sem conteúdo.");
+  const bytes=await out.Body.transformToByteArray();
+  const mimeType=String(out.ContentType||"application/octet-stream");
+  if(!ALLOWED_MEDIA_TYPES.has(mimeType))throw new Error("Tipo de mídia inválido.");
+  return {
+    bytes,
+    mimeType,
+    etag:String(out.ETag||"").replaceAll('"',""),
+    lastModified:out.LastModified||null
+  };
 }
 
 export async function deleteMediaObject(key:string){
