@@ -57,6 +57,7 @@ const sections=[
   {
     label:"CONTEÚDO",
     items:[
+      ["Editor do site","/admin/site",LayoutDashboard],
       ["Galeria","/admin/galeria",Images],
       ["Mídia","/admin/midia",Image],
       ["Blog","/admin/blog",BookOpen]
