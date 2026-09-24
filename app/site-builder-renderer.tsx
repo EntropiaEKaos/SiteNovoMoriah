@@ -187,8 +187,8 @@ export default function SiteBuilderRenderer({
               </div>
               <div className="siteStayBody">
                 <div className="siteStayMeta">
-                  <small>{room.type}</small>
-                  <small><Users size={12}/> até {room.capacity} hóspede(s)</small>
+                  <small>{room.sharedRoom?"Quarto compartilhado":room.type}</small>
+                  <small><Users size={12}/> {room.sharedRoom?room.bedCount+" cama(s)":("até "+room.capacity+" hóspede(s)")}</small>
                 </div>
                 <h3>{room.name}</h3>
                 <p>{room.description}</p>
@@ -201,10 +201,10 @@ export default function SiteBuilderRenderer({
                     <strong>{room.priceCents!=null
                       ?(room.priceCents/100).toLocaleString("pt-BR",{style:"currency",currency:"BRL"})
                       :"Sob consulta"}</strong>
-                    <span>Reserva direta com a Moriah</span>
+                    <span>{room.sharedRoom?"valor por cama / noite":"Reserva direta com a Moriah"}</span>
                   </div>
                   <Link href={"/reservar?accommodationId="+room.id}>
-                    Ver disponibilidade <ArrowRight size={15}/>
+                    {room.sharedRoom?"Ver camas disponíveis":"Ver disponibilidade"} <ArrowRight size={15}/>
                   </Link>
                 </div>
               </div>
