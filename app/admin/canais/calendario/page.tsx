@@ -1,7 +1,12 @@
 import {prisma} from "../../../../lib/prisma";
 import {requireAdmin} from "../../../../lib/admin-auth";
 import AdminCalendar from "./admin-calendar";
-import {createManualBlock} from "./actions";
+import {
+  createManualBlock,
+  rotateCalendarWidgetToken,
+  saveCalendarWidgetSettings
+} from "./actions";
+import WidgetEmbedCode from "./widget-embed-code";
 
 export const dynamic="force-dynamic";
 
@@ -14,7 +19,7 @@ export default async function Page(){
   const to=new Date(now);
   to.setUTCDate(to.getUTCDate()+180);
 
-  const [external,internal,holds,manual,rooms]=await Promise.all([
+  const [external,internal,holds,manual,rooms,widget]=await Promise.all([
     prisma.channelBlock.findMany({
       where:{endsAt:{gt:from},startsAt:{lt:to}},
       include:{integration:{include:{accommodation:true}}},
@@ -46,7 +51,8 @@ export default async function Page(){
     prisma.accommodation.findMany({
       where:{active:true},
       orderBy:[{roomNumber:"asc"},{name:"asc"}]
-    })
+    }),
+    prisma.calendarWidgetSettings.findUnique({where:{id:"main"}})
   ]);
 
   const events=[
@@ -133,22 +139,26 @@ export default async function Page(){
       </div>
     </section>
 
-    <section className="adminSectionCard" style={{marginBottom:18}}>
-      <h2>Novo bloqueio manual</h2>
-      <p>Use para manutenção, uso interno, interdição ou qualquer indisponibilidade operacional.</p>
-      <form action={createManualBlock} className="adminFormGrid cols3">
-        <label>Hospedagem
-          <select name="accommodationId" required>
-            <option value="">Selecione</option>
-            {rooms.map(room=><option key={room.id} value={room.id}>{room.roomNumber?room.roomNumber+" • ":""}{room.name}</option>)}
-          </select>
-        </label>
-        <label>Início<input name="startsAt" type="date" required/></label>
-        <label>Fim<input name="endsAt" type="date" required/></label>
-        <label>Motivo<input name="reason" required maxLength={160} placeholder="Ex.: Manutenção do ar-condicionado"/></label>
-        <label className="span2">Observações<input name="notes" maxLength={1500} placeholder="Opcional"/></label>
-        <button className="span2">Criar bloqueio</button>
-      </form>
+    <section className="calendarWidgetAdmin">
+      <article className="adminSectionCard">
+        <div className="adminListCardHead">
+          <div><small>CALENDÁRIO EXTERNO</small><h2>Widget incorporável</h2><p>Leve a disponibilidade para outro site com iframe, sem expor o painel administrativo.</p></div>
+          <span className={"adminChip "+(widget?.active?"ok":"warn")}>{widget?.active?"ATIVO":"CONFIGURAR"}</span>
+        </div>
+        <form action={saveCalendarWidgetSettings} className="adminFormGrid cols3">
+          <label className="span2">Título<input name="title" defaultValue={widget?.title||"Disponibilidade Moriah"}/></label>
+          <label>Subtítulo<input name="subtitle" defaultValue={widget?.subtitle||""}/></label>
+          <label>Cor principal<input name="primaryColor" type="color" defaultValue={widget?.primaryColor||"#0b607a"}/></label>
+          <label>Cor de destaque<input name="accentColor" type="color" defaultValue={widget?.accentColor||"#ffc845"}/></label>
+          <label className="calendarWidgetCheck"><input name="active" type="checkbox" defaultChecked={widget?.active!==false}/> Widget ativo</label>
+          <label className="calendarWidgetCheck"><input name="showPrices" type="checkbox" defaultChecked={widget?.showPrices!==false}/> Mostrar preços</label>
+          <label className="calendarWidgetCheck"><input name="allowBooking" type="checkbox" defaultChecked={widget?.allowBooking!==false}/> Permitir ir para reserva</label>
+          <label className="calendarWidgetCheck"><input name="compact" type="checkbox" defaultChecked={widget?.compact===true}/> Modo compacto</label>
+          <button className="span2">Salvar widget</button>
+        </form>
+        {widget?<WidgetEmbedCode token={widget.publicToken}/>:<div className="adminPageNote">Salve as configurações uma vez para gerar o token e o código do widget.</div>}
+        {widget&&<form action={rotateCalendarWidgetToken} style={{marginTop:10}}><button className="danger">Trocar token do widget</button></form>}
+      </article>
     </section>
 
     <AdminCalendar
