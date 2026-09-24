@@ -90,19 +90,20 @@ export async function GET(req:NextRequest){
   const cursor=new Date(from);
 
   while(cursor<to){
-    const next=new Date(cursor);
-    next.setUTCDate(next.getUTCDate()+1);
+    const probe=new Date(cursor);
+    probe.setUTCHours(12,0,0,0);
+    const probeEnd=new Date(probe.getTime()+1);
 
     const hardBlocked=hardIntervals.some(interval=>
-      interval.start<next&&interval.end>cursor
+      interval.start<=probe&&interval.end>probe
     );
 
     const hasBeds=!hardBlocked&&hasUnitCapacity(
       totalBeds,
       requestedUnits,
       softIntervals,
-      cursor,
-      next
+      probe,
+      probeEnd
     );
 
     if(!hasBeds)blockedDays.push(day(cursor));
