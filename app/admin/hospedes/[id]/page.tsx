@@ -44,7 +44,9 @@ export default async function GuestDetail({
 
   const quoted=guest.bookings.reduce((sum,booking)=>sum+(booking.quotedTotalCents||0)+booking.charges.reduce((value,charge)=>value+charge.amountCents,0),0);
   const paid=guest.bookings.reduce(
-    (sum,booking)=>sum+booking.payments.reduce((value,payment)=>value+payment.amountCents,0),
+    (sum,booking)=>sum+booking.payments
+      .filter(payment=>payment.reference!=="RESTAURANT_FOLIO")
+      .reduce((value,payment)=>value+payment.amountCents,0),
     0
   );
   const lastStay=guest.bookings
@@ -179,7 +181,9 @@ export default async function GuestDetail({
       <p>Reservas, valores e pagamentos associados a este hóspede.</p>
       {guest.bookings.length===0?<div className="adminPageNote">Ainda não há reservas vinculadas.</div>:<div className="adminStack">
         {guest.bookings.map(booking=>{
-          const received=booking.payments.reduce((sum,payment)=>sum+payment.amountCents,0);
+          const received=booking.payments
+            .filter(payment=>payment.reference!=="RESTAURANT_FOLIO")
+            .reduce((sum,payment)=>sum+payment.amountCents,0);
           const extras=booking.charges.reduce((sum,charge)=>sum+charge.amountCents,0);
           const total=(booking.quotedTotalCents||0)+extras;
           return <article className="adminListCard" key={booking.id}>
