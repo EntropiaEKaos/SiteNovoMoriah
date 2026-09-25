@@ -7158,3 +7158,220 @@ body:has(.externalCalendarWidget) .whatsappFloat{display:none!important}
 .adminActionToast button{border:0;background:transparent;color:#aaa;font-size:20px}.adminActionToast .spin{animation:adminToastSpin .9s linear infinite}@keyframes adminToastSpin{to{transform:rotate(360deg)}}
 @media(max-width:900px){.siteLocaleColumns{grid-template-columns:1fr}.siteNavActionsV7{gap:6px}.siteLanguageSwitcher a{padding:5px}}
 @media(max-width:620px){.siteLanguageSwitcher{order:2}.siteNavActionsV7{width:100%;justify-content:flex-end}.adminActionToast{right:15px;bottom:15px}}
+
+
+/* Admin visual hardening 2026-09: prevent squeezed two-column layouts */
+.adminPage,
+.inventoryPage,
+.cmvPage{
+  width:100%;
+  min-width:0;
+}
+.adminPage>*,
+.inventoryPage>*,
+.cmvPage>*,
+.adminSectionCard,
+.adminListCard,
+.inventoryForm,
+.ingredientCard,
+.recipeCostTable,
+.cmvProductTable{
+  min-width:0;
+}
+.adminSectionCard,
+.adminListCard,
+.inventoryForm,
+.ingredientCard{
+  border-radius:2px;
+}
+.adminSectionCard,
+.adminListCard{
+  box-shadow:0 1px 0 rgba(17,17,17,.02);
+}
+.adminSectionCard:hover,
+.adminListCard:hover{
+  box-shadow:0 12px 35px rgba(17,17,17,.06);
+}
+.adminFormGrid input,
+.adminFormGrid select,
+.adminFormGrid textarea,
+.inventoryForm input,
+.inventoryForm select{
+  min-width:0;
+  border:1px solid #cfc8ba;
+  background:#fff;
+  outline:none;
+  transition:border-color .18s ease,box-shadow .18s ease;
+}
+.adminFormGrid input:focus,
+.adminFormGrid select:focus,
+.adminFormGrid textarea:focus,
+.inventoryForm input:focus,
+.inventoryForm select:focus{
+  border-color:#111;
+  box-shadow:0 0 0 3px rgba(255,212,0,.23);
+}
+.adminFormGrid button,
+.inventoryForm button,
+.adminInlineActions button,
+.adminInlineActions a{
+  cursor:pointer;
+  transition:transform .16s ease,box-shadow .16s ease,filter .16s ease;
+}
+.adminFormGrid button:hover,
+.inventoryForm button:hover,
+.adminInlineActions button:hover,
+.adminInlineActions a:hover{
+  transform:translateY(-1px);
+  filter:brightness(.98);
+}
+.inventoryComposer{
+  grid-template-columns:minmax(0,1.08fr) minmax(340px,.92fr);
+  gap:18px;
+  align-items:stretch;
+}
+.inventoryComposer>.inventoryForm{
+  overflow:hidden;
+  align-content:start;
+}
+.inventoryComposer>.inventoryForm h2{
+  max-width:100%;
+  overflow-wrap:anywhere;
+}
+.inventoryComposer>.inventoryForm.accent{
+  box-shadow:8px 8px 0 #111;
+}
+.inventoryFormGrid{
+  grid-template-columns:repeat(2,minmax(0,1fr));
+}
+.inventoryMetrics,
+.cmvMetrics{
+  grid-template-columns:repeat(5,minmax(0,1fr));
+  overflow:hidden;
+}
+.inventoryMetrics article,
+.cmvMetrics article{
+  min-width:0;
+}
+.ingredientGrid{
+  grid-template-columns:repeat(3,minmax(0,1fr));
+}
+.adminDataTable{
+  width:100%;
+  min-width:880px;
+  border-collapse:collapse;
+  background:#fff;
+}
+.adminDataTable th{
+  background:#111;
+  color:#aaa;
+  text-align:left;
+  font-size:8px;
+  letter-spacing:1px;
+  padding:11px 12px;
+}
+.adminDataTable td{
+  padding:11px 12px;
+  border-bottom:1px solid #ece7dc;
+  font-size:10px;
+  vertical-align:middle;
+}
+.adminDataTable button{
+  border:0;
+  background:var(--y);
+  padding:8px 10px;
+  font-weight:900;
+}
+.rouletteAdminCampaign{
+  margin-top:30px;
+  padding-top:30px;
+  border-top:1px solid var(--admin-line);
+}
+.rouletteAdminCampaignHead{
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:24px;
+  margin-bottom:16px;
+}
+.rouletteAdminCampaignHead>div{max-width:780px}
+.rouletteAdminCampaignHead small{
+  font-size:8px;
+  font-weight:950;
+  letter-spacing:1.4px;
+  color:#8a8477;
+}
+.rouletteAdminCampaignHead h2{
+  margin:6px 0 8px;
+  font-size:36px;
+  letter-spacing:-1.6px;
+}
+.rouletteAdminCampaignHead p{
+  margin:0;
+  color:#706a61;
+  line-height:1.55;
+}
+.rouletteAdminGrid{
+  grid-template-columns:minmax(0,1.15fr) minmax(320px,.85fr);
+}
+.roulettePrizeHint{
+  margin-top:18px;
+  padding:14px 16px;
+  background:#111;
+  color:#fff;
+  border-left:5px solid var(--y);
+}
+.roulettePrizeHint small{
+  color:var(--y);
+  font-size:8px;
+  font-weight:950;
+  letter-spacing:1.2px;
+}
+.roulettePrizeHint p{
+  margin:7px 0 0;
+  color:#bbb;
+  line-height:1.55;
+  font-size:11px;
+}
+
+@media(max-width:1280px){
+  .inventoryComposer,
+  .rouletteAdminGrid{
+    grid-template-columns:1fr;
+  }
+  .inventoryComposer>.inventoryForm.accent{
+    box-shadow:6px 6px 0 #111;
+  }
+  .ingredientGrid{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+  .inventoryMetrics,
+  .cmvMetrics{
+    grid-template-columns:repeat(3,minmax(0,1fr));
+  }
+}
+@media(max-width:900px){
+  .inventoryMetrics,
+  .cmvMetrics{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+  .ingredientGrid{grid-template-columns:1fr}
+  .inventorySectionHead,
+  .cmvSectionHead,
+  .rouletteAdminCampaignHead{
+    align-items:flex-start;
+    flex-direction:column;
+  }
+}
+@media(max-width:620px){
+  .inventoryMetrics,
+  .cmvMetrics{
+    grid-template-columns:1fr;
+  }
+  .inventoryFormGrid{
+    grid-template-columns:1fr;
+  }
+  .inventoryFormGrid .wide{grid-column:auto}
+  .inventoryForm{padding:20px}
+  .rouletteAdminCampaignHead h2{font-size:30px}
+}

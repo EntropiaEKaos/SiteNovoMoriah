@@ -16,6 +16,7 @@ import {
   Gift,
   Image,
   Images,
+  Languages,
   PackageCheck,
   Factory,
   LayoutDashboard,
@@ -73,6 +74,7 @@ const sections=[
     items:[
       ["Site Studio / Home","/admin/site",LayoutDashboard],
       ["Páginas do site","/admin/site/paginas",BookOpen],
+      ["Idiomas PT / EN / ES","/admin/site/idiomas",Languages],
       ["Galeria","/admin/galeria",Images],
       ["Mídia","/admin/midia",Image],
       ["Blog","/admin/blog",BookOpen],

@@ -1,13 +1,19 @@
 import "server-only";
 import {cookies} from "next/headers";
+import {
+  defaultSiteLocale,
+  getI18n,
+  siteLocales,
+  type SiteLocale
+} from "../i18n/catalog";
 
-export type SiteLocale="pt"|"en"|"es";
-const allowed=new Set<SiteLocale>(["pt","en","es"]);
+export type {SiteLocale} from "../i18n/catalog";
+const allowed=new Set<SiteLocale>(siteLocales);
 
 export async function getSiteLocale():Promise<SiteLocale>{
   const store=await cookies();
   const value=store.get("moriah-locale")?.value as SiteLocale|undefined;
-  return value&&allowed.has(value)?value:"pt";
+  return value&&allowed.has(value)?value:defaultSiteLocale;
 }
 
 export function localizeRecord<T>(record:T|null|undefined,locale:SiteLocale):T|null{
@@ -21,13 +27,15 @@ export function localizeRecord<T>(record:T|null|undefined,locale:SiteLocale):T|n
   const patch=byLocale as Record<string,unknown>;
   const next={...objectRecord};
   for(const [key,value] of Object.entries(patch)){
-    if(value!==null&&value!==undefined&&value!=="") (next as Record<string,unknown>)[key]=value;
+    if(value!==null&&value!==undefined&&value!=="")next[key]=value;
   }
   return next as unknown as T;
 }
 
 export const uiText={
-  pt:{stay:"Hospedagem",structure:"Estrutura",events:"Eventos",contact:"Contato",book:"Ver disponibilidade",direct:"Reserva direta • atendimento da própria pousada",reserve:"Reservar",explore:"EXPLORE",contactTitle:"CONTATO",directFooter:"RESERVA DIRETA • PRAIA GRANDE"},
-  en:{stay:"Stay",structure:"Amenities",events:"Events",contact:"Contact",book:"Check availability",direct:"Direct booking • service by our own team",reserve:"Book",explore:"EXPLORE",contactTitle:"CONTACT",directFooter:"DIRECT BOOKING • PRAIA GRANDE"},
-  es:{stay:"Hospedaje",structure:"Estructura",events:"Eventos",contact:"Contacto",book:"Ver disponibilidad",direct:"Reserva directa • atención del propio alojamiento",reserve:"Reservar",explore:"EXPLORAR",contactTitle:"CONTACTO",directFooter:"RESERVA DIRECTA • PRAIA GRANDE"}
+  pt:{...getI18n("pt").nav,direct:getI18n("pt").common.direct},
+  en:{...getI18n("en").nav,direct:getI18n("en").common.direct},
+  es:{...getI18n("es").nav,direct:getI18n("es").common.direct}
 } as const;
+
+export {getI18n};

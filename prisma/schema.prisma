@@ -1058,6 +1058,7 @@ model RouletteSettings {
   introText                String   @default("Sua participação é independente de avaliações. Se quiser, compartilhe sua experiência no Google.")
   googleReviewUrl          String?
   googleReviewLabel        String   @default("Avaliar a Moriah no Google")
+  reviewLinks              Json?
   termsText                String   @default("Ao participar, você autoriza o uso do nome e telefone apenas para administrar esta promoção e validar a entrega do prêmio.")
   activeFrom               DateTime?
   activeUntil              DateTime?
@@ -1118,6 +1119,7 @@ model MoriahEvent {
 
 model RoulettePrize {
   id             String         @id @default(cuid())
+  campaignKey    String         @default("moriah-1")
   name           String
   description    String?
   color          String         @default("#FFC845")
@@ -1132,6 +1134,7 @@ model RoulettePrize {
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
 
+  @@index([campaignKey, active, sortOrder])
   @@index([active, sortOrder])
 }
 
