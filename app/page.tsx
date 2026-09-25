@@ -150,7 +150,7 @@ export default async function Home(){
 
   return <PublicSiteChrome settings={localizedSettings} navPages={localizedNavPages} locale={locale}>
     <>
-      <SiteBuilderRenderer sections={sections} settings={localizedSettings} rooms={localizedRooms} promo={localizedPromo} posts={localizedPosts} media={media} whatsappHref={whatsappHref}/>
+      <SiteBuilderRenderer sections={sections} settings={localizedSettings} rooms={localizedRooms} promo={localizedPromo} posts={localizedPosts} media={media} whatsappHref={whatsappHref} locale={locale}/>
       <EventShowcase events={localizedEvents}/>
     </>
   </PublicSiteChrome>;
