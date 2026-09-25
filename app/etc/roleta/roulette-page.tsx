@@ -84,7 +84,17 @@ export default async function RoulettePage({settingsId,preview=false}:{settingsI
       title:settings.title,
       subtitle:settings.subtitle,
       introText:settings.introText,
-      reviewLinks:parseLinks(settings.reviewLinks,settings.googleReviewUrl,settings.googleReviewLabel),
+      reviewLinks:(()=>{
+        const links=parseLinks(settings.reviewLinks,settings.googleReviewUrl,settings.googleReviewLabel);
+        if(!preview||links.length)return links;
+        return settingsId==="delivery"
+          ?[
+            {key:"IFOOD",label:"Avaliar no iFood",url:""},
+            {key:"99FOOD",label:"Avaliar no 99Food",url:""},
+            {key:"KEETA",label:"Avaliar no Keeta",url:""}
+          ]
+          :[{key:"GOOGLE",label:"Avaliar no Google",url:""}];
+      })(),
       termsText:settings.termsText
     }}
     theme={theme}
