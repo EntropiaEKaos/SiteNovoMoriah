@@ -14,6 +14,7 @@ const GROQ_MODEL_REPLACEMENTS:Record<string,string>={
   "groq/compound-mini":"openai/gpt-oss-20b"
 };
 const buckets=new Map<string,{count:number;resetAt:number}>();
+let publicContextCache:{value:string;expiresAt:number}|null=null;
 
 function normalizeGroqModel(value:string|null|undefined){
   const model=String(value||"").trim();
@@ -135,6 +136,7 @@ async function liveAvailability(text:string){
 }
 
 async function cmsContext(){
+  if(publicContextCache&&publicContextCache.expiresAt>Date.now())return publicContextCache.value;
   const [settings,rooms,promo,restaurant,menu,pages]=await Promise.all([
     loadPublicSiteSettings(),
     prisma.accommodation.findMany({
@@ -161,7 +163,7 @@ async function cmsContext(){
     })
   ]);
 
-  return [
+  const value=[
     "CONTEXTO MORIAH (dados atuais do sistema):",
     `Nome: ${settings?.siteName||"Pousada Moriah"}`,
     settings?.tagline?`Descrição: ${settings.tagline}`:"",
@@ -300,7 +302,7 @@ export async function POST(req:NextRequest){
     :"";
 
   const messages:ChatMessage[]=raw
-    .slice(-10)
+    .slice(-8)
     .filter((item):item is {role:"user"|"assistant";content:string}=>{
       if(!item||typeof item!=="object")return false;
       const entry=item as Record<string,unknown>;
@@ -358,7 +360,7 @@ export async function POST(req:NextRequest){
         body:JSON.stringify({
           model,
           temperature:settings?.groqTemperature??0.2,
-          max_completion_tokens:500,
+          max_completion_tokens:420,
           messages:[
             {role:"system",content:systemContext},
             ...messages
