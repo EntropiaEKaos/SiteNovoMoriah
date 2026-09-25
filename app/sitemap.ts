@@ -23,6 +23,7 @@ function coreRoutes(base:string):MetadataRoute.Sitemap{
     {url:base,lastModified:now,changeFrequency:"daily",priority:1},
     {url:base+"/reservar",lastModified:now,changeFrequency:"daily",priority:.9},
     {url:base+"/restaurante",lastModified:now,changeFrequency:"daily",priority:.8},
+    {url:base+"/eventos",lastModified:now,changeFrequency:"daily",priority:.8},
     {url:base+"/blog",lastModified:now,changeFrequency:"weekly",priority:.7}
   ];
 }
@@ -31,7 +32,7 @@ export default async function sitemap():Promise<MetadataRoute.Sitemap>{
   const base=siteUrl();
 
   try{
-    const [pages,posts]=await Promise.all([
+    const [pages,posts,events]=await Promise.all([
       prisma.sitePage.findMany({
         where:{published:true},
         select:{slug:true,updatedAt:true}
@@ -39,7 +40,8 @@ export default async function sitemap():Promise<MetadataRoute.Sitemap>{
       prisma.blogPost.findMany({
         where:{published:true},
         select:{slug:true,updatedAt:true}
-      })
+      }),
+      prisma.moriahEvent.findMany({where:{published:true},select:{slug:true,updatedAt:true}})
     ]);
 
     return [
@@ -57,6 +59,12 @@ export default async function sitemap():Promise<MetadataRoute.Sitemap>{
         lastModified:post.updatedAt,
         changeFrequency:"monthly" as const,
         priority:.6
+      })),
+      ...events.map(event=>({
+        url:base+"/eventos/"+event.slug,
+        lastModified:event.updatedAt,
+        changeFrequency:"weekly" as const,
+        priority:.7
       }))
     ];
   }catch(error){

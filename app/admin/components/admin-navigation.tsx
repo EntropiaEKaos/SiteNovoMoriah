@@ -75,7 +75,8 @@ const sections=[
       ["Páginas do site","/admin/site/paginas",BookOpen],
       ["Galeria","/admin/galeria",Images],
       ["Mídia","/admin/midia",Image],
-      ["Blog","/admin/blog",BookOpen]
+      ["Blog","/admin/blog",BookOpen],
+      ["Eventos","/admin/eventos",CalendarDays]
     ]
   },
   {

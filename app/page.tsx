@@ -5,12 +5,14 @@ import type {
   Media,
   Promotion,
   SitePage,
-  SiteSection
+  SiteSection,
+  MoriahEvent
 } from "@prisma/client";
 import {prisma} from "../lib/prisma";
 import {loadPublicSiteSettings,type PublicSiteSettings} from "../lib/public-site-settings";
 import SiteBuilderRenderer from "./site-builder-renderer";
 import PublicSiteChrome from "./public-site-chrome";
+import EventShowcase from "./event-showcase";
 
 export const dynamic="force-dynamic";
 
@@ -89,6 +91,7 @@ export default async function Home(){
   let media:Media[]=[];
   let page:HomePageWithSections|null=null;
   let navPages:NavPage[]=[];
+  let events:MoriahEvent[]=[];
 
   try{
     [settings,rooms,promo,posts,media,page,navPages]=await Promise.all([
@@ -116,6 +119,17 @@ export default async function Home(){
     console.error("HOME_DATA_LOAD_FAILED",error);
   }
 
+  try{
+    events=await prisma.moriahEvent.findMany({
+      where:{published:true,showOnHome:true},
+      orderBy:[{featured:"desc"},{sortOrder:"asc"},{startsAt:"asc"}],
+      take:12
+    });
+  }catch(error){console.error("HOME_EVENTS_LOAD_FAILED",error)}
+
+  const now=new Date();
+  const homeEvents=events.filter(event=>(event.endsAt||new Date(event.startsAt.getTime()+24*60*60_000))>=now).slice(0,3);
+
   const wa=settings?.whatsapp?.replace(/\D/g,"");
   const whatsappHref=wa
     ?"https://wa.me/"+wa+"?text="+encodeURIComponent("Olá! Vim pelo site da Pousada Moriah e gostaria de informações sobre hospedagem.")
@@ -124,14 +138,9 @@ export default async function Home(){
   const sections=page?.published!==false&&page?.sections.length?page.sections:fallbackSections;
 
   return <PublicSiteChrome settings={settings} navPages={navPages}>
-    <SiteBuilderRenderer
-      sections={sections}
-      settings={settings}
-      rooms={rooms}
-      promo={promo}
-      posts={posts}
-      media={media}
-      whatsappHref={whatsappHref}
-    />
+    <>
+      <SiteBuilderRenderer sections={sections} settings={settings} rooms={rooms} promo={promo} posts={posts} media={media} whatsappHref={whatsappHref}/>
+      <EventShowcase events={homeEvents}/>
+    </>
   </PublicSiteChrome>;
 }
