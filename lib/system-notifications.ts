@@ -1,5 +1,7 @@
 import type {Prisma} from "@prisma/client";
 import {prisma} from "./prisma";
+import {after} from "next/server";
+import {flushReadyAdminPushNotifications} from "./notification-dispatch";
 
 type NotificationTx=Prisma.TransactionClient|typeof prisma;
 
@@ -13,6 +15,7 @@ type QueueInput={
   dedupeKey?:string|null;
   variables?:Record<string,string|number|null|undefined>;
   tx?:NotificationTx;
+  actionUrl?:string|null;
 };
 
 function render(template:string|undefined|null,variables:Record<string,string|number|null|undefined>){
@@ -21,6 +24,22 @@ function render(template:string|undefined|null,variables:Record<string,string|nu
     const value=variables[key];
     return value==null?"":String(value);
   });
+}
+
+function defaultActionUrl(module:string){
+  const map:Record<string,string>={
+    RESERVAS:"/admin/reservas",
+    PMS:"/admin/pms",
+    COZINHA:"/admin/restaurante/cozinha",
+    FOOD:"/admin/restaurante/pedidos",
+    RESTAURANTE:"/admin/restaurante/pedidos",
+    CANAIS:"/admin/canais",
+    LOCACOES:"/admin/locacoes",
+    GOVERNANCA:"/admin/pms",
+    MENSALISTAS:"/admin/hospedes",
+    INVENTORY:"/admin/restaurante/insumos"
+  };
+  return map[module]||"/admin/notificacoes";
 }
 
 function channelStatus(channel:string){
@@ -66,12 +85,18 @@ export async function queueSystemNotification(input:QueueInput){
           body,
           status,
           scheduledAt,
+          actionUrl:input.actionUrl||defaultActionUrl(input.module),
           error:status==="BLOCKED"?"Provider externo ainda não configurado.":null
         }
       }));
     }catch(error){
       const record=error&&typeof error==="object"?error as {code?:unknown}:null;
       if(String(record?.code||"")!=="P2002")throw error;
+    }
+  }
+  if(rows.some(row=>row.channel==="PUSH"&&row.status==="READY"&&!row.scheduledAt)){
+    try{after(async()=>{await flushReadyAdminPushNotifications(25);});}catch{
+      if(!input.tx)await flushReadyAdminPushNotifications(25);
     }
   }
   return rows;
