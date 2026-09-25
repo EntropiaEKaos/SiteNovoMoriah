@@ -20,7 +20,7 @@ function normalizeGroqModel(value:string|null|undefined){
   return GROQ_MODEL_REPLACEMENTS[model]||model||DEFAULT_GROQ_MODEL;
 }
 
-const SYSTEM=`Você é o assistente virtual da Pousada Moriah, em Praia Grande, SP. Responda em português do Brasil, acolhedor, objetivo e curto. Use SOMENTE o CONTEXTO MORIAH fornecido pelo sistema para afirmar preços, acomodações, capacidades, endereço, promoções, serviços, cardápio, pedidos ou valores financeiros. Nunca invente disponibilidade, saldo ou status de pedido. Nunca confirme uma reserva no chat. Se faltar informação, diga que a equipe precisa confirmar. Nunca peça cartão, senha, documento ou outro dado sensível. Contexto financeiro privado só aparece quando o sistema validou um token ativo da própria hospedagem.`;
+const SYSTEM=`Você é o assistente virtual da Pousada Moriah, em Praia Grande, SP. Responda em português do Brasil, acolhedor, objetivo e curto. Quando houver uma ação útil (reservar, ver hospedagens, abrir cardápio, eventos ou falar com a equipe), cite o nome da ação no texto; a interface fornecerá botões clicáveis seguros. Use SOMENTE o CONTEXTO MORIAH fornecido pelo sistema para afirmar preços, acomodações, capacidades, endereço, promoções, serviços, cardápio, pedidos ou valores financeiros. Nunca invente disponibilidade, saldo ou status de pedido. Nunca confirme uma reserva no chat. Se faltar informação, diga que a equipe precisa confirmar. Nunca peça cartão, senha, documento ou outro dado sensível. Contexto financeiro privado só aparece quando o sistema validou um token ativo da própria hospedagem.`;
 
 type ChatMessage={role:"user"|"assistant";content:string};
 
@@ -185,6 +185,29 @@ async function cmsContext(){
     "O PMS Moriah suporta check-in financeiro com adicionais, pagamento parcial ou externo, saldo, recibo de check-in, Moriah Food, KDS e recibos de restaurante.",
     "Para solicitar reserva: /reservar. Para cardápio: /restaurante."
   ].filter(Boolean).join("\n");
+}
+
+type ChatAction={href:string;label:string;external?:boolean};
+
+function contextualActions(text:string,booking:{href:string;label:string}|null,whatsapp:string|null){
+  const actions:ChatAction[]=[];
+  const push=(action:ChatAction)=>{
+    if(!actions.some(item=>item.href===action.href)&&actions.length<4)actions.push(action);
+  };
+
+  if(booking)push({href:booking.href,label:booking.label});
+  if(/hosped|quarto|acomoda|diária|diaria|cama/i.test(text))push({href:"/hospedagens",label:"Ver hospedagens"});
+  if(/reserv|disponib|data|diária|diaria/i.test(text))push({href:"/reservar",label:"Consultar e solicitar reserva"});
+  if(/food|restaurante|cardápio|cardapio|lanche|marmita|pedido/i.test(text))push({href:"/restaurante",label:"Abrir Moriah Food"});
+  if(/evento|roleta|promoç|promoc/i.test(text))push({href:"/eventos",label:"Ver eventos e promoções"});
+  if(whatsapp&&/(atendente|humano|equipe|whats|whatsapp|falar|fechar|ajuda)/i.test(text)){
+    push({
+      href:"https://wa.me/"+whatsapp+"?text="+encodeURIComponent("Olá! Vim pelo assistente virtual da Pousada Moriah e gostaria de continuar meu atendimento."),
+      label:"Continuar no WhatsApp",
+      external:true
+    });
+  }
+  return actions;
 }
 
 function privateIntent(text:string){
@@ -377,11 +400,13 @@ export async function POST(req:NextRequest){
           label:"Continuar no WhatsApp"
         }
       :null;
+    const actions=contextualActions(lastUser,availability.booking,whatsapp||null);
 
     return NextResponse.json({
       reply:reply||"Não consegui responder agora. Tente novamente em instantes.",
       booking:availability.booking,
       handoff,
+      actions,
       privateContext:Boolean(privateContext)
     });
   }catch(error){
