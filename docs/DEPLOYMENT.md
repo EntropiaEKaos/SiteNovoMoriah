@@ -15,3 +15,5 @@
 
 ## Pós-deploy
 Nunca considere produção validada apenas porque o CI passou. Teste o ambiente real e os serviços externos.
+
+<!-- redeploy-trigger: 2026-09-25T17:34:00-03:00 -->
