@@ -20,7 +20,7 @@ export default function BlogEditor({
   media:{id:string;url:string;alt:string|null}[];
   post?:PostValue;
 }){
-  return <form action={action} className="adminStack blogStudioForm">
+  return <form action={action} className="adminStack blogStudioForm" data-feedback-success="Publicação salva com sucesso.">
     {post?.id&&<input type="hidden" name="id" value={post.id}/>}
 
     <BlogEditorFields post={post} media={media}/>
