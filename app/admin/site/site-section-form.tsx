@@ -92,7 +92,7 @@ export default function SiteSectionForm({
   media:{id:string;url:string;alt:string|null}[];
   section?:SectionValue;
 }){
-  return <form action={action} className="adminStack siteBuilderForm">
+  return <form action={action} className="adminStack siteBuilderForm" data-feedback-success={section?.id?"Seção salva com sucesso.":"Seção criada com sucesso."}>
     <input type="hidden" name="pageId" value={pageId}/>
     <section className="siteStudioFieldMap">
       <div><span>1</span><b>Textos</b><small>Título, subtítulo e descrição visíveis.</small></div>
