@@ -27,6 +27,7 @@ function channelStatus(channel:string){
   if(channel==="IN_APP")return "READY";
   if(channel==="EMAIL")return process.env.RESEND_API_KEY&&process.env.RESEND_FROM_EMAIL?"READY":"BLOCKED";
   if(channel==="WHATSAPP")return "READY";
+  if(channel==="PUSH")return process.env.FIREBASE_SERVICE_ACCOUNT_JSON?"READY":"BLOCKED";
   return "BLOCKED";
 }
 
@@ -48,7 +49,8 @@ export async function queueSystemNotification(input:QueueInput){
   const rows=[];
   for(const channel of rule.channels){
     const status=channelStatus(channel);
-    if(channel!=="IN_APP"&&!input.recipient)continue;
+    if(channel!=="IN_APP"&&channel!=="PUSH"&&!input.recipient)continue;
+    const recipient=channel==="PUSH"?null:(input.recipient||null);
     const dedupeKey=input.dedupeKey
       ?input.dedupeKey+":"+channel
       :null;
@@ -59,7 +61,7 @@ export async function queueSystemNotification(input:QueueInput){
           dedupeKey,
           channel,
           audience,
-          recipient:input.recipient||null,
+          recipient,
           title,
           body,
           status,
