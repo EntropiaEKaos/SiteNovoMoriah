@@ -1,6 +1,7 @@
 "use server";
 
 import {revalidatePath} from "next/cache";
+import {Prisma} from "@prisma/client";
 import {prisma} from "../../../lib/prisma";
 import {requireAdmin} from "../../../lib/admin-auth";
 
@@ -37,7 +38,7 @@ function httpsUrl(value:string){
   if(url.protocol!=="https:")throw new Error("Use uma URL HTTPS.");
   return url.toString();
 }
-async function audit(userId:string,action:string,targetId:string|null,details:Record<string,unknown>){
+async function audit(userId:string,action:string,targetId:string|null,details:Prisma.InputJsonObject){
   await prisma.adminAuditLog.create({data:{
     actorId:userId,
     action,
