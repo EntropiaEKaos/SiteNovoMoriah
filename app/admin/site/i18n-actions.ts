@@ -17,6 +17,7 @@ const fieldMap:Record<string,string[]>={
   RESTAURANT_SETTINGS:["menuTitle","menuSubtitle"],
   MOD_GROUP:["name"],
   MOD_OPTION:["name"],
+  CHAT_SETTINGS:["chatName","chatWelcome"],
   EVENT:["title","eyebrow","summary","description","category","venue","address","badge","ctaLabel","priceLabel"]
 };
 
@@ -80,6 +81,9 @@ export async function saveSiteTranslation(fd:FormData){
   }else if(type==="MOD_OPTION"){
     const row=await prisma.restaurantModifierOption.findUnique({where:{id}}); if(!row)throw new Error("Adicional não encontrado.");
     await prisma.restaurantModifierOption.update({where:{id},data:{translations:mergeTranslations(row.translations,locale,patch)}});
+  }else if(type==="CHAT_SETTINGS"){
+    const row=await prisma.integrationSettings.findUnique({where:{id}}); if(!row)throw new Error("Configuração do assistente não encontrada.");
+    await prisma.integrationSettings.update({where:{id},data:{translations:mergeTranslations(row.translations,locale,patch)}});
   }else if(type==="EVENT"){
     const row=await prisma.moriahEvent.findUnique({where:{id}}); if(!row)throw new Error("Evento não encontrado.");
     await prisma.moriahEvent.update({where:{id},data:{translations:mergeTranslations(row.translations,locale,patch)}});
