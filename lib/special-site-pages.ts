@@ -48,7 +48,20 @@ export const corporateSeed:PageSeed={
 
 export async function ensureSpecialPage(seed:PageSeed){
   const existing=await prisma.sitePage.findUnique({where:{slug:seed.slug},include:{sections:true}});
-  if(existing)return existing;
+  if(existing){
+    if(existing.sections.length===0){
+      await prisma.siteSection.createMany({
+        data:seed.sections.map(item=>({
+          pageId:existing.id,type:item.type,eyebrow:item.eyebrow,title:item.title,subtitle:item.subtitle,body:item.body,
+          imageUrl:item.imageUrl,ctaLabel:item.ctaLabel,ctaHref:item.ctaHref,secondaryCtaLabel:item.secondaryCtaLabel,
+          secondaryCtaHref:item.secondaryCtaHref,anchorId:item.anchorId,backgroundColor:item.backgroundColor,
+          textColor:item.textColor,theme:item.theme,layout:item.layout,sortOrder:item.sortOrder,active:item.active
+        }))
+      });
+      return prisma.sitePage.findUniqueOrThrow({where:{id:existing.id},include:{sections:true}});
+    }
+    return existing;
+  }
   return prisma.sitePage.create({
     data:{
       slug:seed.slug,title:seed.title,description:seed.description,seoTitle:seed.seoTitle,seoDescription:seed.seoDescription,
@@ -69,5 +82,5 @@ export async function loadSpecialSections(slug:string,fallback:SpecialSection[])
     where:{slug},
     include:{sections:{where:{active:true},orderBy:[{sortOrder:"asc"},{createdAt:"asc"}]}}
   });
-  return {page,sections:page?.sections?.length?page.sections:fallback};
+  return {page,sections:page?page.sections:fallback};
 }
