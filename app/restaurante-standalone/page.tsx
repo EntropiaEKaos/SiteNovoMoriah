@@ -8,6 +8,7 @@ import {
 import {getSiteLocale,localizeRecord} from "../../lib/site-i18n";
 import {loadSpecialSections,restaurantVisualSeed} from "../../lib/special-site-pages";
 import Menu from "../restaurante/menu";
+import SpecialPageSection from "../special-page-section";
 
 export const dynamic="force-dynamic";
 
@@ -82,6 +83,7 @@ export default async function StandaloneRestaurant(){
   const hero=sections.find(section=>section.type==="HERO")||sections[0];
   const features=sections.find(section=>section.type==="FEATURES");
   const cta=sections.find(section=>section.type==="CTA");
+  const extraSections=sections.filter(section=>section!==hero&&section!==features&&section!==cta);
   const accepting=localizedSettings?.acceptingOrders!==false;
   const hours=(localizedSettings?.openTime||"07:00")+"–"+(localizedSettings?.closeTime||"22:00");
 
@@ -149,6 +151,8 @@ export default async function StandaloneRestaurant(){
         successPath="/pedido-confirmado"
       />
     </section>
+
+    {extraSections.map((section,index)=><SpecialPageSection key={"restaurant-extra-"+index} section={section}/>)}
 
     {cta&&<section className="restaurantStandaloneCta">
       <div><small>{cta.eyebrow}</small><h2>{cta.title}</h2><p>{cta.subtitle||cta.body}</p></div>
