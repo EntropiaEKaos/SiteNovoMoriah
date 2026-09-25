@@ -85,7 +85,7 @@ export default function MenuProductForm({
   const linkedGroups=new Set(product?.modifierLinks?.map(link=>link.groupId)||[]);
   const recipeMap=new Map(product?.recipes?.map(recipe=>[recipe.ingredientId,recipe.quantity])||[]);
 
-  return <form action={action} className="adminStack menuStudioProductForm">
+  return <form action={action} className="adminStack menuStudioProductForm" data-feedback-success="Produto do cardápio salvo com sucesso.">
     {product?.id&&<input type="hidden" name="id" value={product.id}/>}
 
     <section className="adminSectionCard">
