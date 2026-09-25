@@ -1,6 +1,7 @@
 import {NextRequest,NextResponse} from "next/server";
 import {prisma} from "../../../lib/prisma";
 import {isAccommodationAvailable} from "../../../lib/inventory-engine";
+import {syncDueAccommodationChannels} from "../../../lib/channel-sync";
 import {quoteAccommodation} from "../../../lib/rate-engine";
 import {loadPublicSiteSettings} from "../../../lib/public-site-settings";
 
@@ -101,6 +102,10 @@ async function liveAvailability(text:string){
   });
 
   const checks=await Promise.all(rooms.map(async room=>{
+    const channelSync=await syncDueAccommodationChannels(room.id);
+    if(channelSync.failures){
+      return {...room,free:false,quote:null};
+    }
     const [free,quote]=await Promise.all([
       isAccommodationAvailable(room.id,start,end,undefined,requestedUnits),
       quoteAccommodation(room.id,start,end,null,requestedUnits)
