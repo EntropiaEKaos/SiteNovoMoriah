@@ -81,7 +81,7 @@ export default async function Page(){
           <span className={"adminChip "+(groq?"ok":"bad")}>{groq?"API Groq configurada":"GROQ_API_KEY ausente"}</span>
         </div>
 
-        <form action={saveChatSettings} className="adminFormGrid">
+        <form action={saveChatSettings} className="adminFormGrid" data-feedback-success="Configurações do assistente salvas.">
           <label className="span2" style={{display:"flex",gridTemplateColumns:"auto 1fr",alignItems:"center"}}>
             <span><input type="checkbox" name="chatEnabled" defaultChecked={cfg?.chatEnabled!==false}/> Atendimento ativo</span>
           </label>
@@ -124,7 +124,7 @@ export default async function Page(){
         <span className={"adminChip "+(firebase?"ok":"warn")}>{firebase?"Configurado":"Pendente"}</span>
       </div>
 
-      <form action={saveFirebaseSettings} className="adminFormGrid cols3" style={{marginTop:20}}>
+      <form action={saveFirebaseSettings} className="adminFormGrid cols3" style={{marginTop:20}} data-feedback-success="Configurações do Firebase salvas.">
         <label>API key<input name="firebaseApiKey" defaultValue={cfg?.firebaseApiKey||""}/></label>
         <label>Auth domain<input name="firebaseAuthDomain" defaultValue={cfg?.firebaseAuthDomain||""}/></label>
         <label>Project ID<input name="firebaseProjectId" defaultValue={cfg?.firebaseProjectId||""}/></label>
