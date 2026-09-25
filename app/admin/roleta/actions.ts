@@ -28,7 +28,8 @@ function color(formData:FormData,name:string,fallback:string){
 function dateTime(formData:FormData,name:string){
   const value=text(formData,name,40);
   if(!value)return null;
-  const date=new Date(value);
+  const normalized=/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(value)?value+":00-03:00":value;
+  const date=new Date(normalized);
   if(Number.isNaN(date.getTime()))throw new Error("Data inválida.");
   return date;
 }
@@ -67,11 +68,21 @@ export async function saveRouletteSettings(formData:FormData){
     googleReviewLabel:text(formData,"googleReviewLabel",100)||"Avaliar a Moriah no Google",
     termsText:text(formData,"termsText",1600)||"Ao participar, você autoriza o uso do nome e telefone apenas para administrar esta promoção e validar a entrega do prêmio.",
     activeFrom,
-    activeUntil
+    activeUntil,
+    themeMode:["AUTO_EVENT","CUSTOM"].includes(text(formData,"themeMode",30))?text(formData,"themeMode",30):"AUTO_EVENT",
+    themePreset:text(formData,"themePreset",40)||"CELEBRATION",
+    themePrimaryColor:color(formData,"themePrimaryColor","#0B607A"),
+    themeSecondaryColor:color(formData,"themeSecondaryColor","#073B4C"),
+    themeAccentColor:color(formData,"themeAccentColor","#FFC845"),
+    themeSurfaceColor:color(formData,"themeSurfaceColor","#FFFFFF"),
+    themeTextColor:color(formData,"themeTextColor","#16333D"),
+    themeBackgroundImageUrl:text(formData,"themeBackgroundImageUrl",1000)||null,
+    animationStyle:["CONFETTI","SPARKLES","BUBBLES","SNOW","NONE"].includes(text(formData,"animationStyle",30))?text(formData,"animationStyle",30):"CONFETTI",
+    showEventBanner:formData.get("showEventBanner")==="on"
   };
 
   await prisma.rouletteSettings.upsert({where:{id:"main"},create:{id:"main",...data},update:data});
-  await audit(session.userId,"ROULETTE_SETTINGS_UPDATED","main",{campaignKey,active:data.active});
+  await audit(session.userId,"ROULETTE_SETTINGS_UPDATED","main",{campaignKey,active:data.active,themeMode:data.themeMode,themePreset:data.themePreset});
   revalidatePath("/admin/roleta");
   revalidatePath("/et/roleta");
 }

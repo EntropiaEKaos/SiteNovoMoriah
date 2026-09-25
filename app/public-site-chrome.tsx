@@ -46,6 +46,8 @@ export default function PublicSiteChrome({
         <Link href="/#hospedagem">Hospedagem</Link>
         <Link href="/#estrutura">Estrutura</Link>
         {navPages.map(page=><Link href={"/"+page.slug} key={page.slug}>{page.navLabel||page.title}</Link>)}
+        <Link href="/eventos">Eventos</Link>
+        <Link href="/eventos">Eventos</Link>
         <Link href="/restaurante">Moriah Food</Link>
         <Link href="/blog">Journal</Link>
         <Link href="/#contato">Contato</Link>
