@@ -52,6 +52,7 @@ const sections=[
       ["Tarifas","/admin/tarifas",WalletCards],
       ["Preço dinâmico","/admin/preco-dinamico",Gauge],
       ["Promoções","/admin/promocoes",Megaphone],
+      ["Financeiro / Relatórios","/admin/relatorios",BarChart3],
       ["Roleta da sorte","/admin/roleta",Gift]
     ]
   },
@@ -88,7 +89,8 @@ const sections=[
     items:[
       ["Integrações","/admin/integracoes",Plug],
       ["Configurações","/admin/configuracoes",Settings],
-      ["Notificações","/admin/notificacoes",Bell]
+      ["Notificações","/admin/notificacoes",Bell],
+      ["Saúde do sistema","/admin/sistema/saude",Gauge]
     ]
   }
 ] as const;
