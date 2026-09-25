@@ -7127,3 +7127,12 @@ body:has(.externalCalendarWidget) .whatsappFloat{display:none!important}
 @media(max-width:1100px){.inventoryMetrics,.cmvMetrics{grid-template-columns:repeat(3,1fr)}.ingredientGrid{grid-template-columns:1fr 1fr}.inventoryMetrics article:nth-child(3),.cmvMetrics article:nth-child(3){border-right:0}.cmvLosses{grid-template-columns:1fr}}
 @media(max-width:760px){.adminTopbarTools{margin-left:auto}.adminTopbarMeta{display:none}.adminBellPanel{right:-70px}.inventoryPage,.cmvPage{padding:34px 5vw 70px}.inventoryHero,.cmvHero,.inventorySectionHead,.cmvSectionHead{align-items:flex-start;flex-direction:column}.inventoryHero h1,.cmvHero h1{letter-spacing:-3px}.inventoryMetrics,.cmvMetrics{grid-template-columns:1fr 1fr}.inventoryComposer,.cmvSplit{grid-template-columns:1fr}.ingredientGrid{grid-template-columns:1fr}.inventoryCritical{grid-template-columns:1fr}.cmvLosses>div:last-child{grid-template-columns:1fr}}
 @media(max-width:480px){.inventoryMetrics,.cmvMetrics{grid-template-columns:1fr}.inventoryFormGrid,.ingredientControls form,.cmvComposition{grid-template-columns:1fr}.inventoryFormGrid .wide,.ingredientControls button{grid-column:auto}.adminBellPanel{right:-105px}}
+
+
+/* Chat actions + lodging receipt */
+.chatActionGrid{display:grid;gap:7px;margin-top:9px}
+.chatActionGrid .chatBookingCta{display:flex;justify-content:space-between;align-items:center}
+.receiptActions{display:flex;justify-content:flex-end;margin-top:24px}
+.receiptPrintButton{border:0;background:#111;color:#fff;padding:12px 16px;font-weight:900;cursor:pointer;box-shadow:4px 4px 0 var(--y)}
+.receiptPrintButton:hover{background:var(--y);color:#111}
+@media print{.receiptActions{display:none!important}}
