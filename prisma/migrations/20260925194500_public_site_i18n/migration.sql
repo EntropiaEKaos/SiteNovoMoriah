@@ -1,0 +1,13 @@
+ALTER TABLE "SiteSettings" ADD COLUMN "translations" JSONB;
+ALTER TABLE "SitePage" ADD COLUMN "translations" JSONB;
+ALTER TABLE "SiteSection" ADD COLUMN "translations" JSONB;
+ALTER TABLE "Accommodation" ADD COLUMN "translations" JSONB;
+ALTER TABLE "Promotion" ADD COLUMN "translations" JSONB;
+ALTER TABLE "BlogPost" ADD COLUMN "translations" JSONB;
+ALTER TABLE "RestaurantCategory" ADD COLUMN "translations" JSONB;
+ALTER TABLE "RestaurantProduct" ADD COLUMN "translations" JSONB;
+ALTER TABLE "MoriahEvent" ADD COLUMN "translations" JSONB;
+ALTER TABLE "RestaurantSettings" ADD COLUMN "translations" JSONB;
+ALTER TABLE "RestaurantModifierGroup" ADD COLUMN "translations" JSONB;
+ALTER TABLE "RestaurantModifierOption" ADD COLUMN "translations" JSONB;
+ALTER TABLE "IntegrationSettings" ADD COLUMN "translations" JSONB;

@@ -14,13 +14,14 @@ const GROQ_MODEL_REPLACEMENTS:Record<string,string>={
   "groq/compound-mini":"openai/gpt-oss-20b"
 };
 const buckets=new Map<string,{count:number;resetAt:number}>();
+let publicContextCache:{value:string;expiresAt:number}|null=null;
 
 function normalizeGroqModel(value:string|null|undefined){
   const model=String(value||"").trim();
   return GROQ_MODEL_REPLACEMENTS[model]||model||DEFAULT_GROQ_MODEL;
 }
 
-const SYSTEM=`Você é o assistente virtual da Pousada Moriah, em Praia Grande, SP. Responda em português do Brasil, acolhedor, objetivo e curto. Use SOMENTE o CONTEXTO MORIAH fornecido pelo sistema para afirmar preços, acomodações, capacidades, endereço, promoções, serviços, cardápio, pedidos ou valores financeiros. Nunca invente disponibilidade, saldo ou status de pedido. Nunca confirme uma reserva no chat. Se faltar informação, diga que a equipe precisa confirmar. Nunca peça cartão, senha, documento ou outro dado sensível. Contexto financeiro privado só aparece quando o sistema validou um token ativo da própria hospedagem.`;
+const SYSTEM=`Você é o assistente virtual da Pousada Moriah, em Praia Grande, SP. Responda em português do Brasil, acolhedor, objetivo e curto. Quando houver uma ação útil (reservar, ver hospedagens, abrir cardápio, eventos ou falar com a equipe), cite o nome da ação no texto; a interface fornecerá botões clicáveis seguros. Use SOMENTE o CONTEXTO MORIAH fornecido pelo sistema para afirmar preços, acomodações, capacidades, endereço, promoções, serviços, cardápio, pedidos ou valores financeiros. Nunca invente disponibilidade, saldo ou status de pedido. Nunca confirme uma reserva no chat. Se faltar informação, diga que a equipe precisa confirmar. Nunca peça cartão, senha, documento ou outro dado sensível. Contexto financeiro privado só aparece quando o sistema validou um token ativo da própria hospedagem.`;
 
 type ChatMessage={role:"user"|"assistant";content:string};
 
@@ -135,6 +136,7 @@ async function liveAvailability(text:string){
 }
 
 async function cmsContext(){
+  if(publicContextCache&&publicContextCache.expiresAt>Date.now())return publicContextCache.value;
   const [settings,rooms,promo,restaurant,menu,pages]=await Promise.all([
     loadPublicSiteSettings(),
     prisma.accommodation.findMany({
@@ -161,7 +163,7 @@ async function cmsContext(){
     })
   ]);
 
-  return [
+  const value=[
     "CONTEXTO MORIAH (dados atuais do sistema):",
     `Nome: ${settings?.siteName||"Pousada Moriah"}`,
     settings?.tagline?`Descrição: ${settings.tagline}`:"",
@@ -185,6 +187,31 @@ async function cmsContext(){
     "O PMS Moriah suporta check-in financeiro com adicionais, pagamento parcial ou externo, saldo, recibo de check-in, Moriah Food, KDS e recibos de restaurante.",
     "Para solicitar reserva: /reservar. Para cardápio: /restaurante."
   ].filter(Boolean).join("\n");
+  publicContextCache={value,expiresAt:Date.now()+45_000};
+  return value;
+}
+
+type ChatAction={href:string;label:string;external?:boolean};
+
+function contextualActions(text:string,booking:{href:string;label:string}|null,whatsapp:string|null){
+  const actions:ChatAction[]=[];
+  const push=(action:ChatAction)=>{
+    if(!actions.some(item=>item.href===action.href)&&actions.length<4)actions.push(action);
+  };
+
+  if(booking)push({href:booking.href,label:booking.label});
+  if(/hosped|quarto|acomoda|diária|diaria|cama/i.test(text))push({href:"/hospedagens",label:"Ver hospedagens"});
+  if(/reserv|disponib|data|diária|diaria/i.test(text))push({href:"/reservar",label:"Consultar e solicitar reserva"});
+  if(/food|restaurante|cardápio|cardapio|lanche|marmita|pedido/i.test(text))push({href:"/restaurante",label:"Abrir Moriah Food"});
+  if(/evento|roleta|promoç|promoc/i.test(text))push({href:"/eventos",label:"Ver eventos e promoções"});
+  if(whatsapp&&/(atendente|humano|equipe|whats|whatsapp|falar|fechar|ajuda)/i.test(text)){
+    push({
+      href:"https://wa.me/"+whatsapp+"?text="+encodeURIComponent("Olá! Vim pelo assistente virtual da Pousada Moriah e gostaria de continuar meu atendimento."),
+      label:"Continuar no WhatsApp",
+      external:true
+    });
+  }
+  return actions;
 }
 
 function privateIntent(text:string){
@@ -272,12 +299,13 @@ export async function POST(req:NextRequest){
 
   const record=body&&typeof body==="object"?body as Record<string,unknown>:{};
   const raw=Array.isArray(record.messages)?record.messages:[];
+  const chatLocale=record.locale==="en"?"en":record.locale==="es"?"es":"pt";
   const bookingToken=typeof record.bookingToken==="string"
     ?record.bookingToken.trim().slice(0,200)
     :"";
 
   const messages:ChatMessage[]=raw
-    .slice(-10)
+    .slice(-8)
     .filter((item):item is {role:"user"|"assistant";content:string}=>{
       if(!item||typeof item!=="object")return false;
       const entry=item as Record<string,unknown>;
@@ -310,8 +338,15 @@ export async function POST(req:NextRequest){
       ?`\n\nINSTRUÇÕES COMERCIAIS DO ADMIN (não podem contrariar as regras de segurança acima):\n${settings.chatInstructions}`
       :"";
 
+    const languageDirective=chatLocale==="en"
+      ?"\n\nIDIOMA DA RESPOSTA: responda em inglês natural e claro."
+      :chatLocale==="es"
+        ?"\n\nIDIOMA DA RESPOSTA: responda em espanhol natural e claro."
+        :"\n\nIDIOMA DA RESPOSTA: responda em português do Brasil.";
+
     const systemContext=[
       SYSTEM,
+      languageDirective,
       custom,
       "\n\n"+context,
       availability.context?"\n\n"+availability.context:"",
@@ -335,7 +370,7 @@ export async function POST(req:NextRequest){
         body:JSON.stringify({
           model,
           temperature:settings?.groqTemperature??0.2,
-          max_completion_tokens:500,
+          max_completion_tokens:420,
           messages:[
             {role:"system",content:systemContext},
             ...messages
@@ -377,11 +412,13 @@ export async function POST(req:NextRequest){
           label:"Continuar no WhatsApp"
         }
       :null;
+    const actions=contextualActions(lastUser,availability.booking,whatsapp||null);
 
     return NextResponse.json({
       reply:reply||"Não consegui responder agora. Tente novamente em instantes.",
       booking:availability.booking,
       handoff,
+      actions,
       privateContext:Boolean(privateContext)
     });
   }catch(error){

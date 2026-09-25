@@ -2,17 +2,23 @@ import Link from "next/link";
 import type {CSSProperties} from "react";
 import {ArrowRight,MapPin,MessageCircle} from "lucide-react";
 import type {PublicSiteSettings} from "../lib/public-site-settings";
+import type {SiteLocale} from "../lib/site-i18n";
+import {uiText} from "../lib/site-i18n";
+import LanguageSwitcher from "./language-switcher";
 
 export default function PublicSiteChrome({
   settings,
   navPages,
-  children
+  children,
+  locale
 }:{
   settings:PublicSiteSettings|null;
   navPages:Array<{slug:string;title:string;navLabel:string|null}>;
   children:React.ReactNode;
+  locale:SiteLocale;
 }){
   const name=settings?.siteName||"Pousada Moriah";
+  const t=uiText[locale];
   const wa=settings?.whatsapp?.replace(/\D/g,"");
   const whatsappHref=wa
     ?"https://wa.me/"+wa+"?text="+encodeURIComponent("Olá! Vim pelo site da Pousada Moriah e gostaria de informações sobre hospedagem.")
@@ -30,7 +36,7 @@ export default function PublicSiteChrome({
   return <main className="siteV4" style={style}>
     <div className="siteTopBarV6">
       <span><MapPin size={13}/>{settings?.address||"Praia Grande — SP"}</span>
-      <span>Reserva direta • atendimento da própria pousada</span>
+      <span>{t.direct}</span>
       {whatsappHref&&<a href={whatsappHref} target="_blank" rel="noreferrer"><MessageCircle size={13}/> WhatsApp</a>}
     </div>
 
@@ -43,19 +49,16 @@ export default function PublicSiteChrome({
       </Link>
 
       <nav className="siteNavLinksV4" aria-label="Navegação principal">
-        <Link href="/#hospedagem">Hospedagem</Link>
-        <Link href="/#estrutura">Estrutura</Link>
+        <Link href="/#hospedagem">{t.stay}</Link>
+        <Link href="/#estrutura">{t.structure}</Link>
         {navPages.map(page=><Link href={"/"+page.slug} key={page.slug}>{page.navLabel||page.title}</Link>)}
-        <Link href="/eventos">Eventos</Link>
-        <Link href="/eventos">Eventos</Link>
+        <Link href="/eventos">{t.events}</Link>
         <Link href="/restaurante">Moriah Food</Link>
         <Link href="/blog">Journal</Link>
-        <Link href="/#contato">Contato</Link>
+        <Link href="/#contato">{t.contact}</Link>
       </nav>
 
-      <Link className="siteBookV4" href="/reservar">
-        Ver disponibilidade <ArrowRight size={16}/>
-      </Link>
+      <div className="siteNavActionsV7"><LanguageSwitcher locale={locale}/><Link className="siteBookV4" href="/reservar">{t.book} <ArrowRight size={16}/></Link></div>
     </header>
 
     {children}
@@ -72,16 +75,16 @@ export default function PublicSiteChrome({
       </div>
 
       <div className="siteFooterColumn">
-        <small>EXPLORE</small>
-        <Link href="/#hospedagem">Hospedagem</Link>
-        <Link href="/reservar">Reservar</Link>
+        <small>{t.explore}</small>
+        <Link href="/#hospedagem">{t.stay}</Link>
+        <Link href="/reservar">{t.reserve}</Link>
         {navPages.slice(0,5).map(page=><Link href={"/"+page.slug} key={page.slug}>{page.navLabel||page.title}</Link>)}
         <Link href="/restaurante">Moriah Food</Link>
         <Link href="/blog">Journal</Link>
       </div>
 
       <div className="siteFooterColumn">
-        <small>CONTATO</small>
+        <small>{t.contactTitle}</small>
         <p>{settings?.address||"Praia Grande — SP"}</p>
         {settings?.instagram&&<a
           href={settings.instagram.startsWith("http")?settings.instagram:"https://instagram.com/"+settings.instagram.replace("@","")}
@@ -93,7 +96,7 @@ export default function PublicSiteChrome({
 
       <div className="siteFooterBottom">
         <small>© 2026 {name}</small>
-        <small>RESERVA DIRETA • PRAIA GRANDE</small>
+        <small>{t.directFooter}</small>
       </div>
     </footer>
   </main>;

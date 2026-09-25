@@ -28,14 +28,23 @@ export default function BookingCalendar({
   selected,
   initialCheckIn="",
   initialCheckOut="",
-  initialGuests="1"
+  initialGuests="1",
+  locale
 }:{
   rooms:Room[];
   selected:string;
   initialCheckIn?:string;
   initialCheckOut?:string;
   initialGuests?:string;
+  locale:"pt"|"en"|"es";
 }){
+  const localeTag=locale==="en"?"en-US":locale==="es"?"es-ES":"pt-BR";
+  const t=locale==="en"?{
+    step:"BUILD YOUR STAY",title:"Choose your stay and dates",loading:"Checking availability…",shared:"Shared room.",bedsTotal:"bed(s) total; availability below considers",beds:"bed(s).",loaded:"Availability loaded.",occupied:"occupied period(s) in the coming months.",chooseStay:"Choose a stay to check availability.",choose:"Choose a stay",sharedOpt:"shared",entry:"Check-in",exit:"Check-out",name:"Your name",bedsGuests:"Beds / guests",guests:"Guests",notes:"Notes",requestBeds:"Request bed(s)",request:"Request booking",tooManyBeds:"This dorm has",reduce:"bed(s). Reduce the requested quantity.",tooManyGuests:"The number of guests exceeds this stay capacity.",quote:"Calculating the best rate for your dates…",best:"BEST RATE",nights:"night(s)",avg:"average",perNight:"/ night",noBeds:"There are not enough beds for the whole selected period. Choose other dates or reduce the quantity.",blocked:"The selected period overlaps occupied dates. Choose another interval.",viewNoBeds:"See periods without enough beds",viewOccupied:"See occupied periods",validated:"Availability is validated again on the server before registering the request."}
+  :locale==="es"?{
+    step:"ARMA TU ESTANCIA",title:"Elige tu hospedaje y período",loading:"Consultando disponibilidad…",shared:"Habitación compartida.",bedsTotal:"cama(s) en total; la disponibilidad considera",beds:"cama(s).",loaded:"Disponibilidad cargada.",occupied:"período(s) ocupado(s) en los próximos meses.",chooseStay:"Elige un hospedaje para consultar disponibilidad.",choose:"Elige el hospedaje",sharedOpt:"compartido",entry:"Entrada",exit:"Salida",name:"Tu nombre",bedsGuests:"Camas / huéspedes",guests:"Huéspedes",notes:"Observaciones",requestBeds:"Solicitar cama(s)",request:"Solicitar reserva",tooManyBeds:"Este dormitorio tiene",reduce:"cama(s). Reduce la cantidad solicitada.",tooManyGuests:"La cantidad de huéspedes supera la capacidad de este hospedaje.",quote:"Calculando la mejor tarifa para el período…",best:"MEJOR TARIFA",nights:"noche(s)",avg:"promedio",perNight:"/ noche",noBeds:"No hay camas suficientes durante todo el período seleccionado. Elige otras fechas o reduce la cantidad.",blocked:"El período seleccionado cruza fechas ocupadas. Elige otro intervalo.",viewNoBeds:"Ver períodos sin camas suficientes",viewOccupied:"Ver períodos ocupados",validated:"La disponibilidad se valida nuevamente en el servidor antes de registrar la solicitud."}
+  :{
+    step:"MONTE SUA ESTADIA",title:"Escolha sua hospedagem e período",loading:"Consultando disponibilidade…",shared:"Quarto compartilhado.",bedsTotal:"cama(s) no total; a disponibilidade abaixo considera",beds:"cama(s).",loaded:"Disponibilidade carregada.",occupied:"período(s) ocupado(s) nos próximos meses.",chooseStay:"Escolha uma hospedagem para consultar a disponibilidade.",choose:"Escolha a hospedagem",sharedOpt:"compartilhado",entry:"Entrada",exit:"Saída",name:"Seu nome",bedsGuests:"Camas / hóspedes",guests:"Hóspedes",notes:"Observações",requestBeds:"Solicitar cama(s)",request:"Solicitar reserva",tooManyBeds:"Este dormitório possui",reduce:"cama(s). Reduza a quantidade solicitada.",tooManyGuests:"A quantidade de hóspedes excede a capacidade desta hospedagem.",quote:"Calculando melhor tarifa para o período…",best:"MELHOR TARIFA",nights:"noite(s)",avg:"média de",perNight:"/ noite",noBeds:"Não há camas suficientes em todo o período selecionado. Escolha outras datas ou reduza a quantidade.",blocked:"O período selecionado cruza datas ocupadas. Escolha outro intervalo.",viewNoBeds:"Ver períodos sem camas suficientes",viewOccupied:"Ver períodos já ocupados",validated:"A disponibilidade é validada novamente no servidor antes de registrar a solicitação."};
   const [room,setRoom]=useState(selected);
   const [requestToken]=useState(()=>crypto.randomUUID());
   const [start,setStart]=useState(initialCheckIn);
@@ -119,19 +128,19 @@ export default function BookingCalendar({
     <div className="bookingPanelHead">
       <span>01</span>
       <div>
-        <small>MONTE SUA ESTADIA</small>
-        <h2>Escolha sua hospedagem e período</h2>
+        <small>{t.step}</small>
+        <h2>{t.title}</h2>
       </div>
     </div>
 
     <div className="availabilityStatus" aria-live="polite">
       {loading
-        ?"Consultando disponibilidade…"
+        ?t.loading
         :selectedRoom
           ?selectedRoom.sharedRoom
-            ?<><b>Quarto compartilhado.</b> {selectedRoom.bedCount} cama(s) no total; a disponibilidade abaixo considera {guestCount} cama(s).</>
-            :<><b>Disponibilidade carregada.</b> {blocks.length} período(s) ocupado(s) nos próximos meses.</>
-          :"Escolha uma hospedagem para consultar a disponibilidade."
+            ?<><b>{t.shared}</b> {selectedRoom.bedCount} {t.bedsTotal} {guestCount} {t.beds}</>
+            :<><b>{t.loaded}</b> {blocks.length} {t.occupied}</>
+          :t.chooseStay
       }
     </div>
 
@@ -145,13 +154,13 @@ export default function BookingCalendar({
         onChange={event=>setRoom(event.target.value)}
         style={{padding:15}}
       >
-        <option value="">Escolha a hospedagem</option>
+        <option value="">{t.choose}</option>
         {rooms.map(item=><option key={item.id} value={item.id}>
-          {item.name}{item.sharedRoom?" • compartilhado • "+item.bedCount+" camas":""}
+          {item.name}{item.sharedRoom?" • "+t.sharedOpt+" • "+item.bedCount+" "+t.beds:""}
         </option>)}
       </select>
 
-      <label>Entrada
+      <label>{t.entry}
         <input
           name="checkIn"
           type="date"
@@ -166,7 +175,7 @@ export default function BookingCalendar({
         />
       </label>
 
-      <label>Saída
+      <label>{t.exit}
         <input
           name="checkOut"
           type="date"
@@ -178,12 +187,12 @@ export default function BookingCalendar({
         />
       </label>
 
-      <input name="name" required placeholder="Seu nome" style={{padding:15}}/>
+      <input name="name" required placeholder={t.name} style={{padding:15}}/>
       <input name="phone" required placeholder="WhatsApp" style={{padding:15}}/>
       <input name="email" type="email" placeholder="E-mail" style={{padding:15}}/>
 
       <label>
-        {selectedRoom?.sharedRoom?"Camas / hóspedes":"Hóspedes"}
+        {selectedRoom?.sharedRoom?t.bedsGuests:t.guests}
         <input
           name="guests"
           type="number"
@@ -197,7 +206,7 @@ export default function BookingCalendar({
 
       <textarea
         name="message"
-        placeholder="Observações"
+        placeholder={t.notes}
         style={{padding:15,gridColumn:"1/-1"}}
       />
 
@@ -205,69 +214,69 @@ export default function BookingCalendar({
         className="bookingSubmit"
         disabled={!room||!start||!end||rangeBlocked||blocked(start)||invalidGuestCount}
       >
-        {selectedRoom?.sharedRoom?"Solicitar cama(s)":"Solicitar reserva"}
+        {selectedRoom?.sharedRoom?t.requestBeds:t.request}
       </button>
     </form>
 
     {invalidGuestCount&&<p style={{padding:12,background:"#fff3cd",border:"1px solid #e8b600"}}>
       {selectedRoom?.sharedRoom
-        ?"Este dormitório possui "+sellableUnits+" cama(s). Reduza a quantidade solicitada."
-        :"A quantidade de hóspedes excede a capacidade desta hospedagem."
+        ?t.tooManyBeds+" "+sellableUnits+" "+t.reduce
+         :t.tooManyGuests
       }
     </p>}
 
-    {quoteLoading&&<p className="quoteLoading">Calculando melhor tarifa para o período…</p>}
+    {quoteLoading&&<p className="quoteLoading">{t.quote}</p>}
 
     {quote&&<div className="quoteCard">
       <div>
         <small>
-          MELHOR TARIFA • {quote.ratePlan}
+          {t.best} • {quote.ratePlan}
           {selectedRoom?.sharedRoom&&quote.unitCount
             ?" • "+quote.unitCount+" cama(s)"
             :""
           }
         </small>
-        <h3>{(quote.totalCents/100).toLocaleString("pt-BR",{
+        <h3>{(quote.totalCents/100).toLocaleString(localeTag,{
           style:"currency",
           currency:quote.currency
         })}</h3>
       </div>
       <p>
-        {quote.nights} noite(s)<br/>
+        {quote.nights} {t.nights}<br/>
         <span>
-          média de {(quote.averageNightCents/100).toLocaleString("pt-BR",{
+          {t.avg} {(quote.averageNightCents/100).toLocaleString(localeTag,{
             style:"currency",
             currency:quote.currency
-          })} / noite
+          })} {t.perNight}
         </span>
       </p>
     </div>}
 
     {rangeBlocked&&<p style={{padding:12,background:"#fff3cd",border:"1px solid #e8b600"}}>
       {selectedRoom?.sharedRoom
-        ?"Não há camas suficientes em todo o período selecionado. Escolha outras datas ou reduza a quantidade."
-        :"O período selecionado cruza datas ocupadas. Escolha outro intervalo."
+        ?t.noBeds
+         :t.blocked
       }
     </p>}
 
     <details style={{marginTop:14}}>
       <summary>
         {selectedRoom?.sharedRoom
-          ?"Ver períodos sem camas suficientes"
-          :"Ver períodos já ocupados"
+          ?t.viewNoBeds
+           :t.viewOccupied
         }
       </summary>
       <ul>
         {blocks.map((block,index)=><li key={index}>
-          {new Date(block.start+"T12:00:00").toLocaleDateString("pt-BR")}
+          {new Date(block.start+"T12:00:00").toLocaleDateString(localeTag)}
           {" → "}
-          {new Date(block.end+"T12:00:00").toLocaleDateString("pt-BR")}
+          {new Date(block.end+"T12:00:00").toLocaleDateString(localeTag)}
         </li>)}
       </ul>
     </details>
 
     <p style={{marginTop:14,fontSize:14}}>
-      A disponibilidade é validada novamente no servidor antes de registrar a solicitação.
+      {t.validated}
     </p>
   </section>;
 }

@@ -17,6 +17,7 @@ type Msg={
   content:string;
   booking?:Action|null;
   handoff?:Action|null;
+  actions?:Array<Action&{external?:boolean}>|null;
 };
 
 const fallback={
@@ -25,13 +26,14 @@ const fallback={
   welcome:"Olá! Sou o assistente virtual da Moriah. Como posso ajudar com sua hospedagem?"
 };
 
-const starterPrompts=[
-  "Quais hospedagens vocês têm?",
-  "Quero consultar disponibilidade",
-  "Quero conhecer o Moriah Food"
-];
-
-export default function SupportChat(){
+export default function SupportChat({locale}:{locale:"pt"|"en"|"es"}){
+  const copy=locale==="en"?{
+    online:"ONLINE",service:"Support",privateTitle:"Stay linked",privateBody:"This device can check balance and orders for the active stay.",you:"You",suggestions:["What stays do you offer?","I want to check availability","I want to see Moriah Food"],typing:"Assistant is typing",placeholderPrivate:"Ask about balance, order or stay…",placeholder:"Write your message…",disclaimer:"Moriah AI • private data only appears with a linked stay.",connectError:"I couldn’t connect right now. Please try again shortly."
+  }:locale==="es"?{
+    online:"EN LÍNEA",service:"Atención",privateTitle:"Hospedaje vinculado",privateBody:"Este dispositivo puede consultar saldo y pedidos de la estancia activa.",you:"Tú",suggestions:["¿Qué hospedajes tienen?","Quiero consultar disponibilidad","Quiero conocer Moriah Food"],typing:"El asistente está escribiendo",placeholderPrivate:"Pregunta por saldo, pedido o estancia…",placeholder:"Escribe tu mensaje…",disclaimer:"IA de Moriah • los datos privados solo aparecen con hospedaje vinculado.",connectError:"No pude conectar ahora. Inténtalo nuevamente en unos instantes."
+  }:{
+    online:"ONLINE",service:"Atendimento",privateTitle:"Hospedagem vinculada",privateBody:"Este dispositivo pode consultar saldo e pedidos da estadia ativa.",you:"Você",suggestions:["Quais hospedagens vocês têm?","Quero consultar disponibilidade","Quero conhecer o Moriah Food"],typing:"Assistente digitando",placeholderPrivate:"Pergunte sobre saldo, pedido ou estadia…",placeholder:"Escreva sua mensagem…",disclaimer:"{copy.disclaimer}",connectError:"Não consegui conectar agora. Tente novamente em instantes."
+  };
   const initial:Msg[]=[{role:"assistant",content:fallback.welcome}];
 
   const [config,setConfig]=useState(fallback);
@@ -160,7 +162,7 @@ export default function SupportChat(){
       const response=await fetch("/api/chat",{
         method:"POST",
         headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({messages:next,bookingToken})
+        body:JSON.stringify({messages:next,bookingToken,locale})
       });
       const data=await response.json();
 
@@ -171,7 +173,8 @@ export default function SupportChat(){
             role:"assistant" as const,
             content:data.reply||data.error||"Atendimento indisponível no momento.",
             booking:data.booking||null,
-            handoff:data.handoff||null
+            handoff:data.handoff||null,
+            actions:Array.isArray(data.actions)?data.actions.slice(0,4):null
           }
         ].slice(-20);
         try{
@@ -183,7 +186,7 @@ export default function SupportChat(){
       setMessages(current=>{
         const updated=[
           ...current,
-          {role:"assistant" as const,content:"Não consegui conectar agora. Tente novamente em instantes."}
+          {role:"assistant" as const,content:copy.connectError}
         ].slice(-20);
         try{
           sessionStorage.setItem("moriah-chat",JSON.stringify(updated));
@@ -210,8 +213,8 @@ export default function SupportChat(){
     >
       <span className="chatLauncherIcon">{open?<X size={19}/>:<Bot size={19}/>}</span>
       <span className="chatLauncherCopy">
-        <small>ONLINE</small>
-        <b>Atendimento</b>
+        <small>{copy.online}</small>
+        <b>{copy.service}</b>
       </span>
     </button>
 
@@ -244,8 +247,8 @@ export default function SupportChat(){
       {stayLinked&&<div className="chatPrivateBadge">
         <ShieldCheck size={15}/>
         <span>
-          <b>Hospedagem vinculada</b>
-          Este dispositivo pode consultar saldo e pedidos da estadia ativa.
+          <b>{copy.privateTitle}</b>
+          {copy.privateBody}
         </span>
       </div>}
 
@@ -257,16 +260,27 @@ export default function SupportChat(){
           {message.role==="assistant"&&<span className="chatMessageAvatar"><Bot size={14}/></span>}
 
           <div className={"chatBubble "+message.role}>
-            <small className="chatBubbleMeta">{message.role==="assistant"?"Moriah":"Você"}</small>
+            <small className="chatBubbleMeta">{message.role==="assistant"?"Moriah":copy.you}</small>
             <p>{message.content}</p>
 
-            {message.booking&&<a
+            {message.booking&&!message.actions?.some(action=>action.href===message.booking?.href)&&<a
               className="chatBookingCta"
               href={message.booking.href}
               onClick={()=>metric("BOOKING_CTA")}
             >{message.booking.label} →</a>}
 
-            {message.handoff&&<a
+            {message.actions&&message.actions.length>0&&<div className="chatActionGrid">
+              {message.actions.map(action=><a
+                key={action.href}
+                className="chatBookingCta"
+                href={action.href}
+                target={action.external?"_blank":undefined}
+                rel={action.external?"noreferrer":undefined}
+                onClick={()=>metric(action.external?"WHATSAPP":"ACTION_CTA")}
+              >{action.label} →</a>)}
+            </div>}
+
+            {!message.actions?.some(action=>action.href===message.handoff?.href)&&message.handoff&&<a
               className="chatHumanCta"
               href={message.handoff.href}
               onClick={()=>metric("WHATSAPP")}
@@ -277,14 +291,14 @@ export default function SupportChat(){
         </div>)}
 
         {messages.length<=1&&!busy&&<div className="chatQuickPrompts" aria-label="Sugestões">
-          {starterPrompts.map(prompt=><button
+          {copy.suggestions.map(prompt=><button
             type="button"
             key={prompt}
             onClick={()=>choosePrompt(prompt)}
           >{prompt}</button>)}
         </div>}
 
-        {busy&&<div className="chatTyping" aria-label="Assistente digitando">
+        {busy&&<div className="chatTyping" aria-label={copy.typing}>
           <span className="chatMessageAvatar"><Bot size={14}/></span>
           <div><i/><i/><i/></div>
         </div>}
@@ -308,7 +322,7 @@ export default function SupportChat(){
           }}
           rows={1}
           maxLength={1500}
-          placeholder={stayLinked?"Pergunte sobre saldo, pedido ou estadia…":"Escreva sua mensagem…"}
+          placeholder={stayLinked?copy.placeholderPrivate:copy.placeholder}
           aria-label="Mensagem"
         />
         <button disabled={busy||!text.trim()} aria-label="Enviar">

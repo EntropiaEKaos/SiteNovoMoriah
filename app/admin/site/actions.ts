@@ -5,6 +5,7 @@ import {redirect} from "next/navigation";
 import {requireAdmin} from "../../../lib/admin-auth";
 import {prisma} from "../../../lib/prisma";
 import {normalizeMediaUrl,normalizeMediaUrls} from "../../../lib/media-url";
+import {Prisma} from "@prisma/client";
 
 const SECTION_TYPES=[
   "HERO",
@@ -331,10 +332,11 @@ export async function duplicateSiteSection(formData:FormData){
   const section=await prisma.siteSection.findUnique({where:{id},include:{page:{select:{slug:true}}}});
   if(!section)throw new Error("Seção não encontrada.");
 
-  const {id:_id,createdAt:_createdAt,updatedAt:_updatedAt,page:_page,...data}=section;
+  const {id:_id,createdAt:_createdAt,updatedAt:_updatedAt,page:_page,translations:_translations,...data}=section;
   const created=await prisma.siteSection.create({
     data:{
       ...data,
+      ...(section.translations!==null?{translations:section.translations as Prisma.InputJsonValue}:{}),
       title:section.title?section.title+" — cópia":section.title,
       sortOrder:section.sortOrder+1,
       active:false

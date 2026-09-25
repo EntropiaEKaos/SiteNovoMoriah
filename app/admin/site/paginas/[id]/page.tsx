@@ -65,7 +65,7 @@ export default async function EditSitePage({params}:{params:Promise<{id:string}>
     <section className="adminTwoCol" style={{marginBottom:20}}>
       <article className="adminSectionCard">
         <h2>Página, SEO & navegação</h2>
-        <form action={saveSitePageMeta} className="adminFormGrid">
+        <form action={saveSitePageMeta} className="adminFormGrid" data-feedback-success="Página salva com sucesso.">
           <input type="hidden" name="id" value={page.id}/>
           <label className="span2">Título interno
             <input name="title" required defaultValue={page.title}/>

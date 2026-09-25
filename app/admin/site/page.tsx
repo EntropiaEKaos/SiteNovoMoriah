@@ -63,7 +63,7 @@ export default async function SiteEditor(){
         <p>Edite os textos e imagens da página inicial bloco por bloco. Cada card abaixo corresponde a uma parte visível da Home.</p>
       </div>
       <div className="adminPageHeroActions">
-        <Link className="adminSecondaryAction" href="/admin/site/paginas">Páginas →</Link>
+        <Link className="adminSecondaryAction" href="/admin/site/paginas">Páginas →</Link><Link className="adminSecondaryAction" href="/admin/site/idiomas">Idiomas PT / EN / ES →</Link>
         <Link className="adminSecondaryAction" href="/" target="_blank">Preview do site ↗</Link>
         <Link className="adminPrimaryAction" href="/admin/site/nova">+ Nova seção</Link>
       </div>
@@ -101,7 +101,7 @@ export default async function SiteEditor(){
       <article className="adminSectionCard" id="home-seo">
         <h2>SEO & página</h2>
         <p>Metadados da Home. Eles não alteram o conteúdo das seções.</p>
-        <form action={saveSitePageMeta} className="adminFormGrid">
+        <form action={saveSitePageMeta} className="adminFormGrid" data-feedback-success="Página salva com sucesso.">
           <input type="hidden" name="id" value={page.id}/>
           <label className="span2">Nome interno
             <input name="title" required defaultValue={page.title}/>

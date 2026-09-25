@@ -66,6 +66,7 @@ model AdminLoginAttempt {
 }
 
 model SiteSettings {
+  translations Json?
   id                        String   @id @default("main")
   siteName                  String   @default("Pousada Moriah")
   tagline                   String   @default("Seu lugar perto de tudo. Do seu jeito.")
@@ -90,6 +91,7 @@ model SiteSettings {
 }
 
 model SitePage {
+  translations Json?
   id             String        @id @default(cuid())
   slug           String        @unique
   title          String
@@ -109,6 +111,7 @@ model SitePage {
 }
 
 model SiteSection {
+  translations Json?
   id                String   @id @default(cuid())
   pageId            String
   page              SitePage @relation(fields: [pageId], references: [id], onDelete: Cascade)
@@ -147,6 +150,7 @@ model SiteSection {
 }
 
 model Accommodation {
+  translations Json?
   id                  String               @id @default(cuid())
   name                String
   description         String
@@ -184,6 +188,7 @@ model Accommodation {
 }
 
 model Promotion {
+  translations Json?
   id          String    @id @default(cuid())
   title       String
   description String?
@@ -258,6 +263,7 @@ model BookingLead {
 }
 
 model IntegrationSettings {
+  translations Json?
   id                        String   @id @default("main")
   firebaseApiKey            String?
   firebaseAuthDomain        String?
@@ -276,6 +282,7 @@ model IntegrationSettings {
 }
 
 model BlogPost {
+  translations Json?
   id          String    @id @default(cuid())
   title       String
   slug        String    @unique
@@ -662,6 +669,7 @@ model BookingAuditLog {
 }
 
 model RestaurantCategory {
+  translations Json?
  id String @id @default(cuid())
  name String
  description String?
@@ -669,6 +677,7 @@ model RestaurantCategory {
  sortOrder Int @default(0)
  active Boolean @default(true)
  featured Boolean @default(false)
+ targetCmvPct Float?
  availableFrom String?
  availableUntil String?
  availableDays Int[] @default([])
@@ -677,6 +686,7 @@ model RestaurantCategory {
  @@index([active,sortOrder])
 }
 model RestaurantProduct {
+  translations Json?
  id String @id @default(cuid())
  categoryId String
  category RestaurantCategory @relation(fields:[categoryId],references:[id],onDelete:Restrict)
@@ -688,6 +698,7 @@ model RestaurantProduct {
  priceCents Int
  promotionalPriceCents Int?
  costCents Int?
+ targetCmvPct Float?
  sku String? @unique
  active Boolean @default(true)
  featured Boolean @default(false)
@@ -792,6 +803,7 @@ model RestaurantStockMovement {
 }
 
 model RestaurantSettings {
+ translations Json?
  id String @id @default("main")
  openTime String @default("07:00")
  closeTime String @default("22:00")
@@ -874,6 +886,7 @@ model RestaurantProductionBatch {
  @@index([ingredientId,status])
 }
 model RestaurantModifierGroup {
+ translations Json?
  id String @id @default(cuid())
  name String
  required Boolean @default(false)
@@ -884,6 +897,7 @@ model RestaurantModifierGroup {
  products RestaurantProductModifierGroup[]
 }
 model RestaurantModifierOption {
+ translations Json?
  id String @id @default(cuid())
  groupId String
  group RestaurantModifierGroup @relation(fields:[groupId],references:[id],onDelete:Cascade)
@@ -905,12 +919,94 @@ model RestaurantIngredient {
  stockQty Float @default(0)
  minStockQty Float @default(0)
  costPerUnitCents Int @default(0)
+ purchaseUnit String?
+ purchaseToStockFactor Float @default(1)
+ targetDaysCover Int @default(7)
  active Boolean @default(true)
  recipes RestaurantRecipeItem[]
  movements RestaurantIngredientMovement[]
  productionBatches RestaurantProductionBatch[]
+ purchaseItems RestaurantPurchaseItem[]
+ inventoryCountItems RestaurantInventoryCountItem[]
  @@index([active,name])
 }
+model RestaurantSupplier {
+ id String @id @default(cuid())
+ name String
+ document String?
+ phone String?
+ email String?
+ contactName String?
+ notes String?
+ active Boolean @default(true)
+ purchases RestaurantPurchase[]
+ createdAt DateTime @default(now())
+ updatedAt DateTime @updatedAt
+ @@index([active,name])
+}
+
+model RestaurantPurchase {
+ id String @id @default(cuid())
+ supplierId String?
+ supplier RestaurantSupplier? @relation(fields:[supplierId],references:[id],onDelete:SetNull)
+ invoiceNumber String?
+ status String @default("RECEIVED")
+ purchasedAt DateTime @default(now())
+ receivedAt DateTime @default(now())
+ totalCents Int @default(0)
+ notes String?
+ items RestaurantPurchaseItem[]
+ createdAt DateTime @default(now())
+ updatedAt DateTime @updatedAt
+ @@index([supplierId,purchasedAt])
+ @@index([status,purchasedAt])
+}
+
+model RestaurantPurchaseItem {
+ id String @id @default(cuid())
+ purchaseId String
+ purchase RestaurantPurchase @relation(fields:[purchaseId],references:[id],onDelete:Cascade)
+ ingredientId String
+ ingredient RestaurantIngredient @relation(fields:[ingredientId],references:[id],onDelete:Restrict)
+ purchaseQty Float
+ purchaseUnit String
+ conversionFactor Float @default(1)
+ stockQtyAdded Float
+ unitPurchaseCostCents Int
+ unitStockCostCents Int
+ totalCents Int
+ lotCode String?
+ expiresAt DateTime?
+ createdAt DateTime @default(now())
+ @@index([ingredientId,createdAt])
+ @@index([expiresAt])
+}
+
+model RestaurantInventoryCount {
+ id String @id @default(cuid())
+ status String @default("POSTED")
+ countedAt DateTime @default(now())
+ actorName String?
+ notes String?
+ items RestaurantInventoryCountItem[]
+ createdAt DateTime @default(now())
+ @@index([countedAt,status])
+}
+
+model RestaurantInventoryCountItem {
+ id String @id @default(cuid())
+ countId String
+ count RestaurantInventoryCount @relation(fields:[countId],references:[id],onDelete:Cascade)
+ ingredientId String
+ ingredient RestaurantIngredient @relation(fields:[ingredientId],references:[id],onDelete:Restrict)
+ systemQty Float
+ countedQty Float
+ varianceQty Float
+ varianceCostCents Int
+ createdAt DateTime @default(now())
+ @@index([ingredientId,createdAt])
+}
+
 model RestaurantRecipeItem {
  productId String
  ingredientId String
@@ -979,6 +1075,7 @@ model RouletteSettings {
 }
 
 model MoriahEvent {
+  translations Json?
   id                       String   @id @default(cuid())
   slug                     String   @unique
   title                    String

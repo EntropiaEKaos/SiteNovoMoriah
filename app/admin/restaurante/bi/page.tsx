@@ -1,6 +1,7 @@
 import Link from "next/link";
 import {prisma} from "../../../../lib/prisma";
 import {requireAdmin} from "../../../../lib/admin-auth";
+import {saveCmvTarget} from "../../../../lib/restaurant-procurement-actions";
 
 export const dynamic="force-dynamic";
 
@@ -10,7 +11,7 @@ const pct=(v:number)=>v.toLocaleString("pt-BR",{minimumFractionDigits:1,maximumF
 export default async function Page(){
   await requireAdmin();
   const since=new Date(Date.now()-30*86400000);
-  const [orders,items,movements,ingredients]=await Promise.all([
+  const [orders,items,movements,ingredients,catalog,categories]=await Promise.all([
     prisma.restaurantOrder.findMany({
       where:{createdAt:{gte:since},status:{not:"CANCELLED"}},
       select:{createdAt:true,totalCents:true}
@@ -23,7 +24,9 @@ export default async function Page(){
       where:{createdAt:{gte:since},type:{in:["WASTE","LOSS"]}},
       include:{ingredient:true}
     }),
-    prisma.restaurantIngredient.findMany({select:{stockQty:true,costPerUnitCents:true}})
+    prisma.restaurantIngredient.findMany({select:{stockQty:true,costPerUnitCents:true}}),
+    prisma.restaurantProduct.findMany({where:{active:true},include:{recipes:{include:{ingredient:true}},category:true},orderBy:{name:"asc"}}),
+    prisma.restaurantCategory.findMany({where:{active:true},orderBy:{name:"asc"}})
   ]);
 
   const revenue=orders.reduce((sum,order)=>sum+order.totalCents,0);
@@ -53,6 +56,14 @@ export default async function Page(){
     .map(row=>({...row,cmv:row.revenue?row.cost/row.revenue*100:0,margin:row.revenue-row.cost}))
     .sort((a,b)=>b.revenue-a.revenue);
 
+  const theoretical=catalog.map(product=>{
+    const cost=Math.round(product.recipes.reduce((sum,row)=>sum+row.quantity*row.ingredient.costPerUnitCents,0));
+    const rate=product.priceCents>0?cost/product.priceCents*100:0;
+    const target=product.targetCmvPct??product.category.targetCmvPct;
+    return {product,cost,rate,target,over:target!=null&&rate>target};
+  }).sort((a,b)=>Number(b.over)-Number(a.over)||b.rate-a.rate);
+  const overTarget=theoretical.filter(row=>row.over).length;
+
   let accumulated=0;
 
   return <main className="cmvPage">
@@ -62,7 +73,7 @@ export default async function Page(){
         <h1>CMV <span>& margem</span></h1>
         <p>Leitura dos últimos 30 dias com vendas, custo direto registrado, perdas de insumos e margem bruta estimada.</p>
       </div>
-      <Link href="/admin/restaurante/insumos">Gerenciar insumos →</Link>
+      <div className="inventoryHeroActions"><Link href="/admin/restaurante/insumos">Gerenciar insumos →</Link><Link href="/admin/restaurante/compras">Compras / inventário →</Link></div>
     </section>
 
     <section className="cmvMetrics">

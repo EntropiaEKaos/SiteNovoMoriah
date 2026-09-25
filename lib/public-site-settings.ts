@@ -18,7 +18,8 @@ export type PublicSiteSettings=
     "whatsappFloatingEnabled"|
     "whatsappFloatingMessage"|
     "whatsappFloatingLabel"|
-    "whatsappFloatingPosition"
+    "whatsappFloatingPosition"|
+    "translations"
   >>;
 
 export async function loadPublicSiteSettings():Promise<PublicSiteSettings|null>{
@@ -59,7 +60,8 @@ export async function loadPublicSiteSettings():Promise<PublicSiteSettings|null>{
         whatsappFloatingEnabled:true,
         whatsappFloatingMessage:true,
         whatsappFloatingLabel:true,
-        whatsappFloatingPosition:true
+        whatsappFloatingPosition:true,
+        translations:true
       }
     });
     return {...base,...(branding||{})};

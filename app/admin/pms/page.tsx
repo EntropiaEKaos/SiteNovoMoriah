@@ -59,7 +59,8 @@ export default async function PMS(){
       .filter(payment=>payment.status==="PAID"&&payment.reference!=="RESTAURANT_FOLIO")
       .reduce((value,payment)=>value+payment.amountCents,0);
     const charges=booking.charges.reduce((value,charge)=>value+charge.amountCents,0);
-    return sum+Math.max(0,(booking.quotedTotalCents||0)+charges-paid);
+    const restaurant=booking.restaurantRoomCharges.reduce((value,charge)=>value+charge.amountCents,0);
+    return sum+Math.max(0,(booking.quotedTotalCents||0)+charges-paid)+restaurant;
   },0);
 
   return <main className="adminPage">
@@ -95,7 +96,9 @@ export default async function PMS(){
           const lodgingTotal=booking.quotedTotalCents||0;
           const total=lodgingTotal+extras;
           const balance=Math.max(0,total-paid);
-          const openRestaurant=booking.restaurantRoomCharges.length>0;
+          const restaurantBalance=booking.restaurantRoomCharges.reduce((sum,charge)=>sum+charge.amountCents,0);
+          const openRestaurant=restaurantBalance>0;
+          const operationalBalance=balance+restaurantBalance;
 
           return <article className="adminListCard" key={booking.id}>
             <div className="adminListCardHead">
@@ -122,14 +125,16 @@ export default async function PMS(){
                 <div className="adminStatusLine"><span>Adicionais</span><b>{money(extras)}</b></div>
                 <div className="adminStatusLine"><span>Total da conta</span><b>{money(total)}</b></div>
                 <div className="adminStatusLine"><span>Pago</span><b>{money(paid)}</b></div>
-                <div className="adminStatusLine"><span>Saldo</span><b>{money(balance)}</b></div>
+                <div className="adminStatusLine"><span>Saldo hospedagem</span><b>{money(balance)}</b></div>
+                <div className="adminStatusLine"><span>Restaurante aberto</span><b>{money(restaurantBalance)}</b></div>
+                <div className="adminStatusLine"><span>Saldo operacional</span><b>{money(operationalBalance)}</b></div>
               </div>
 
               <div>
                 <div className="adminInlineActions">
                   <Link className="highlight" href={"/admin/reservas/"+booking.id}>Abrir reserva →</Link>
                   {booking.guest&&<Link href={"/admin/hospedes/"+booking.guest.id}>Ficha do hóspede</Link>}
-                  {booking.checkedInAt&&<Link href={"/admin/reservas/"+booking.id+"/checkin-recibo"} target="_blank">Recibo check-in ↗</Link>}
+                  <Link href={"/admin/reservas/"+booking.id+"/recibo"} target="_blank">Recibo hospedagem ↗</Link>{booking.checkedInAt&&<Link href={"/admin/reservas/"+booking.id+"/checkin-recibo"} target="_blank">Recibo check-in ↗</Link>}
 
                   {booking.status==="CHECKED_IN"&&<form action={pmsBookingAction}>
                     <input type="hidden" name="id" value={booking.id}/>
