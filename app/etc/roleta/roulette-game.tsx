@@ -120,7 +120,10 @@ export default function RouletteGame({
         <h2>{delivery?"Seu pedido chegou. Que tal tentar a sorte?":"Quer contar como foi sua experiência?"}</h2>
         <p>{settings.introText}</p>
         {settings.reviewLinks.length>0&&<div className={styles.reviewGrid}>
-          {settings.reviewLinks.map(link=><a key={link.key} className={styles.reviewButton} href={link.url} target="_blank" rel="noreferrer">{link.label} ↗</a>)}
+          {settings.reviewLinks.map(link=>link.url
+            ?<a key={link.key} className={styles.reviewButton} href={link.url} target="_blank" rel="noreferrer">{link.label} ↗</a>
+            :<span key={link.key} className={styles.reviewButton+" "+styles.reviewPlaceholder}>{link.label} • exemplo</span>
+          )}
         </div>}
         <button className={styles.primary} onClick={()=>setStep("identify")}>Continuar para a roleta</button>
         <small>A avaliação é opcional e não altera sua chance nem o prêmio.</small>
