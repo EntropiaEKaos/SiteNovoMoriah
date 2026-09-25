@@ -6,6 +6,32 @@ function run(command,args,env=process.env){
   if(result.status!==0)process.exit(result.status??1);
 }
 
+function resolveFailedRouletteMigration(env){
+  const migration="20260925195500_multi_roulette_campaigns";
+  const result=spawnSync(
+    npx,
+    ["prisma","migrate","resolve","--rolled-back",migration],
+    {env,encoding:"utf8"}
+  );
+
+  const output=[result.stdout,result.stderr].filter(Boolean).join("\n");
+  if(output)process.stdout.write(output.endsWith("\n")?output:output+"\n");
+
+  if(result.error)throw result.error;
+  if(result.status===0){
+    console.log(`Marked failed migration ${migration} as rolled back so it can be retried safely.`);
+    return;
+  }
+
+  if(/P3012/.test(output)){
+    console.log(`Migration ${migration} is not in a failed state; no recovery step was needed.`);
+    return;
+  }
+
+  console.error(`Could not inspect/recover migration ${migration}.`);
+  process.exit(result.status??1);
+}
+
 const npx=process.platform==="win32"?"npx.cmd":"npx";
 const vercelEnv=process.env.VERCEL_ENV||"local";
 const previewMigrations=vercelEnv==="preview"&&process.env.RUN_PREVIEW_MIGRATIONS==="1";
@@ -32,10 +58,19 @@ if(shouldMigrate){
       :"Running explicitly enabled Preview Prisma migrations through DIRECT_URL."
   );
 
-  run(npx,["prisma","migrate","deploy"],{
+  const migrationEnv={
     ...process.env,
     DATABASE_URL:directUrl
-  });
+  };
+
+  // Recovery for the 2026-09-25 roulette migration that previously failed
+  // with PostgreSQL 42804 while seeding nullable integer columns. The
+  // migration itself is now idempotent, so a genuinely failed attempt can
+  // be marked rolled back and safely retried. P3012 means there is nothing
+  // to recover and is intentionally tolerated; every other error aborts.
+  resolveFailedRouletteMigration(migrationEnv);
+
+  run(npx,["prisma","migrate","deploy"],migrationEnv);
 }else{
   console.log(
     vercelEnv==="preview"
