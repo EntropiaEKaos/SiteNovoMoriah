@@ -15,13 +15,14 @@ function normalizePhone(raw:string){
 
 export async function POST(req:NextRequest){
   try{
-    const body=await req.json() as {name?:unknown;phone?:unknown;consent?:unknown};
+    const body=await req.json() as {name?:unknown;phone?:unknown;consent?:unknown;settingsId?:unknown};
+    const settingsId=body.settingsId==="delivery"?"delivery":"main";
     const name=String(body.name||"").trim().slice(0,120);
     const phone=normalizePhone(String(body.phone||""));
     if(!name) return NextResponse.json({error:"Informe seu nome."},{status:400});
     if(body.consent!==true) return NextResponse.json({error:"É necessário aceitar os termos da promoção."},{status:400});
 
-    const settings=await prisma.rouletteSettings.findUnique({where:{id:"main"}});
+    const settings=await prisma.rouletteSettings.findUnique({where:{id:settingsId}});
     const now=new Date();
     if(!settings?.active) return NextResponse.json({error:"A roleta está temporariamente indisponível."},{status:409});
     if(settings.activeFrom&&settings.activeFrom>now) return NextResponse.json({error:"A campanha ainda não começou."},{status:409});
@@ -39,7 +40,7 @@ export async function POST(req:NextRequest){
       }
 
       const prizes=await tx.roulettePrize.findMany({
-        where:{active:true},
+        where:{active:true,campaignKey:settings.campaignKey},
         orderBy:[{sortOrder:"asc"},{createdAt:"asc"}]
       });
       const eligible=prizes.filter(prize=>prize.quantityTotal===null||prize.awardedCount<prize.quantityTotal);
