@@ -28,13 +28,15 @@ function render(template:string|undefined|null,variables:Record<string,string|nu
 
 function defaultActionUrl(module:string){
   const map:Record<string,string>={
-    RESERVATIONS:"/admin/reservas",
+    RESERVAS:"/admin/reservas",
     PMS:"/admin/pms",
-    KITCHEN:"/admin/restaurante/cozinha",
+    COZINHA:"/admin/restaurante/cozinha",
     FOOD:"/admin/restaurante/pedidos",
-    RESTAURANT:"/admin/restaurante/pedidos",
-    CHANNELS:"/admin/canais",
-    RENTALS:"/admin/locacoes",
+    RESTAURANTE:"/admin/restaurante/pedidos",
+    CANAIS:"/admin/canais",
+    LOCACOES:"/admin/locacoes",
+    GOVERNANCA:"/admin/pms",
+    MENSALISTAS:"/admin/hospedes",
     INVENTORY:"/admin/restaurante/insumos"
   };
   return map[module]||"/admin/notificacoes";
