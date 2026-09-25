@@ -1,5 +1,6 @@
 import Link from "next/link";
 import {requireAdmin} from "../../../../lib/admin-auth";
+import {prisma} from "../../../../lib/prisma";
 import {ensureSpecialPage,restaurantVisualSeed} from "../../../../lib/special-site-pages";
 
 export const dynamic="force-dynamic";
@@ -8,6 +9,14 @@ export default async function RestaurantSiteAdmin(){
   await requireAdmin();
   const page=await ensureSpecialPage(restaurantVisualSeed);
   const active=page.sections.filter(section=>section.active).length;
+  const since=new Date(Date.now()-30*86400000);
+  const standaloneOrders=await prisma.restaurantOrder.findMany({
+    where:{source:"STANDALONE_MENU",createdAt:{gte:since},status:{not:"CANCELLED"}},
+    select:{totalCents:true}
+  });
+  const standaloneRevenue=standaloneOrders.reduce((sum,row)=>sum+row.totalCents,0);
+  const standaloneTicket=standaloneOrders.length?Math.round(standaloneRevenue/standaloneOrders.length):0;
+  const money=(value:number)=>(value/100).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
 
   return <main className="adminPage">
     <section className="adminPageHero">
@@ -25,8 +34,24 @@ export default async function RestaurantSiteAdmin(){
     <section className="adminMetricStrip">
       <div><small>Seções</small><strong>{page.sections.length}</strong></div>
       <div><small>Ativas</small><strong>{active}</strong></div>
-      <div><small>Motor</small><strong style={{fontSize:18}}>MORIAH FOOD</strong></div>
-      <div><small>Modo</small><strong style={{fontSize:18}}>STANDALONE</strong></div>
+      <div><small>Pedidos standalone / 30d</small><strong>{standaloneOrders.length}</strong></div>
+      <div><small>Receita standalone / 30d</small><strong style={{fontSize:18}}>{money(standaloneRevenue)}</strong></div>
+    </section>
+
+    <section className="adminTwoCol" style={{marginBottom:20}}>
+      <article className="adminSectionCard">
+        <small>CANAL STANDALONE / 30 DIAS</small>
+        <h2>{money(standaloneRevenue)}</h2>
+        <div className="adminStatusLine"><span>Pedidos</span><b>{standaloneOrders.length}</b></div>
+        <div className="adminStatusLine"><span>Ticket médio</span><b>{money(standaloneTicket)}</b></div>
+        <div className="adminStatusLine"><span>Origem registrada</span><b>STANDALONE_MENU</b></div>
+      </article>
+      <article className="adminSectionCard isDark">
+        <small>PUBLICAÇÃO</small>
+        <h2>Subdomínio próprio</h2>
+        <p>O storefront usa o mesmo backend e pode operar em um host como restaurante.seudominio.com.br sem duplicar estoque, cozinha ou produtos.</p>
+        <div className="adminStatusLine"><span>Variável</span><b className={"adminChip "+(process.env.RESTAURANT_SUBDOMAIN_HOST?"ok":"warn")}>{process.env.RESTAURANT_SUBDOMAIN_HOST?"CONFIGURADA":"PENDENTE"}</b></div>
+      </article>
     </section>
 
     <section className="adminTwoCol">
