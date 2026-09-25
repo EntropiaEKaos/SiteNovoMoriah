@@ -1,6 +1,7 @@
 import {prisma} from "./prisma";
 import {isAccommodationAvailable} from "./inventory-engine";
 import {getChannelAdapter,resolveAdapterKind} from "./channel-adapter-registry";
+import {queueSystemNotification} from "./system-notifications";
 
 export async function syncChannelIntegration(id:string){
  const row=await prisma.channelIntegration.findUnique({where:{id}});
@@ -21,6 +22,7 @@ export async function syncChannelIntegration(id:string){
  }catch(error){
   const message=error instanceof Error?error.message:"Erro desconhecido";
   const failures=(row.consecutiveFailures||0)+1;const delay=Math.min(60,Math.pow(2,Math.min(failures,5))*5);await prisma.channelIntegration.update({where:{id},data:{syncStatus:"ERROR",lastError:message.slice(0,500),consecutiveFailures:failures,nextSyncAt:new Date(Date.now()+delay*60_000),syncDurationMs:Date.now()-started}});
+  await queueSystemNotification({module:"CANAIS",eventKey:"SYNC_ERROR",title:"Falha de sincronização de canal",body:row.provider+" • "+message.slice(0,260),dedupeKey:"channel-sync:"+id+":"+String(failures),actionUrl:"/admin/canais"});
   throw error;
  }
 }
