@@ -39,7 +39,7 @@ export default async function Page(){
       <small>NOVA CAMPANHA</small>
       <h2>Crie uma promoção calculável</h2>
       <p>O desconto é revalidado pelo servidor no momento da cotação.</p>
-      <form action={createPromotion} className="adminFormGrid cols3">
+      <form action={createPromotion} className="adminFormGrid cols3" data-feedback-success="Promoção criada com sucesso.">
         <label>Título<input name="title" required placeholder="Nome da campanha"/></label>
         <label>Cupom<input name="coupon" placeholder="Opcional"/></label>
         <label>Tipo
@@ -85,11 +85,11 @@ export default async function Page(){
         </div>
 
         <div className="adminInlineActions">
-          <form action={togglePromotion}>
+          <form action={togglePromotion} data-feedback-success="Status da promoção atualizado.">
             <input type="hidden" name="id" value={promo.id}/>
             <button>{promo.active?"Pausar":"Ativar"}</button>
           </form>
-          <form action={deletePromotion}>
+          <form action={deletePromotion} data-feedback-success="Promoção excluída.">
             <input type="hidden" name="id" value={promo.id}/>
             <button className="danger">Excluir</button>
           </form>

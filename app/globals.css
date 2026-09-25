@@ -7375,3 +7375,180 @@ body:has(.externalCalendarWidget) .whatsappFloat{display:none!important}
   .inventoryForm{padding:20px}
   .rouletteAdminCampaignHead h2{font-size:30px}
 }
+
+
+/* Admin UX 5.0 audit */
+.adminApp{min-width:0}
+.adminSidebar{overflow:hidden}
+.adminNav{
+  min-height:0;
+  padding-right:4px;
+  scrollbar-width:thin;
+  scrollbar-color:#3b3b3b transparent;
+}
+.adminNavSection{display:grid;gap:5px}
+.adminNavSection+.adminNavSection{margin-top:15px}
+.adminNavLabel{
+  padding:0 10px 5px;
+  color:#666;
+  font-size:7px;
+  font-weight:950;
+  letter-spacing:1.5px;
+}
+.adminNavItems{display:grid;gap:2px}
+.adminNavLink{gap:10px}
+.adminNavLink>span{flex:1;min-width:0}
+.adminNavLink>b{opacity:.28;font-size:9px}
+.adminNavLink.isActive{
+  background:#1a1a1a;
+  color:#fff;
+  border-left-color:var(--y);
+}
+.adminNavLink.isActive>span{color:var(--y)}
+.adminWorkspace{min-width:0}
+.adminWorkspace>main{min-width:0}
+.adminTopbar{gap:16px}
+.adminTopbarTools{min-width:0}
+.adminTopbarMeta{white-space:nowrap}
+.adminPage,.adminDashboard{width:100%;min-width:0}
+.adminPageHero>div,.adminListCardHead>div{min-width:0}
+.adminPageHero h1,.adminListCard h3{overflow-wrap:anywhere}
+.adminSectionCard,.adminListCard{
+  position:relative;
+  transition:border-color .18s ease,box-shadow .18s ease,transform .18s ease;
+}
+.adminSectionCard:focus-within,.adminListCard:focus-within{
+  border-color:#111;
+  box-shadow:0 0 0 3px rgba(255,212,0,.18);
+}
+.adminSectionCard:has(table){
+  overflow-x:auto;
+}
+.adminSectionCard:has(table)>h2,
+.adminSectionCard:has(table)>p{
+  position:sticky;
+  left:0;
+}
+.adminWorkspace main table{
+  min-width:760px;
+}
+.adminWorkspace main form[data-feedback-success] button[type="submit"],
+.adminWorkspace main form[data-feedback-success] button:not([type]){
+  position:relative;
+}
+.adminHelp{
+  line-height:1.5;
+  color:#777;
+}
+.adminActionToast{
+  border-radius:2px;
+}
+.adminStatusLine>span{min-width:0;overflow-wrap:anywhere}
+.adminStatusLine>b{flex:0 0 auto}
+.adminListCardHead{min-width:0}
+.adminMetricStrip>div{min-width:0}
+.adminMetricStrip strong{overflow-wrap:anywhere}
+.adminTwoCol>*{min-width:0}
+
+@media(max-width:1180px){
+  .adminSidebar{width:230px;padding-left:14px;padding-right:14px}
+  .adminWorkspace{margin-left:230px}
+  .adminNav a{font-size:12px;padding:10px 9px}
+  .adminPageHero{gap:22px}
+}
+@media(max-width:900px){
+  .adminTopbarStatus{display:none}
+  .adminTopbar{justify-content:flex-end}
+  .adminPageHero h1{font-size:clamp(42px,9vw,66px)}
+}
+@media(max-width:760px){
+  .adminSidebar{
+    position:relative;
+    width:auto;
+    max-height:none;
+    padding:16px;
+  }
+  .adminNav{
+    display:flex;
+    gap:18px;
+    overflow-x:auto;
+    overflow-y:hidden;
+    padding-bottom:8px;
+  }
+  .adminNavSection{
+    flex:0 0 auto;
+    min-width:max-content;
+  }
+  .adminNavSection+.adminNavSection{margin-top:0}
+  .adminNavItems{display:flex;gap:4px}
+  .adminNavLabel{padding-left:4px}
+  .adminNavLink>b{display:none}
+  .adminWorkspace{margin-left:0}
+  .adminTopbar{position:sticky;top:0}
+  .adminWorkspace main table{min-width:680px}
+}
+@media(max-width:560px){
+  .adminListCardHead{flex-direction:column}
+  .adminPageHeroActions{width:100%}
+  .adminPageHeroActions>a,.adminPageHeroActions>button{flex:1 1 160px}
+  .adminWorkspace main table{min-width:620px}
+}
+
+
+/* Restaurant modifiers studio - Admin UX 5.0 */
+.modifierComposer{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:14px;
+  align-items:start;
+}
+.modifierComposer>*{min-width:0}
+.modifierAccentCard{
+  background:linear-gradient(145deg,#fff7cc,#ffe96d);
+  border-color:#d7ba00;
+}
+.modifierCheckLabel{
+  display:flex!important;
+  align-items:end;
+}
+.modifierCheckLabel>span{
+  min-height:42px;
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.modifierCheckLabel input{width:auto!important}
+.modifierSectionHead{
+  margin-top:34px;
+}
+.modifierSectionHead>p{
+  max-width:520px;
+  margin:0;
+  color:#777168;
+  line-height:1.5;
+}
+.modifierGroupGrid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:12px;
+}
+.modifierGroupCard{display:grid;gap:14px}
+.modifierOptionList{display:grid}
+.modifierProducts{
+  padding-top:12px;
+  border-top:1px solid #ece6da;
+}
+.modifierProducts>small{
+  font-size:8px;
+  font-weight:950;
+  letter-spacing:1.1px;
+  color:#8b8579;
+}
+@media(max-width:1180px){
+  .modifierComposer{grid-template-columns:1fr 1fr}
+  .modifierComposer>form:first-child{grid-column:1/-1}
+}
+@media(max-width:820px){
+  .modifierComposer,.modifierGroupGrid{grid-template-columns:1fr}
+  .modifierComposer>form:first-child{grid-column:auto}
+}

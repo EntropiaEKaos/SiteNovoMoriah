@@ -68,7 +68,7 @@ export default function CheckInForm({
     });
   }
 
-  return <form action={pmsBookingAction} className="checkInFinanceForm">
+  return <form action={pmsBookingAction} className="checkInFinanceForm" data-feedback-success="Check-in realizado com sucesso.">
     <input type="hidden" name="id" value={bookingId}/>
     <input type="hidden" name="action" value="CHECK_IN"/>
     <input type="hidden" name="checkInExtras" value={payload}/>

@@ -72,7 +72,7 @@ export default async function PurchasesPage(){
     </section>
 
     <section className="inventoryComposer">
-      <form action={createRestaurantSupplier} className="inventoryForm dark">
+      <form action={createRestaurantSupplier} className="inventoryForm dark" data-feedback-success="Fornecedor criado com sucesso.">
         <small>FORNECEDOR</small><h2>Novo fornecedor</h2>
         <div className="inventoryFormGrid">
           <label><span>Nome</span><input name="name" required/></label>
@@ -85,7 +85,7 @@ export default async function PurchasesPage(){
         <button>Cadastrar fornecedor</button>
       </form>
 
-      <form action={receiveIngredientPurchase} className="inventoryForm accent">
+      <form action={receiveIngredientPurchase} className="inventoryForm accent" data-feedback-success="Compra recebida e estoque atualizado.">
         <small>RECEBIMENTO</small><h2>Entrada de compra</h2>
         <label><span>Fornecedor</span><select name="supplierId"><option value="">Sem fornecedor</option>{suppliers.map(s=><option key={s.id} value={s.id}>{s.name}</option>)}</select></label>
         <label><span>Insumo</span><select name="ingredientId" required><option value="">Selecione</option>{ingredients.map(i=><option key={i.id} value={i.id}>{i.name} • estoque {qty(i.stockQty)} {i.unit}</option>)}</select></label>
@@ -114,7 +114,7 @@ export default async function PurchasesPage(){
         <span>{row.daysCover==null?"—":row.daysCover.toFixed(1)+" dias"}</span>
         <span><b>{qty(row.suggested)} {row.ingredient.unit}</b></span>
         <span>
-          <form action={updateIngredientPlanning} style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:5}}>
+          <form action={updateIngredientPlanning} style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:5}} data-feedback-success="Planejamento do insumo atualizado.">
             <input type="hidden" name="ingredientId" value={row.ingredient.id}/>
             <input name="targetDaysCover" type="number" min="1" max="180" defaultValue={row.ingredient.targetDaysCover} title="Dias de cobertura"/>
             <input name="purchaseUnit" defaultValue={row.ingredient.purchaseUnit||row.ingredient.unit} title="Unidade de compra"/>
@@ -129,7 +129,7 @@ export default async function PurchasesPage(){
       <div><small>INVENTÁRIO FÍSICO</small><h2>Contagem e divergência</h2></div>
       <p>A contagem registra saldo anterior, contado, diferença e impacto financeiro antes de ajustar o estoque oficial.</p>
     </section>
-    <form action={recordPhysicalInventory} className="inventoryForm dark" style={{marginBottom:20}}>
+    <form action={recordPhysicalInventory} className="inventoryForm dark" style={{marginBottom:20}} data-feedback-success="Inventário físico registrado com sucesso.">
       <div className="inventoryFormGrid">
         <label><span>Insumo</span><select name="ingredientId" required><option value="">Selecione</option>{ingredients.map(i=><option key={i.id} value={i.id}>{i.name} • sistema {qty(i.stockQty)} {i.unit}</option>)}</select></label>
         <label><span>Quantidade contada</span><input name="countedQty" type="number" min="0" step=".001" required/></label>

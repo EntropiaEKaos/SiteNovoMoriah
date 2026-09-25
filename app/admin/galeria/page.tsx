@@ -76,7 +76,7 @@ export default async function Page({
       <article className="adminSectionCard">
         <h2>Adicionar por URL</h2>
         <p>Para imagens externas já hospedadas em origem confiável.</p>
-        <form action={addMedia} className="adminFormGrid">
+        <form action={addMedia} className="adminFormGrid" data-feedback-success="Mídia adicionada com sucesso.">
           <label className="span2">URL
             <input name="url" required placeholder="https://..."/>
           </label>
@@ -124,7 +124,7 @@ export default async function Page({
           <b>{item.label||item.alt||"Imagem sem título"}</b>
           <small>{item.folder||"Sem pasta"}{item.sizeBytes?" • "+Math.round(item.sizeBytes/1024)+" KB":""}</small>
 
-          <form action={updateMediaMetadata} className="mediaMetaForm">
+          <form action={updateMediaMetadata} className="mediaMetaForm" data-feedback-success="Metadados da mídia salvos.">
             <input type="hidden" name="id" value={item.id}/>
             <label>Título
               <input name="label" defaultValue={item.label||""}/>
@@ -143,7 +143,7 @@ export default async function Page({
 
           <div className="adminInlineActions">
             <a href={item.url} target="_blank" rel="noreferrer">Abrir ↗</a>
-            <form action={deleteMedia}>
+            <form action={deleteMedia} data-feedback-success="Mídia excluída com sucesso.">
               <input type="hidden" name="id" value={item.id}/>
               <button className="danger">Excluir</button>
             </form>

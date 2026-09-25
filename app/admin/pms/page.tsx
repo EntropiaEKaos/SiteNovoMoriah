@@ -136,12 +136,12 @@ export default async function PMS(){
                   {booking.guest&&<Link href={"/admin/hospedes/"+booking.guest.id}>Ficha do hóspede</Link>}
                   <Link href={"/admin/reservas/"+booking.id+"/recibo"} target="_blank">Recibo hospedagem ↗</Link>{booking.checkedInAt&&<Link href={"/admin/reservas/"+booking.id+"/checkin-recibo"} target="_blank">Recibo check-in ↗</Link>}
 
-                  {booking.status==="CHECKED_IN"&&<form action={pmsBookingAction}>
+                  {booking.status==="CHECKED_IN"&&<form action={pmsBookingAction} data-feedback-success="Status da hospedagem atualizado com sucesso.">
                     <input type="hidden" name="id" value={booking.id}/>
                     <input type="hidden" name="action" value="CHECK_OUT"/>
                     <button className="highlight">Fazer check-out</button>
                   </form>}
-                  {booking.status==="CONFIRMED"&&<form action={pmsBookingAction}>
+                  {booking.status==="CONFIRMED"&&<form action={pmsBookingAction} data-feedback-success="Status da hospedagem atualizado com sucesso.">
                     <input type="hidden" name="id" value={booking.id}/>
                     <input type="hidden" name="action" value="NO_SHOW"/>
                     <button>No-show</button>
@@ -157,7 +157,7 @@ export default async function PMS(){
                   bookingId={booking.id}
                   lodgingTotalCents={lodgingTotal}
                   alreadyPaidCents={paid}
-                />:<form action={registerPayment} className="adminFormGrid" style={{marginTop:12}}>
+                />:<form action={registerPayment} className="adminFormGrid" style={{marginTop:12}} data-feedback-success="Pagamento registrado com sucesso.">
                   <input type="hidden" name="bookingId" value={booking.id}/>
                   <label>Receber valor
                     <input name="amount" inputMode="decimal" required placeholder="R$"/>
@@ -174,7 +174,7 @@ export default async function PMS(){
                   <button className="span2">Registrar pagamento</button>
                 </form>}
 
-                {booking.status==="CHECKED_IN"&&<form action={settleRestaurantFolio} style={{marginTop:10}}>
+                {booking.status==="CHECKED_IN"&&<form action={settleRestaurantFolio} style={{marginTop:10}} data-feedback-success="Consumo do restaurante liquidado com sucesso.">
                   <input type="hidden" name="bookingId" value={booking.id}/>
                   <input type="hidden" name="method" value="ROOM_SETTLEMENT"/>
                   <button>Fechar consumo restaurante</button>
@@ -199,7 +199,7 @@ export default async function PMS(){
               </span>
               <span className="adminChip warn">{task.status}</span>
             </div>
-            <form action={updateHousekeeping} style={{display:"flex",gap:7,marginTop:10}}>
+            <form action={updateHousekeeping} style={{display:"flex",gap:7,marginTop:10}} data-feedback-success="Tarefa de governança atualizada.">
               <input type="hidden" name="id" value={task.id}/>
               <select name="status" defaultValue={task.status}>
                 <option value="PENDING">Pendente</option>

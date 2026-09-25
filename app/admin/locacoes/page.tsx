@@ -76,11 +76,11 @@ export default async function Page(){
 
     {items.length===0&&<section className="rentalPresetBar">
       <div><b>Começar com bicicletas</b><span>Cria um item padrão editável com 2 unidades, preço/hora e diária.</span></div>
-      <form action={createBikePreset}><button className="adminPrimaryAction">Criar Bike padrão</button></form>
+      <form action={createBikePreset} data-feedback-success="Bike padrão criada."><button className="adminPrimaryAction">Criar Bike padrão</button></form>
     </section>}
 
     <section className="adminTwoCol rentalsSetup">
-      <form action={createRentalItem} className="adminSectionCard adminFormGrid">
+      <form action={createRentalItem} className="adminSectionCard adminFormGrid" data-feedback-success="Item de locação criado.">
         <div className="span2"><small>NOVO ITEM</small><h2>Cadastrar item para locação</h2></div>
         <label>Nome<input name="name" required placeholder="Ex.: Bike urbana"/></label>
         <label>Categoria<input name="category" defaultValue="BIKE" placeholder="BIKE, PRAIA, ESPORTE..."/></label>
@@ -96,7 +96,7 @@ export default async function Page(){
         <button className="span2">Cadastrar item</button>
       </form>
 
-      <form action={startRental} className="adminSectionCard adminFormGrid rentalStartForm">
+      <form action={startRental} className="adminSectionCard adminFormGrid rentalStartForm" data-feedback-success="Locação iniciada com sucesso.">
         <div className="span2"><small>NOVA LOCAÇÃO</small><h2>Entregar equipamento</h2></div>
         <label className="span2">Item<select name="itemId" required><option value="">Selecione</option>{items.filter(item=>item.active).map(item=><option key={item.id} value={item.id}>{item.name} • {item.quantityTotal} un.</option>)}</select></label>
         <label>Nome do locatário<input name="renterName" required/></label>
@@ -119,7 +119,7 @@ export default async function Page(){
         {items.map(item=>{
           const used=item.rentals.reduce((sum,rental)=>sum+rental.quantity,0);
           const free=Math.max(0,item.quantityTotal-used);
-          return <form action={updateRentalItem} className={"rentalItemCard"+(item.active?"":" isDisabled")} key={item.id}>
+          return <form action={updateRentalItem} className={"rentalItemCard"+(item.active?"":" isDisabled")} key={item.id} data-feedback-success="Item de locação atualizado.">
             <input type="hidden" name="id" value={item.id}/>
             {item.imageUrl?<img src={item.imageUrl} alt={item.name}/>:<div className="rentalItemPlaceholder">SEM FOTO</div>}
             <div className="rentalItemBody">
@@ -163,9 +163,9 @@ export default async function Page(){
             <div className="adminMetaRow"><span className={"adminChip "+(rental.paymentStatus==="PAID"?"ok":"warn")}>{rental.paymentStatus}</span><span className="adminChip">{rental.pricingMode}</span>{rental.phone&&<span className="adminChip">{rental.phone}</span>}</div>
             {rental.notes&&<div className="adminPageNote">{rental.notes}</div>}
             {rental.status==="ACTIVE"&&<div className="adminInlineActions">
-              <form action={returnRental}><input type="hidden" name="id" value={rental.id}/><input type="hidden" name="paymentStatus" value="PAID"/><button className="highlight">Devolver + marcar pago</button></form>
-              {rental.paymentStatus!=="PAID"&&<form action={markRentalPaid}><input type="hidden" name="id" value={rental.id}/><button>Marcar pago</button></form>}
-              <form action={cancelRental}><input type="hidden" name="id" value={rental.id}/><button className="danger">Cancelar</button></form>
+              <form action={returnRental} data-feedback-success="Locação devolvida e finalizada."><input type="hidden" name="id" value={rental.id}/><input type="hidden" name="paymentStatus" value="PAID"/><button className="highlight">Devolver + marcar pago</button></form>
+              {rental.paymentStatus!=="PAID"&&<form action={markRentalPaid} data-feedback-success="Pagamento da locação registrado."><input type="hidden" name="id" value={rental.id}/><button>Marcar pago</button></form>}
+              <form action={cancelRental} data-feedback-success="Locação cancelada."><input type="hidden" name="id" value={rental.id}/><button className="danger">Cancelar</button></form>
             </div>}
           </article>;
         })}

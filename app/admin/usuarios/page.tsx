@@ -33,7 +33,7 @@ export default async function AdminUsers(){
       <article className="adminSectionCard">
         <h2>Novo administrador</h2>
         <p>Crie um acesso com senha inicial de pelo menos 12 caracteres.</p>
-        <form action={createAdminUser} className="adminFormGrid">
+        <form action={createAdminUser} className="adminFormGrid" data-feedback-success="Usuário administrativo criado.">
           <label className="span2">Usuário
             <input name="username" required minLength={3} maxLength={40} placeholder="usuario"/>
           </label>
@@ -67,11 +67,11 @@ export default async function AdminUsers(){
           </div>
 
           <div className="adminInlineActions">
-            {user.id!==session.userId&&<form action={toggleAdminUser}>
+            {user.id!==session.userId&&<form action={toggleAdminUser} data-feedback-success="Status do usuário atualizado.">
               <input type="hidden" name="id" value={user.id}/>
               <button>{user.active?"Desativar":"Ativar"}</button>
             </form>}
-            <form action={resetAdminPassword} style={{display:"flex",gap:7,flexWrap:"wrap"}}>
+            <form action={resetAdminPassword} style={{display:"flex",gap:7,flexWrap:"wrap"}} data-feedback-success="Senha redefinida com sucesso.">
               <input type="hidden" name="id" value={user.id}/>
               <input name="password" type="password" minLength={12} required placeholder="Nova senha"/>
               <button>Trocar senha</button>

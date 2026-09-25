@@ -76,7 +76,7 @@ export default async function Page(){
     </section>}
 
     <section className="inventoryComposer">
-      <form action={createIngredient} className="inventoryForm dark">
+      <form action={createIngredient} className="inventoryForm dark" data-feedback-success="Insumo criado com sucesso.">
         <small>CADASTRO</small><h2>Novo insumo</h2>
         <div className="inventoryFormGrid">
           <label><span>Nome</span><input name="name" required placeholder="Queijo, bacon, arroz..."/></label>
@@ -88,7 +88,7 @@ export default async function Page(){
         <button>Cadastrar insumo</button>
       </form>
 
-      <form action={addRecipeItem} className="inventoryForm accent">
+      <form action={addRecipeItem} className="inventoryForm accent" data-feedback-success="Ficha técnica atualizada com sucesso.">
         <small>FICHA TÉCNICA</small><h2>Composição do produto</h2>
         <label><span>Produto</span><select name="productId" required><option value="">Selecione</option>{products.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select></label>
         <label><span>Insumo</span><select name="ingredientId" required><option value="">Selecione</option>{ingredients.map(i=><option key={i.id} value={i.id}>{i.name} • {i.unit}</option>)}</select></label>
@@ -118,19 +118,19 @@ export default async function Page(){
 
           <details className="ingredientControls">
             <summary>Gerenciar insumo</summary>
-            <form action={updateIngredientControls}>
+            <form action={updateIngredientControls} data-feedback-success="Controles do insumo salvos.">
               <input type="hidden" name="ingredientId" value={item.id}/>
               <label><span>Custo / {item.unit}</span><input name="costPerUnit" defaultValue={(item.costPerUnitCents/100).toFixed(2)} inputMode="decimal"/></label>
               <label><span>Estoque mínimo</span><input name="minStockQty" type="number" step=".001" min="0" defaultValue={item.minStockQty}/></label>
               <button>Salvar parâmetros</button>
             </form>
-            <form action={adjustIngredientStock}>
+            <form action={adjustIngredientStock} data-feedback-success="Estoque ajustado com sucesso.">
               <input type="hidden" name="ingredientId" value={item.id}/>
               <label><span>Ajuste de estoque</span><input name="quantity" type="number" step=".001" required placeholder="+10 ou -1"/></label>
               <label><span>Motivo</span><input name="reason" required placeholder="Compra, inventário, correção..."/></label>
               <button>Ajustar saldo</button>
             </form>
-            <form action={recordIngredientWaste} className="wasteForm">
+            <form action={recordIngredientWaste} className="wasteForm" data-feedback-success="Perda registrada com sucesso.">
               <input type="hidden" name="ingredientId" value={item.id}/>
               <label><span>Quantidade perdida</span><input name="quantity" type="number" step=".001" min=".001" required placeholder="0"/></label>
               <label><span>Motivo da perda</span><input name="reason" required placeholder="Validade, quebra, preparo..."/></label>

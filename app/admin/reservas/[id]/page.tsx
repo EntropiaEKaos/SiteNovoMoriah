@@ -107,19 +107,19 @@ export default async function BookingDetail({params}:{params:Promise<{id:string}
 
           <div className="adminInlineActions" style={{marginTop:18}}>
 
-            {booking.status==="CHECKED_IN"&&<form action={pmsBookingAction}>
+            {booking.status==="CHECKED_IN"&&<form action={pmsBookingAction} data-feedback-success="Status da hospedagem atualizado com sucesso.">
               <input type="hidden" name="id" value={booking.id}/>
               <input type="hidden" name="action" value="CHECK_OUT"/>
               <button className="highlight">Fazer check-out</button>
             </form>}
-            {booking.status==="CONFIRMED"&&<form action={pmsBookingAction}>
+            {booking.status==="CONFIRMED"&&<form action={pmsBookingAction} data-feedback-success="Status da hospedagem atualizado com sucesso.">
               <input type="hidden" name="id" value={booking.id}/>
               <input type="hidden" name="action" value="NO_SHOW"/>
               <button>No-show</button>
             </form>}
           </div>
 
-          {statusEditable&&<form action={setBookingStatus} className="adminFormGrid" style={{marginTop:16}}>
+          {statusEditable&&<form action={setBookingStatus} className="adminFormGrid" style={{marginTop:16}} data-feedback-success="Status da reserva atualizado.">
             <input type="hidden" name="id" value={booking.id}/>
             <label>Status comercial
               <select name="status" defaultValue={booking.status}>
@@ -135,7 +135,7 @@ export default async function BookingDetail({params}:{params:Promise<{id:string}
 
         <article className="adminSectionCard">
           <h2>Titular e observações</h2>
-          <form action={updateBookingProfile} className="adminFormGrid">
+          <form action={updateBookingProfile} className="adminFormGrid" data-feedback-success="Reserva salva com sucesso.">
             <input type="hidden" name="id" value={booking.id}/>
             <label className="span2">Nome
               <input name="name" required defaultValue={booking.name}/>
@@ -169,14 +169,14 @@ export default async function BookingDetail({params}:{params:Promise<{id:string}
                 <b>{companion.name}</b><br/>
                 <small>{companion.document||"Sem documento"}{companion.birthDate?" • "+companion.birthDate.toLocaleDateString("pt-BR"):""}</small>
               </span>
-              <form action={deleteBookingCompanion}>
+              <form action={deleteBookingCompanion} data-feedback-success="Acompanhante removido.">
                 <input type="hidden" name="id" value={companion.id}/>
                 <button>Remover</button>
               </form>
             </div>)}
           </div>}
 
-          <form action={addBookingCompanion} className="adminFormGrid">
+          <form action={addBookingCompanion} className="adminFormGrid" data-feedback-success="Acompanhante adicionado com sucesso.">
             <input type="hidden" name="bookingId" value={booking.id}/>
             <label className="span2">Nome completo
               <input name="name" required/>
@@ -206,7 +206,7 @@ export default async function BookingDetail({params}:{params:Promise<{id:string}
             bookingId={booking.id}
             lodgingTotalCents={lodgingTotal}
             alreadyPaidCents={paid}
-          />:<form action={registerPayment} className="adminFormGrid" style={{marginTop:18}}>
+          />:<form action={registerPayment} className="adminFormGrid" style={{marginTop:18}} data-feedback-success="Pagamento registrado com sucesso.">
             <input type="hidden" name="bookingId" value={booking.id}/>
             <label>Valor
               <input name="amount" inputMode="decimal" required placeholder="R$"/>
@@ -248,7 +248,7 @@ export default async function BookingDetail({params}:{params:Promise<{id:string}
                 <b>{money(charge.amountCents)}</b>
               </div>)}
             </div>
-            {restaurantOpen>0&&<form action={settleRestaurantFolio} style={{marginTop:16}}>
+            {restaurantOpen>0&&<form action={settleRestaurantFolio} style={{marginTop:16}} data-feedback-success="Consumo do restaurante liquidado com sucesso.">
               <input type="hidden" name="bookingId" value={booking.id}/>
               <input type="hidden" name="method" value="ROOM_SETTLEMENT"/>
               <button>Liquidar consumo do restaurante</button>
