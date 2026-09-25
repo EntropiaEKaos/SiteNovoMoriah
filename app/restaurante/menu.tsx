@@ -52,7 +52,7 @@ type Product={
   groups:ModifierGroup[];
 };
 
-const money=(value:number)=>(value/100).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
+function money(value:number,locale:string){return (value/100).toLocaleString(locale==="en"?"en-US":locale==="es"?"es-ES":"pt-BR",{style:"currency",currency:"BRL"});}
 
 function slug(value:string){
   return value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
@@ -61,12 +61,18 @@ function slug(value:string){
 export default function Menu({
   products,
   bookingToken,
-  accepting
+  accepting,
+  locale
 }:{
   products:Product[];
   bookingToken:string;
   accepting:boolean;
+  locale:"pt"|"en"|"es";
 }){
+  const t=locale==="en"?{
+    search:"Search menu",clear:"Clear search",accepting:"Accepting orders",paused:"Orders paused",stayLinked:"Stay linked",categories:"Menu categories",empty:"No items found.",emptyHelp:"Try another name, ingredient or category.",item:"item",items:"items",featured:"Popular",prepared:"Prepared by the Moriah kitchen.",unavailable:"Unavailable",choose:"Choose",add:"Add",order:"YOUR ORDER",emptyCart:"Your cart is empty",emptyCartHelp:"Add menu items to build your order.",note:"Note:",edit:"Edit",subtotal:"Subtotal",finish:"CHECKOUT",delivery:"Delivery details",name:"Name",who:"Who will receive it?",room:"Room / location",linkedRoom:"Stay already linked",roomPickup:"Room or pickup",payment:"Payment",chargeStay:"Charge to stay",notes:"General notes",notesPlaceholder:"e.g. deliver at reception...",place:"Place order",addItem:"Add an item",pausedBtn:"Orders paused",trust:"Prices, add-ons and stock are validated again before confirmation.",viewOrder:"View order",closeCart:"Close cart",close:"Close",required:"Required",chooseOne:"Choose",chooseRange:"Choose from",observation:"Any notes?",obsPlaceholder:"e.g. no onion, sauce on the side...",allergens:"Allergens:",addMore:"Add more",addOrder:"Add to order",sharedSuffix:"shared"}:locale==="es"?{
+    search:"Buscar en el menú",clear:"Limpiar búsqueda",accepting:"Aceptando pedidos",paused:"Pedidos pausados",stayLinked:"Hospedaje vinculado",categories:"Categorías del menú",empty:"No se encontraron productos.",emptyHelp:"Prueba otro nombre, ingrediente o categoría.",item:"ítem",items:"ítems",featured:"Más pedido",prepared:"Preparado por la cocina Moriah.",unavailable:"No disponible",choose:"Elegir",add:"Agregar",order:"TU PEDIDO",emptyCart:"Tu carrito está vacío",emptyCartHelp:"Agrega productos del menú para armar tu pedido.",note:"Obs.:",edit:"Editar",subtotal:"Subtotal",finish:"FINALIZAR PEDIDO",delivery:"Datos para entrega",name:"Nombre",who:"¿Quién recibe?",room:"Habitación / lugar",linkedRoom:"Hospedaje ya vinculado",roomPickup:"Habitación o retiro",payment:"Pago",chargeStay:"Cargar al hospedaje",notes:"Observaciones generales",notesPlaceholder:"Ej.: entregar en recepción...",place:"Hacer pedido",addItem:"Agrega un producto",pausedBtn:"Pedidos pausados",trust:"Valores, adicionales y stock se validan nuevamente antes de confirmar.",viewOrder:"Ver pedido",closeCart:"Cerrar carrito",close:"Cerrar",required:"Obligatorio",chooseOne:"Elige",chooseRange:"Elige de",observation:"¿Alguna observación?",obsPlaceholder:"Ej.: sin cebolla, salsa aparte...",allergens:"Alérgenos:",addMore:"Agregar más",addOrder:"Agregar al pedido",sharedSuffix:"compartido"}:{
+    search:"Buscar no cardápio",clear:"Limpar busca",accepting:"Aceitando pedidos",paused:"Pedidos pausados",stayLinked:"{t.stayLinked}",categories:"Categorias do cardápio",empty:"Nenhum item encontrado.",emptyHelp:"Tente outro nome, ingrediente ou categoria.",item:"item",items:"itens",featured:"Mais pedido",prepared:"Preparado pela cozinha Moriah.",unavailable:"Indisponível",choose:"Escolher",add:"Adicionar",order:"SEU PEDIDO",emptyCart:"Seu carrinho está vazio",emptyCartHelp:"Adicione itens do cardápio para montar seu pedido.",note:"Obs.:",edit:"Editar",subtotal:"Subtotal",finish:"FINALIZAR PEDIDO",delivery:"Dados para entrega",name:"Nome",who:"Quem vai receber?",room:"Quarto / local",linkedRoom:"Hospedagem já vinculada",roomPickup:"Quarto ou retirada",payment:"Pagamento",chargeStay:"Lançar na hospedagem",notes:"Observações gerais",notesPlaceholder:"Ex.: entregar na recepção...",place:"Fazer pedido",addItem:"Adicione um item",pausedBtn:"Pedidos pausados",trust:"Valores, adicionais e estoque são validados novamente antes da confirmação.",viewOrder:"Ver pedido",closeCart:"Fechar carrinho",close:"Fechar",required:"Obrigatório",chooseOne:"Escolha",chooseRange:"Escolha de",observation:"Alguma observação?",obsPlaceholder:"Ex.: sem cebola, molho separado...",allergens:"Alérgenos:",addMore:"Adicionar mais",addOrder:"Adicionar ao pedido",sharedSuffix:"compartilhado"};
   const [cart,setCart]=useState<Record<string,number>>({});
   const [mods,setMods]=useState<Record<string,string[]>>({});
   const [itemNotes,setItemNotes]=useState<Record<string,string>>({});
@@ -220,19 +226,19 @@ export default function Menu({
           <input
             value={query}
             onChange={event=>setQuery(event.target.value)}
-            placeholder="Buscar no cardápio"
-            aria-label="Buscar no cardápio"
+            placeholder={t.search}
+            aria-label={t.search}
           />
-          {query&&<button type="button" onClick={()=>setQuery("")} aria-label="Limpar busca"><X size={15}/></button>}
+          {query&&<button type="button" onClick={()=>setQuery("")} aria-label={t.clear}><X size={15}/></button>}
         </label>
 
         <div className="foodDeliveryInfo">
-          <span><Clock3 size={14}/>{accepting?"Aceitando pedidos":"Pedidos pausados"}</span>
-          {bookingToken&&<span><BedDouble size={14}/>Hospedagem vinculada</span>}
+          <span><Clock3 size={14}/>{accepting?t.accepting:t.paused}</span>
+          {bookingToken&&<span><BedDouble size={14}/>{t.stayLinked}</span>}
         </div>
       </div>
 
-      {categories.length>0&&<nav className="foodCategoryNavV3" aria-label="Categorias do cardápio">
+      {categories.length>0&&<nav className="foodCategoryNavV3" aria-label={t.categories}>
         {categories.map(category=><a key={category.id} href={"#food-"+slug(category.name)}>
           {category.name}
         </a>)}
@@ -240,8 +246,8 @@ export default function Menu({
 
       {visibleCategories.length===0&&<div className="foodDeliveryEmpty">
         <Search size={28}/>
-        <h2>Nenhum item encontrado.</h2>
-        <p>Tente outro nome, ingrediente ou categoria.</p>
+        <h2>{t.empty}</h2>
+        <p>{t.emptyHelp}</p>
       </div>}
 
       {visibleCategories.map(category=><section
@@ -254,7 +260,7 @@ export default function Menu({
             <h2>{category.name}</h2>
             {category.description&&<p>{category.description}</p>}
           </div>
-          <span>{category.products.length} {category.products.length===1?"item":"itens"}</span>
+          <span>{category.products.length} {category.products.length===1?t.item:t.items}</span>
         </header>
 
         <div className="foodProductGridV3">
@@ -276,13 +282,13 @@ export default function Menu({
               <button type="button" className="foodProductCardClick" onClick={()=>setSelectedProduct(product)}>
                 <div className="foodProductCopyV3">
                   <div className="foodProductEyebrowV3">
-                    {product.featured&&<span><Sparkles size={11}/>Mais pedido</span>}
+                    {product.featured&&<span><Sparkles size={11}/>{t.featured}</span>}
                     {product.badge&&<span>{product.badge}</span>}
                     {discount>0&&<span className="isPromo">-{discount}%</span>}
                   </div>
 
                   <h3>{product.name}</h3>
-                  <p>{product.description||"Preparado pela cozinha Moriah."}</p>
+                  <p>{product.description||t.prepared}</p>
 
                   <div className="foodProductMetaV3">
                     {product.prepMinutes&&<span><Clock3 size={11}/>~{product.prepMinutes} min</span>}
@@ -290,8 +296,8 @@ export default function Menu({
                   </div>
 
                   <div className="foodProductPriceV3">
-                    {product.originalPriceCents!=null&&<del>{money(product.originalPriceCents)}</del>}
-                    <strong>{money(product.priceCents)}</strong>
+                    {product.originalPriceCents!=null&&<del>{money(product.originalPriceCents,locale)}</del>}
+                    <strong>{money(product.priceCents,locale)}</strong>
                   </div>
                 </div>
 
@@ -299,7 +305,7 @@ export default function Menu({
                   {product.imageUrl
                     ?<img src={product.imageUrl} alt={product.name}/>
                     :<div className="foodProductPlaceholderV3">MORIAH</div>}
-                  {!product.available&&<span>Indisponível</span>}
+                  {!product.available&&<span>{t.unavailable}</span>}
                 </div>
               </button>
 
@@ -314,7 +320,7 @@ export default function Menu({
                   disabled={!product.available}
                   onClick={()=>quickAdd(product)}
                 >
-                  <Plus size={16}/>{product.groups.length?"Escolher":"Adicionar"}
+                  <Plus size={16}/>{product.groups.length?t.choose:t.add}
                 </button>}
               </div>
             </article>;
@@ -327,31 +333,31 @@ export default function Menu({
       <div className="foodCartV3Head">
         <div>
           <span><ShoppingBag size={19}/></span>
-          <div><small>SEU PEDIDO</small><h2>{itemCount} {itemCount===1?"item":"itens"}</h2></div>
+          <div><small>{t.order}</small><h2>{itemCount} {itemCount===1?t.item:t.items}</h2></div>
         </div>
-        <button type="button" className="foodCartCloseV3" onClick={()=>setCartOpen(false)} aria-label="Fechar carrinho"><X size={18}/></button>
+        <button type="button" className="foodCartCloseV3" onClick={()=>setCartOpen(false)} aria-label={t.closeCart}><X size={18}/></button>
       </div>
 
       {itemCount===0?<div className="foodCartEmptyV3">
         <ShoppingBag size={28}/>
-        <b>Seu carrinho está vazio</b>
-        <span>Adicione itens do cardápio para montar seu pedido.</span>
+        <b>{t.emptyCart}</b>
+        <span>{t.emptyCartHelp}</span>
       </div>:<div className="foodCartLinesV3">
         {cartLines.map(({product,quantity,selectedOptions,lineTotal})=><div className="foodCartLineV3" key={product.id}>
           <div className="foodCartLineTopV3">
             <div><b>{quantity}× {product.name}</b>{selectedOptions.length>0&&<small>{selectedOptions.map(option=>option.name).join(" • ")}</small>}</div>
-            <strong>{money(lineTotal)}</strong>
+            <strong>{money(lineTotal,locale)}</strong>
           </div>
-          {itemNotes[product.id]?.trim()&&<small className="foodCartNoteV3">Obs.: {itemNotes[product.id]}</small>}
+          {itemNotes[product.id]?.trim()&&<small className="foodCartNoteV3">{t.note} {itemNotes[product.id]}</small>}
           <div className="foodCartLineActionsV3">
-            <button type="button" onClick={()=>setSelectedProduct(product)}>Editar</button>
+            <button type="button" onClick={()=>setSelectedProduct(product)}>{t.edit}</button>
             <div><button type="button" onClick={()=>remove(product)}><Minus size={13}/></button><b>{quantity}</b><button type="button" onClick={()=>quickAdd(product)}><Plus size={13}/></button></div>
           </div>
         </div>)}
       </div>}
 
       <div className="foodOrderTotalV3">
-        <span>Subtotal</span><b>{money(total)}</b>
+        <span>{t.subtotal}</span><b>{money(total,locale)}</b>
       </div>
 
       <form action={placeRestaurantOrder} className="foodOrderFormV3">
@@ -359,41 +365,41 @@ export default function Menu({
         <input type="hidden" name="bookingToken" value={bookingToken}/>
 
         <div className="foodCheckoutTitleV3">
-          <small>FINALIZAR PEDIDO</small>
-          <b>Dados para entrega</b>
+          <small>{t.finish}</small>
+          <b>{t.delivery}</b>
         </div>
 
-        <label><span><UserRound size={14}/>Nome</span><input name="guestName" required placeholder="Quem vai receber?"/></label>
-        <label><span><BedDouble size={14}/>Quarto / local</span><input name="roomLabel" placeholder={bookingToken?"Hospedagem já vinculada":"Quarto ou retirada"}/></label>
+        <label><span><UserRound size={14}/>{t.name}</span><input name="guestName" required placeholder={t.who}/></label>
+        <label><span><BedDouble size={14}/>{t.room}</span><input name="roomLabel" placeholder={bookingToken?t.linkedRoom:t.roomPickup}/></label>
         <label><span><Phone size={14}/>WhatsApp</span><input name="phone" inputMode="tel" placeholder="(13) 99999-9999"/></label>
-        <label><span><CreditCard size={14}/>Pagamento</span>
+        <label><span><CreditCard size={14}/>{t.payment}</span>
           <select name="paymentMethod" defaultValue={bookingToken?"ROOM":"PIX"}>
-            {bookingToken&&<option value="ROOM">Lançar na hospedagem</option>}
+            {bookingToken&&<option value="ROOM">{t.chargeStay}</option>}
             <option value="PIX">PIX</option><option value="CARD">Cartão</option><option value="CASH">Dinheiro</option>
           </select>
         </label>
-        <label><span><MessageSquareText size={14}/>Observações gerais</span><textarea name="notes" rows={2} maxLength={1000} placeholder="Ex.: entregar na recepção..."/></label>
+        <label><span><MessageSquareText size={14}/>{t.notes}</span><textarea name="notes" rows={2} maxLength={1000} placeholder={t.notesPlaceholder}/></label>
 
         <button className="foodOrderSubmitV3" disabled={!total||!accepting}>
-          <span>{accepting?itemCount>0?"Fazer pedido":"Adicione um item":"Pedidos pausados"}</span>
-          {itemCount>0&&<b>{money(total)}</b>}
+          <span>{accepting?itemCount>0?t.place:t.addItem:t.pausedBtn}</span>
+          {itemCount>0&&<b>{money(total,locale)}</b>}
           <ChevronRight size={18}/>
         </button>
       </form>
 
-      <p className="foodOrderTrustV3">Valores, adicionais e estoque são validados novamente antes da confirmação.</p>
+      <p className="foodOrderTrustV3">{t.trust}</p>
     </aside>
 
     {itemCount>0&&<button type="button" className="foodMobileCartBarV3" onClick={()=>setCartOpen(true)}>
-      <span><i>{itemCount}</i><ShoppingBag size={18}/><b>Ver pedido</b></span>
-      <strong>{money(total)}</strong>
+      <span><i>{itemCount}</i><ShoppingBag size={18}/><b>{t.viewOrder}</b></span>
+      <strong>{money(total,locale)}</strong>
     </button>}
 
     {selectedProduct&&<div className="foodProductModalBackdropV3" role="presentation" onMouseDown={event=>{
       if(event.currentTarget===event.target)setSelectedProduct(null);
     }}>
       <section className="foodProductModalV3" role="dialog" aria-modal="true" aria-label={selectedProduct.name}>
-        <button type="button" className="foodModalCloseV3" onClick={()=>setSelectedProduct(null)} aria-label="Fechar"><X size={20}/></button>
+        <button type="button" className="foodModalCloseV3" onClick={()=>setSelectedProduct(null)} aria-label={t.close}><X size={20}/></button>
 
         <div className="foodModalHeroV3">
           {selectedProduct.imageUrl
@@ -404,9 +410,9 @@ export default function Menu({
         <div className="foodModalBodyV3">
           <div className="foodModalTitleV3">
             <div><small>{selectedProduct.category}</small><h2>{selectedProduct.name}</h2></div>
-            <strong>{money(selectedProduct.priceCents)}</strong>
+            <strong>{money(selectedProduct.priceCents,locale)}</strong>
           </div>
-          <p>{selectedProduct.description||"Preparado pela cozinha Moriah."}</p>
+          <p>{selectedProduct.description||t.prepared}</p>
 
           {(selectedProduct.prepMinutes||selectedProduct.tags.length>0)&&<div className="foodModalMetaV3">
             {selectedProduct.prepMinutes&&<span><Clock3 size={12}/>~{selectedProduct.prepMinutes} min</span>}
@@ -415,8 +421,8 @@ export default function Menu({
 
           {selectedProduct.groups.map(group=><div className="foodModifierV3" key={group.id}>
             <header>
-              <div><b>{group.name}</b><small>{group.minSelect===group.maxSelect?"Escolha "+group.minSelect:"Escolha de "+group.minSelect+" a "+group.maxSelect}</small></div>
-              {group.required&&<span>Obrigatório</span>}
+              <div><b>{group.name}</b><small>{group.minSelect===group.maxSelect?t.chooseOne+" "+group.minSelect:t.chooseRange+" "+group.minSelect+" a "+group.maxSelect}</small></div>
+              {group.required&&<span>{t.required}</span>}
             </header>
             <div>
               {group.options.map(option=><label key={option.id}>
@@ -429,23 +435,23 @@ export default function Menu({
                   />
                   <b>{option.name}</b>
                 </span>
-                {option.priceCents>0&&<strong>+ {money(option.priceCents)}</strong>}
+                {option.priceCents>0&&<strong>+ {money(option.priceCents,locale)}</strong>}
               </label>)}
             </div>
           </div>)}
 
           {selectedProduct.allowNotes&&<label className="foodModalNoteV3">
-            <b>Alguma observação?</b>
+            <b>{t.observation}</b>
             <textarea
               value={itemNotes[selectedProduct.id]||""}
               maxLength={500}
               rows={3}
-              placeholder="Ex.: sem cebola, molho separado..."
+              placeholder={t.obsPlaceholder}
               onChange={event=>setItemNotes(current=>({...current,[selectedProduct.id]:event.target.value}))}
             />
           </label>}
 
-          {selectedProduct.allergens.length>0&&<div className="foodAllergenV3"><b>Alérgenos:</b> {selectedProduct.allergens.join(", ")}</div>}
+          {selectedProduct.allergens.length>0&&<div className="foodAllergenV3"><b>{t.allergens}</b> {selectedProduct.allergens.join(", ")}</div>}
         </div>
 
         <footer className="foodModalFooterV3">
@@ -463,8 +469,8 @@ export default function Menu({
               if(choicesValid(selectedProduct))setSelectedProduct(null);
             }}
           >
-            <span>{(cart[selectedProduct.id]||0)>0?"Adicionar mais":"Adicionar ao pedido"}</span>
-            <b>{money(selectedProduct.priceCents+selectedExtra(selectedProduct))}</b>
+            <span>{(cart[selectedProduct.id]||0)>0?t.addMore:t.addOrder}</span>
+            <b>{money(selectedProduct.priceCents+selectedExtra(selectedProduct),locale)}</b>
           </button>
         </footer>
       </section>
