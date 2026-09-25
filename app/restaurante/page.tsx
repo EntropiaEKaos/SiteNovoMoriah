@@ -7,11 +7,13 @@ import {
 } from "../../lib/restaurant-menu";
 import PublicSiteChrome from "../public-site-chrome";
 import Menu from "./menu";
+import {getSiteLocale,localizeRecord} from "../../lib/site-i18n";
 
 export const dynamic="force-dynamic";
 
 export default async function Page({searchParams}:{searchParams:Promise<{booking?:string}>}){
   const q=await searchParams;
+  const locale=await getSiteLocale();
 
   const [products,settings,siteSettings,navPages]=await Promise.all([
     prisma.restaurantProduct.findMany({
@@ -38,15 +40,30 @@ export default async function Page({searchParams}:{searchParams:Promise<{booking
     loadPublicSiteSettings(),
     prisma.sitePage.findMany({
       where:{published:true,showInNav:true,slug:{not:"home"}},
-      select:{slug:true,title:true,navLabel:true},
+      select:{slug:true,title:true,navLabel:true,translations:true},
       orderBy:[{sortOrder:"asc"},{createdAt:"asc"}],
       take:6
     })
   ]);
 
   const now=new Date();
+  const localizedSettings=localizeRecord(settings,locale);
+  const localizedSiteSettings=localizeRecord(siteSettings,locale);
+  const localizedNavPages=navPages.map(row=>localizeRecord(row,locale)!).filter(Boolean);
+  const localizedProducts=products.map(product=>{
+    const localizedProduct=localizeRecord(product,locale)||product;
+    const localizedCategory=localizeRecord(product.category,locale)||product.category;
+    const localizedLinks=product.modifierLinks.map(link=>({
+      ...link,
+      group:{
+        ...(localizeRecord(link.group,locale)||link.group),
+        options:link.group.options.map(option=>localizeRecord(option,locale)||option)
+      }
+    }));
+    return {...localizedProduct,category:localizedCategory,modifierLinks:localizedLinks};
+  });
 
-  const menuProducts=products
+  const menuProducts=localizedProducts
     .map(product=>{
       const categoryScheduled=isMenuScheduleAvailable(product.category,now);
       const productScheduled=isMenuScheduleAvailable(product,now);
@@ -95,12 +112,13 @@ export default async function Page({searchParams}:{searchParams:Promise<{booking
     })
     .filter(product=>product.scheduled&&(product.available||settings?.showSoldOut!==false));
 
-  const accepting=settings?.acceptingOrders!==false;
-  const hours=(settings?.openTime||"07:00")+"–"+(settings?.closeTime||"22:00");
-  const title=settings?.menuTitle||"Moriah Food";
-  const subtitle=settings?.menuSubtitle||"Cardápio da casa conectado à sua hospedagem.";
+  const accepting=localizedSettings?.acceptingOrders!==false;
+  const hours=(localizedSettings?.openTime||"07:00")+"–"+(localizedSettings?.closeTime||"22:00");
+  const title=localizedSettings?.menuTitle||"Moriah Food";
+  const subtitle=localizedSettings?.menuSubtitle||(locale==="en"?"Our menu connected to your stay.":locale==="es"?"Nuestro menú conectado a tu hospedaje.":"Cardápio da casa conectado à sua hospedagem.");
+  const t=locale==="en"?{open:"OPEN",paused:"PAUSED",orders:"ORDERS",service:"SERVICE",items:"AVAILABLE ITEMS",linked:"Stay identified • orders can be linked to your room account."}:locale==="es"?{open:"ABIERTO",paused:"PAUSADO",orders:"PEDIDOS",service:"ATENCIÓN",items:"ÍTEMS DISPONIBLES",linked:"Hospedaje identificado • los pedidos pueden vincularse a tu cuenta."}:{open:"ABERTO",paused:"PAUSADO",orders:"PEDIDOS",service:"ATENDIMENTO",items:"ITENS DISPONÍVEIS",linked:"Hospedagem identificada • pedidos podem ser vinculados à sua conta."};
 
-  return <PublicSiteChrome settings={siteSettings} navPages={navPages}>
+  return <PublicSiteChrome settings={localizedSiteSettings} navPages={localizedNavPages} locale={locale}>
     <section
       className={"siteSubpageHeroV6 foodHeroV6"+(settings?.menuBannerUrl?" hasImage":"")}
       style={settings?.menuBannerUrl?{
@@ -114,16 +132,16 @@ export default async function Page({searchParams}:{searchParams:Promise<{booking
         <p>{subtitle}</p>
       </div>
       <div className="siteSubpageHeroStats">
-        <span><b>{accepting?"ABERTO":"PAUSADO"}</b><small>PEDIDOS</small></span>
-        <span><b>{hours}</b><small>ATENDIMENTO</small></span>
-        <span><b>{menuProducts.filter(product=>product.available).length}</b><small>ITENS DISPONÍVEIS</small></span>
+        <span><b>{accepting?t.open:t.paused}</b><small>{t.orders}</small></span>
+        <span><b>{hours}</b><small>{t.service}</small></span>
+        <span><b>{menuProducts.filter(product=>product.available).length}</b><small>{t.items}</small></span>
       </div>
     </section>
 
-    {q.booking&&<div className="foodBookingIdentifiedV6">Hospedagem identificada • pedidos podem ser vinculados à sua conta.</div>}
+    {q.booking&&<div className="foodBookingIdentifiedV6">{t.linked}</div>}
 
     <section className="foodShell foodShellV6">
-      <Menu products={menuProducts} bookingToken={q.booking||""} accepting={accepting}/>
+      <Menu products={menuProducts} bookingToken={q.booking||""} accepting={accepting} locale={locale}/>
     </section>
   </PublicSiteChrome>;
 }
