@@ -3,6 +3,7 @@ import {notFound} from "next/navigation";
 import {prisma} from "../../lib/prisma";
 import PublicSiteChrome from "../public-site-chrome";
 import SiteBuilderRenderer from "../site-builder-renderer";
+import {getSiteLocale,localizeRecord} from "../../lib/site-i18n";
 
 export const dynamic="force-dynamic";
 
@@ -12,6 +13,7 @@ export async function generateMetadata({
   params:Promise<{slug:string}>
 }):Promise<Metadata>{
   const {slug}=await params;
+  const locale=await getSiteLocale();
   const page=await prisma.sitePage.findUnique({
     where:{slug},
     select:{
@@ -20,15 +22,17 @@ export async function generateMetadata({
       description:true,
       seoTitle:true,
       seoDescription:true,
-      ogImage:true
+      ogImage:true,
+      translations:true
     }
   });
 
   if(!page||!page.published)return {};
+  const localized=localizeRecord(page,locale)||page;
 
   return {
-    title:page.seoTitle||page.title+" | Pousada Moriah",
-    description:page.seoDescription||page.description||undefined,
+    title:localized.seoTitle||localized.title+" | Pousada Moriah",
+    description:localized.seoDescription||localized.description||undefined,
     openGraph:page.ogImage?{images:[page.ogImage]}:undefined
   };
 }
@@ -39,6 +43,7 @@ export default async function DynamicSitePage({
   params:Promise<{slug:string}>
 }){
   const {slug}=await params;
+  const locale=await getSiteLocale();
 
   const [page,settings,rooms,promo,posts,media,navPages]=await Promise.all([
     prisma.sitePage.findUnique({
@@ -65,7 +70,7 @@ export default async function DynamicSitePage({
     prisma.media.findMany({orderBy:{createdAt:"desc"},take:30}),
     prisma.sitePage.findMany({
       where:{published:true,showInNav:true,slug:{not:"home"}},
-      select:{slug:true,title:true,navLabel:true},
+      select:{slug:true,title:true,navLabel:true,translations:true},
       orderBy:[{sortOrder:"asc"},{createdAt:"asc"}],
       take:6
     })
@@ -73,24 +78,32 @@ export default async function DynamicSitePage({
 
   if(!page||!page.published||page.slug==="home")notFound();
 
-  const wa=settings?.whatsapp?.replace(/\D/g,"");
+  const localizedPage=localizeRecord(page,locale)||page;
+  const localizedSettings=localizeRecord(settings,locale);
+  const localizedRooms=rooms.map(room=>localizeRecord(room,locale)!).filter(Boolean);
+  const localizedPromo=localizeRecord(promo,locale);
+  const localizedPosts=posts.map(post=>localizeRecord(post,locale)!).filter(Boolean);
+  const localizedNavPages=navPages.map(item=>localizeRecord(item,locale)!).filter(Boolean);
+  const localizedSections=localizedPage.sections.map(section=>localizeRecord(section,locale)!).filter(Boolean);
+
+  const wa=localizedSettings?.whatsapp?.replace(/\D/g,"");
   const whatsappHref=wa
     ?"https://wa.me/"+wa+"?text="+encodeURIComponent("Olá! Vim pelo site da Pousada Moriah e gostaria de informações.")
     :null;
 
-  return <PublicSiteChrome settings={settings} navPages={navPages}>
-    {page.sections.length?<SiteBuilderRenderer
-      sections={page.sections}
-      settings={settings}
-      rooms={rooms}
-      promo={promo}
-      posts={posts}
+  return <PublicSiteChrome settings={localizedSettings} navPages={localizedNavPages} locale={locale}>
+    {localizedSections.length?<SiteBuilderRenderer
+      sections={localizedSections}
+      settings={localizedSettings}
+      rooms={localizedRooms}
+      promo={localizedPromo}
+      posts={localizedPosts}
       media={media}
       whatsappHref={whatsappHref}
     />:<section className="siteEmptyPage">
-      <small>MORIAH / {page.slug.toUpperCase()}</small>
-      <h1>{page.title}</h1>
-      <p>{page.description||"Conteúdo em atualização."}</p>
+      <small>MORIAH / {localizedPage.slug.toUpperCase()}</small>
+      <h1>{localizedPage.title}</h1>
+      <p>{localizedPage.description||"Conteúdo em atualização."}</p>
     </section>}
   </PublicSiteChrome>;
 }
