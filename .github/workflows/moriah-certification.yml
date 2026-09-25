@@ -1,0 +1,56 @@
+name: Moriah Certification
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: moriah-certification-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  static-gates:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install
+        run: npm ci
+      - name: Prisma generate
+        run: npm run prisma:generate
+        env:
+          DATABASE_URL: postgresql://moriah_ci:moriah_ci@127.0.0.1:5432/moriah_ci
+      - name: TypeScript
+        run: npm run typecheck
+        env:
+          DATABASE_URL: postgresql://moriah_ci:moriah_ci@127.0.0.1:5432/moriah_ci
+
+  production-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: static-gates
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install
+        run: npm ci
+      - name: Production build
+        run: npm run build
+        env:
+          DATABASE_URL: postgresql://moriah_ci:moriah_ci@127.0.0.1:5432/moriah_ci
+          NEXT_TELEMETRY_DISABLED: "1"
