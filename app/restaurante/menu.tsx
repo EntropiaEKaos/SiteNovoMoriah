@@ -368,6 +368,7 @@ export default function Menu({
         <input type="hidden" name="cart" value={payload}/>
         <input type="hidden" name="bookingToken" value={bookingToken}/>
         <input type="hidden" name="successPath" value={successPath}/>
+        <input type="hidden" name="orderSource" value={standalone?"STANDALONE_MENU":bookingToken?"ROOM_QR":"PUBLIC_MENU"}/>
 
         <div className="foodCheckoutTitleV3">
           <small>{t.finish}</small>
