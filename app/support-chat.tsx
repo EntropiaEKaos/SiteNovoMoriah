@@ -17,6 +17,7 @@ type Msg={
   content:string;
   booking?:Action|null;
   handoff?:Action|null;
+  actions?:Array<Action&{external?:boolean}>|null;
 };
 
 const fallback={
@@ -171,7 +172,8 @@ export default function SupportChat(){
             role:"assistant" as const,
             content:data.reply||data.error||"Atendimento indisponível no momento.",
             booking:data.booking||null,
-            handoff:data.handoff||null
+            handoff:data.handoff||null,
+            actions:Array.isArray(data.actions)?data.actions.slice(0,4):null
           }
         ].slice(-20);
         try{
@@ -266,7 +268,18 @@ export default function SupportChat(){
               onClick={()=>metric("BOOKING_CTA")}
             >{message.booking.label} →</a>}
 
-            {message.handoff&&<a
+            {message.actions&&message.actions.length>0&&<div className="chatActionGrid">
+              {message.actions.map(action=><a
+                key={action.href}
+                className="chatBookingCta"
+                href={action.href}
+                target={action.external?"_blank":undefined}
+                rel={action.external?"noreferrer":undefined}
+                onClick={()=>metric(action.external?"WHATSAPP":"ACTION_CTA")}
+              >{action.label} →</a>)}
+            </div>}
+
+            {!message.actions?.some(action=>action.href===message.handoff?.href)&&message.handoff&&<a
               className="chatHumanCta"
               href={message.handoff.href}
               onClick={()=>metric("WHATSAPP")}
