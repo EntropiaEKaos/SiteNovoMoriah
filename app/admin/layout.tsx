@@ -7,6 +7,7 @@ import {logoutAdmin} from "./login/actions";
 import AdminPresenceControl from "./components/admin-presence-control";
 import AdminPwaRegister from "./components/admin-pwa-register";
 import AdminNotificationCenter from "./components/admin-notification-center";
+import AdminActionFeedback from "./components/admin-action-feedback";
 
 export const metadata:Metadata={
   title:{default:"Moriah Admin",template:"%s | Moriah Admin"},
@@ -54,7 +55,7 @@ export default async function AdminLayout({children}:{children:React.ReactNode})
   const notificationItems=notificationRows.map(row=>({...row,read:readIds.has(row.id)}));
   const unread=notificationItems.filter(row=>!row.read).length;
 
-  return <div className="adminApp"><AdminPwaRegister/>
+  return <div className="adminApp"><AdminPwaRegister/><AdminActionFeedback/>
     <aside className="adminSidebar">
       <div className="adminBrand">
         <span className="adminBrandMark">M</span>
