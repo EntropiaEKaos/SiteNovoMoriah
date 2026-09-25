@@ -57,7 +57,7 @@ export default async function SitePages(){
         <div className="adminInlineActions">
           <Link className="highlight" href={page.slug==="home"?"/admin/site":"/admin/site/paginas/"+page.id}>Editar</Link>
           <Link href={page.slug==="home"?"/":"/"+page.slug} target="_blank">Abrir ↗</Link>
-          <form action={duplicateSitePage}>
+          <form action={duplicateSitePage} data-feedback-success="Página duplicada com sucesso.">
             <input type="hidden" name="id" value={page.id}/>
             <button>Duplicar página</button>
           </form>
