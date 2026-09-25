@@ -7,3 +7,6 @@ ALTER TABLE "BlogPost" ADD COLUMN "translations" JSONB;
 ALTER TABLE "RestaurantCategory" ADD COLUMN "translations" JSONB;
 ALTER TABLE "RestaurantProduct" ADD COLUMN "translations" JSONB;
 ALTER TABLE "MoriahEvent" ADD COLUMN "translations" JSONB;
+ALTER TABLE "RestaurantSettings" ADD COLUMN "translations" JSONB;
+ALTER TABLE "RestaurantModifierGroup" ADD COLUMN "translations" JSONB;
+ALTER TABLE "RestaurantModifierOption" ADD COLUMN "translations" JSONB;
