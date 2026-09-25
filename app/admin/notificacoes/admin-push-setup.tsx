@@ -44,8 +44,8 @@ export default function AdminPushSetup(){
         headers:{"content-type":"application/json"},
         body:JSON.stringify({
           token,
-          deviceName:navigator.userAgentData?.platform||navigator.platform||"Dispositivo Admin",
-          platform:navigator.userAgentData?.platform||navigator.platform||null
+          deviceName:navigator.platform||"Dispositivo Admin",
+          platform:navigator.platform||null
         })
       });
       if(!response.ok)throw new Error("Não foi possível registrar este dispositivo no Admin.");
