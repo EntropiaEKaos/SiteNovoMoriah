@@ -49,7 +49,7 @@ function TranslationForm({entity,locale}:{entity:Entity;locale:Locale}){
 
 export default async function SiteLanguages(){
   await requireAdmin();
-  const [settings,pages,sections,rooms,promotions,posts,categories,products,events]=await Promise.all([
+  const [settings,pages,sections,rooms,promotions,posts,categories,products,restaurantSettings,modifierGroups,modifierOptions,events]=await Promise.all([
     prisma.siteSettings.findUnique({where:{id:"main"}}),
     prisma.sitePage.findMany({orderBy:[{sortOrder:"asc"},{createdAt:"asc"}]}),
     prisma.siteSection.findMany({include:{page:{select:{title:true,slug:true}}},orderBy:[{pageId:"asc"},{sortOrder:"asc"}]}),
@@ -58,6 +58,9 @@ export default async function SiteLanguages(){
     prisma.blogPost.findMany({orderBy:{createdAt:"desc"},take:60}),
     prisma.restaurantCategory.findMany({orderBy:{sortOrder:"asc"}}),
     prisma.restaurantProduct.findMany({include:{category:true},orderBy:{name:"asc"},take:150}),
+    prisma.restaurantSettings.findUnique({where:{id:"main"}}),
+    prisma.restaurantModifierGroup.findMany({orderBy:{name:"asc"}}),
+    prisma.restaurantModifierOption.findMany({include:{group:true},orderBy:{name:"asc"}}),
     prisma.moriahEvent.findMany({orderBy:{startsAt:"desc"},take:80})
   ]);
 
@@ -119,6 +122,10 @@ export default async function SiteLanguages(){
     type:"CATEGORY",id:row.id,title:"Moriah Food / categoria: "+row.name,translations:row.translations,
     fields:[{name:"name",label:"Nome"},{name:"description",label:"Descrição",long:true}]
   }));
+  if(restaurantSettings)entities.push({
+    type:"RESTAURANT_SETTINGS",id:restaurantSettings.id,title:"Moriah Food / textos gerais",translations:restaurantSettings.translations,
+    fields:[{name:"menuTitle",label:"Título do cardápio"},{name:"menuSubtitle",label:"Subtítulo do cardápio",long:true}]
+  }));
   products.forEach(row=>entities.push({
     type:"PRODUCT",id:row.id,title:"Moriah Food: "+row.name,subtitle:row.category.name,translations:row.translations,
     fields:[
@@ -128,6 +135,14 @@ export default async function SiteLanguages(){
       {name:"tags",label:"Tags",long:true,array:true},
       {name:"allergens",label:"Alérgenos",long:true,array:true}
     ]
+  }));
+  modifierGroups.forEach(row=>entities.push({
+    type:"MOD_GROUP",id:row.id,title:"Adicionais / grupo: "+row.name,translations:row.translations,
+    fields:[{name:"name",label:"Nome do grupo"}]
+  }));
+  modifierOptions.forEach(row=>entities.push({
+    type:"MOD_OPTION",id:row.id,title:"Adicional: "+row.name,subtitle:row.group.name,translations:row.translations,
+    fields:[{name:"name",label:"Nome da opção"}]
   }));
   events.forEach(row=>entities.push({
     type:"EVENT",id:row.id,title:"Evento: "+row.title,translations:row.translations,
@@ -152,8 +167,11 @@ export default async function SiteLanguages(){
     ["ACCOMMODATION","Hospedagens"],
     ["PROMOTION","Promoções"],
     ["BLOG","Blog"],
+    ["RESTAURANT_SETTINGS","Moriah Food / textos gerais"],
     ["CATEGORY","Categorias do Moriah Food"],
     ["PRODUCT","Produtos do Moriah Food"],
+    ["MOD_GROUP","Grupos de adicionais"],
+    ["MOD_OPTION","Opções de adicionais"],
     ["EVENT","Eventos"]
   ];
 
