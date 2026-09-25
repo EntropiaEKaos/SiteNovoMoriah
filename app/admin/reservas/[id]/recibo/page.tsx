@@ -1,6 +1,7 @@
 import {notFound} from "next/navigation";
 import {prisma} from "../../../../../lib/prisma";
 import {requireAdmin} from "../../../../../lib/admin-auth";
+import ReceiptPrintButton from "./receipt-print-button";
 
 export const dynamic="force-dynamic";
 
@@ -33,8 +34,8 @@ export default async function ReceiptPage({params}:{params:Promise<{id:string}>}
   return <main className="receiptPage">
     <header>
       <div>
-        <small>POUSADA MORIAH • COMPROVANTE</small>
-        <h1>Resumo da hospedagem</h1>
+        <small>POUSADA MORIAH • RECIBO DE HOSPEDAGEM</small>
+        <h1>Recibo da hospedagem</h1>
       </div>
       <b>#{booking.id.slice(-8).toUpperCase()}</b>
     </header>
@@ -77,8 +78,10 @@ export default async function ReceiptPage({params}:{params:Promise<{id:string}>}
       </div>)}
     </section>}
 
+    <div className="receiptActions"><ReceiptPrintButton/></div>
+
     <footer>
-      <p>Documento operacional emitido pelo sistema Moriah.</p>
+      <p>Recibo operacional da hospedagem emitido pelo sistema Moriah.</p>
       <small>Emissão: {new Date().toLocaleString("pt-BR")}</small>
     </footer>
   </main>;
