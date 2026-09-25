@@ -3,7 +3,7 @@ import {loadPublicSiteSettings} from "../lib/public-site-settings";
 import PwaRegister from "./pwa-register";
 import GlobalSupportChat from "./global-support-chat";
 import WhatsAppButton from "./whatsapp-button";
-import {getSiteLocale,localizeRecord} from "../lib/site-i18n";
+import {getI18n,getSiteLocale,localizeRecord} from "../lib/site-i18n";
 import "./globals.css";
 
 export async function generateMetadata():Promise<Metadata>{
@@ -34,8 +34,7 @@ export default async function RootLayout({children}:{children:React.ReactNode}){
   }
 
   const lang=locale==="en"?"en":locale==="es"?"es":"pt-BR";
-  const fallbackMessage=locale==="en"?"Hi! I came from the Moriah website and would like assistance.":locale==="es"?"¡Hola! Vengo del sitio de Moriah y quisiera atención.":"Olá! Vim pelo site da Moriah e gostaria de atendimento.";
-  const fallbackLabel=locale==="en"?"Chat on WhatsApp":locale==="es"?"Hablar por WhatsApp":"Fale no WhatsApp";
+  const messages=getI18n(locale);
 
   return <html lang={lang}>
     <body>
@@ -44,8 +43,8 @@ export default async function RootLayout({children}:{children:React.ReactNode}){
       <WhatsAppButton
         enabled={settings?.whatsappFloatingEnabled??true}
         number={settings?.whatsapp||""}
-        message={settings?.whatsappFloatingMessage||fallbackMessage}
-        label={settings?.whatsappFloatingLabel||fallbackLabel}
+        message={settings?.whatsappFloatingMessage||messages.common.whatsappMessage}
+        label={settings?.whatsappFloatingLabel||messages.common.whatsappLabel}
         position={settings?.whatsappFloatingPosition==="RIGHT"?"RIGHT":"LEFT"}
       />
       {children}
