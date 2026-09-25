@@ -10,3 +10,4 @@ ALTER TABLE "MoriahEvent" ADD COLUMN "translations" JSONB;
 ALTER TABLE "RestaurantSettings" ADD COLUMN "translations" JSONB;
 ALTER TABLE "RestaurantModifierGroup" ADD COLUMN "translations" JSONB;
 ALTER TABLE "RestaurantModifierOption" ADD COLUMN "translations" JSONB;
+ALTER TABLE "IntegrationSettings" ADD COLUMN "translations" JSONB;
