@@ -66,6 +66,7 @@ model AdminLoginAttempt {
 }
 
 model SiteSettings {
+  translations Json?
   id                        String   @id @default("main")
   siteName                  String   @default("Pousada Moriah")
   tagline                   String   @default("Seu lugar perto de tudo. Do seu jeito.")
@@ -90,6 +91,7 @@ model SiteSettings {
 }
 
 model SitePage {
+  translations Json?
   id             String        @id @default(cuid())
   slug           String        @unique
   title          String
@@ -109,6 +111,7 @@ model SitePage {
 }
 
 model SiteSection {
+  translations Json?
   id                String   @id @default(cuid())
   pageId            String
   page              SitePage @relation(fields: [pageId], references: [id], onDelete: Cascade)
@@ -147,6 +150,7 @@ model SiteSection {
 }
 
 model Accommodation {
+  translations Json?
   id                  String               @id @default(cuid())
   name                String
   description         String
@@ -184,6 +188,7 @@ model Accommodation {
 }
 
 model Promotion {
+  translations Json?
   id          String    @id @default(cuid())
   title       String
   description String?
@@ -276,6 +281,7 @@ model IntegrationSettings {
 }
 
 model BlogPost {
+  translations Json?
   id          String    @id @default(cuid())
   title       String
   slug        String    @unique
@@ -662,6 +668,7 @@ model BookingAuditLog {
 }
 
 model RestaurantCategory {
+  translations Json?
  id String @id @default(cuid())
  name String
  description String?
@@ -678,6 +685,7 @@ model RestaurantCategory {
  @@index([active,sortOrder])
 }
 model RestaurantProduct {
+  translations Json?
  id String @id @default(cuid())
  categoryId String
  category RestaurantCategory @relation(fields:[categoryId],references:[id],onDelete:Restrict)
@@ -1063,6 +1071,7 @@ model RouletteSettings {
 }
 
 model MoriahEvent {
+  translations Json?
   id                       String   @id @default(cuid())
   slug                     String   @unique
   title                    String
