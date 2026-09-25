@@ -75,7 +75,7 @@ export default async function Page(){
         {Array.from(new Set(rules.map(rule=>rule.module))).map(module=><article className="notificationModuleCard" key={module}>
           <header><small>MÓDULO</small><h3>{module}</h3></header>
           <div className="notificationRuleStack">
-            {rules.filter(rule=>rule.module===module).map(rule=><form action={saveNotificationRule} className="notificationRuleCard" key={rule.id}>
+            {rules.filter(rule=>rule.module===module).map(rule=><form action={saveNotificationRule} className="notificationRuleCard" data-feedback-success="Regra de notificação salva." key={rule.id}>
               <input type="hidden" name="id" value={rule.id}/>
               <input type="hidden" name="module" value={rule.module}/>
               <input type="hidden" name="eventKey" value={rule.eventKey}/>
@@ -103,7 +103,7 @@ export default async function Page(){
 
       <details className="notificationNewRule">
         <summary>+ Criar regra personalizada</summary>
-        <form action={saveNotificationRule} className="adminFormGrid cols3">
+        <form action={saveNotificationRule} className="adminFormGrid cols3" data-feedback-success="Regra de notificação criada.">
           <label>Módulo<input name="module" required placeholder="Ex.: LOCACOES"/></label>
           <label>Evento<input name="eventKey" required placeholder="Ex.: DAMAGE_REPORTED"/></label>
           <label>Nome<input name="label" required placeholder="Ex.: Avaria registrada"/></label>
@@ -125,7 +125,7 @@ export default async function Page(){
         <h2>Nova mensagem</h2>
         <p>Mensagens internas são registradas imediatamente. PUSH sem destinatário envia para todos os dispositivos Admin ativos.</p>
 
-        <form action={createNotification} className="adminFormGrid">
+        <form action={createNotification} className="adminFormGrid" data-feedback-success="Notificação criada com sucesso.">
           <label>Canal
             <select name="channel" defaultValue="IN_APP">
               <option value="IN_APP">Interna</option>
@@ -215,20 +215,20 @@ export default async function Page(){
             {message.error&&<div className="adminPageNote" style={{marginTop:12}}>{message.error}</div>}
 
             <div className="adminInlineActions">
-              {(message.channel==="EMAIL"||message.channel==="PUSH")&&message.status!=="SENT"&&message.status!=="CANCELLED"&&<form action={dispatchNotification}>
+              {(message.channel==="EMAIL"||message.channel==="PUSH")&&message.status!=="SENT"&&message.status!=="CANCELLED"&&<form action={dispatchNotification} data-feedback-success="Notificação enviada para processamento.">
                 <input type="hidden" name="id" value={message.id}/>
                 <button className="highlight">{message.channel==="PUSH"?"Enviar push":"Enviar e-mail"}</button>
               </form>}
 
               {message.channel==="WHATSAPP"&&message.status!=="SENT"&&message.status!=="CANCELLED"&&wa&&<>
                 <a className="highlight" href={wa} target="_blank" rel="noreferrer">Abrir WhatsApp ↗</a>
-                <form action={markNotificationSent}>
+                <form action={markNotificationSent} data-feedback-success="Notificação marcada como enviada.">
                   <input type="hidden" name="id" value={message.id}/>
                   <button>Marcar enviada</button>
                 </form>
               </>}
 
-              {message.status!=="SENT"&&message.status!=="CANCELLED"&&<form action={cancelNotification}>
+              {message.status!=="SENT"&&message.status!=="CANCELLED"&&<form action={cancelNotification} data-feedback-success="Notificação cancelada.">
                 <input type="hidden" name="id" value={message.id}/>
                 <button className="danger">Cancelar</button>
               </form>}
