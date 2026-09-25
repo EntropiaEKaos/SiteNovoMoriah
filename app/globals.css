@@ -7977,3 +7977,84 @@ body:has(.externalCalendarWidget) .whatsappFloat{display:none!important}
   .corporateOffer{padding:58px 18px;gap:28px}
   .corporateQuote{padding:70px 18px}
 }
+
+
+/* Generic editable sections for special landing pages */
+.specialVisualSection{
+  padding:clamp(64px,8vw,108px) clamp(20px,6vw,96px);
+  background:#f4f1e8;
+  color:#111;
+}
+.specialVisualSection.theme-dark{background:#111;color:#fff}
+.specialVisualSection.theme-yellow{background:#ffd400;color:#111}
+.specialVisualSection.theme-soft{background:#ebe7de;color:#111}
+.specialVisualInner{max-width:1500px;margin:auto}
+.specialVisualInner>small{
+  display:block;
+  margin-bottom:10px;
+  color:#b49700;
+  font-size:9px;
+  font-weight:950;
+  letter-spacing:1.8px;
+}
+.specialVisualSection.theme-dark .specialVisualInner>small{color:#ffd400}
+.specialVisualInner>h2{
+  max-width:950px;
+  margin:0;
+  font-size:clamp(40px,5.5vw,78px);
+  line-height:.94;
+  letter-spacing:-3px;
+}
+.specialVisualLead{
+  max-width:760px;
+  margin:18px 0 0;
+  color:#716a60;
+  line-height:1.65;
+}
+.specialVisualSection.theme-dark .specialVisualLead{color:#aaa}
+.specialVisualBody{
+  max-width:900px;
+  margin-top:24px;
+  color:#716a60;
+  line-height:1.7;
+}
+.specialVisualSection.theme-dark .specialVisualBody{color:#aaa}
+.specialVisualGrid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:10px;
+  margin-top:34px;
+}
+.specialVisualGrid article{
+  min-height:180px;
+  padding:22px;
+  border:1px solid rgba(128,120,108,.28);
+  background:rgba(255,255,255,.72);
+}
+.specialVisualSection.theme-dark .specialVisualGrid article{background:#181818;border-color:#333}
+.specialVisualGrid article>span{font-size:9px;font-weight:950;color:#9a927f}
+.specialVisualGrid h3{margin:24px 0 8px;font-size:22px;letter-spacing:-.8px}
+.specialVisualGrid p{margin:0;color:#746e64;line-height:1.55}
+.specialVisualSection.theme-dark .specialVisualGrid p{color:#999}
+.specialVisualActions{display:flex;gap:10px;flex-wrap:wrap;margin-top:28px}
+.specialVisualActions a{
+  display:inline-flex;
+  padding:13px 16px;
+  background:#111;
+  color:#fff;
+  font-size:11px;
+  font-weight:950;
+}
+.specialVisualSection.theme-dark .specialVisualActions a,
+.specialVisualSection.theme-yellow .specialVisualActions a{background:#fff;color:#111}
+.specialVisualActions a.secondary{
+  background:transparent!important;
+  color:currentColor!important;
+  border:1px solid currentColor;
+}
+@media(max-width:900px){
+  .specialVisualGrid{grid-template-columns:1fr 1fr}
+}
+@media(max-width:620px){
+  .specialVisualGrid{grid-template-columns:1fr}
+}
