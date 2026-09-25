@@ -1,14 +1,17 @@
-ALTER TABLE "RouletteSettings" ADD COLUMN "reviewLinks" JSONB;
+ALTER TABLE "RouletteSettings"
+ADD COLUMN IF NOT EXISTS "reviewLinks" JSONB;
 
-ALTER TABLE "RoulettePrize" ADD COLUMN "campaignKey" TEXT NOT NULL DEFAULT 'moriah-1';
+ALTER TABLE "RoulettePrize"
+ADD COLUMN IF NOT EXISTS "campaignKey" TEXT NOT NULL DEFAULT 'moriah-1';
 
 UPDATE "RoulettePrize"
 SET "campaignKey" = COALESCE(
   (SELECT "campaignKey" FROM "RouletteSettings" WHERE "id" = 'main'),
   'moriah-1'
-);
+)
+WHERE "campaignKey" IS NULL OR "campaignKey" = 'moriah-1';
 
-CREATE INDEX "RoulettePrize_campaignKey_active_sortOrder_idx"
+CREATE INDEX IF NOT EXISTS "RoulettePrize_campaignKey_active_sortOrder_idx"
 ON "RoulettePrize"("campaignKey","active","sortOrder");
 
 INSERT INTO "RouletteSettings" (
@@ -32,38 +35,76 @@ INSERT INTO "RoulettePrize" (
   "id","campaignKey","name","description","color","textColor","weight",
   "quantityTotal","awardedCount","validityDays","active","sortOrder","createdAt","updatedAt"
 )
-SELECT * FROM (VALUES
-  ('delivery-demo-01','moriah-delivery-demo','10% OFF','10% de desconto no próximo pedido direto.','#FFD400','#101010',3,NULL,0,14,true,10,NOW(),NOW()),
-  ('delivery-demo-02','moriah-delivery-demo','Refrigerante grátis','Ganhe um refrigerante no próximo pedido elegível.','#101010','#FFFFFF',3,NULL,0,14,true,20,NOW(),NOW()),
-  ('delivery-demo-03','moriah-delivery-demo','Sobremesa grátis','Uma sobremesa selecionada pela casa.','#FFFFFF','#101010',2,NULL,0,14,true,30,NOW(),NOW()),
-  ('delivery-demo-04','moriah-delivery-demo','Frete grátis','Frete grátis em um próximo pedido elegível.','#F5C400','#101010',2,NULL,0,14,true,40,NOW(),NOW()),
-  ('delivery-demo-05','moriah-delivery-demo','Upgrade de bebida','Troque sua bebida por uma opção maior, conforme disponibilidade.','#222222','#FFFFFF',2,NULL,0,14,true,50,NOW(),NOW()),
-  ('delivery-demo-06','moriah-delivery-demo','Brinde surpresa','Um mimo surpresa da Moriah no próximo pedido.','#FFF3A6','#101010',1,NULL,0,14,true,60,NOW(),NOW())
+SELECT
+  seed.id,
+  seed."campaignKey",
+  seed.name,
+  seed.description,
+  seed.color,
+  seed."textColor",
+  seed.weight,
+  seed."quantityTotal",
+  seed."awardedCount",
+  seed."validityDays",
+  seed.active,
+  seed."sortOrder",
+  seed."createdAt",
+  seed."updatedAt"
+FROM (VALUES
+  ('delivery-demo-01'::text,'moriah-delivery-demo'::text,'10% OFF'::text,'10% de desconto no próximo pedido direto.'::text,'#FFD400'::text,'#101010'::text,3::integer,NULL::integer,0::integer,14::integer,true,10::integer,NOW(),NOW()),
+  ('delivery-demo-02'::text,'moriah-delivery-demo'::text,'Refrigerante grátis'::text,'Ganhe um refrigerante no próximo pedido elegível.'::text,'#101010'::text,'#FFFFFF'::text,3::integer,NULL::integer,0::integer,14::integer,true,20::integer,NOW(),NOW()),
+  ('delivery-demo-03'::text,'moriah-delivery-demo'::text,'Sobremesa grátis'::text,'Uma sobremesa selecionada pela casa.'::text,'#FFFFFF'::text,'#101010'::text,2::integer,NULL::integer,0::integer,14::integer,true,30::integer,NOW(),NOW()),
+  ('delivery-demo-04'::text,'moriah-delivery-demo'::text,'Frete grátis'::text,'Frete grátis em um próximo pedido elegível.'::text,'#F5C400'::text,'#101010'::text,2::integer,NULL::integer,0::integer,14::integer,true,40::integer,NOW(),NOW()),
+  ('delivery-demo-05'::text,'moriah-delivery-demo'::text,'Upgrade de bebida'::text,'Troque sua bebida por uma opção maior, conforme disponibilidade.'::text,'#222222'::text,'#FFFFFF'::text,2::integer,NULL::integer,0::integer,14::integer,true,50::integer,NOW(),NOW()),
+  ('delivery-demo-06'::text,'moriah-delivery-demo'::text,'Brinde surpresa'::text,'Um mimo surpresa da Moriah no próximo pedido.'::text,'#FFF3A6'::text,'#101010'::text,1::integer,NULL::integer,0::integer,14::integer,true,60::integer,NOW(),NOW())
 ) AS seed(
-  "id","campaignKey","name","description","color","textColor","weight",
-  "quantityTotal","awardedCount","validityDays","active","sortOrder","createdAt","updatedAt"
+  id,"campaignKey",name,description,color,"textColor",weight,
+  "quantityTotal","awardedCount","validityDays",active,"sortOrder","createdAt","updatedAt"
 )
 WHERE NOT EXISTS (
   SELECT 1 FROM "RoulettePrize" WHERE "campaignKey"='moriah-delivery-demo'
-);
+)
+ON CONFLICT ("id") DO NOTHING;
 
 INSERT INTO "RoulettePrize" (
   "id","campaignKey","name","description","color","textColor","weight",
   "quantityTotal","awardedCount","validityDays","active","sortOrder","createdAt","updatedAt"
 )
-SELECT * FROM (VALUES
-  ('main-demo-01','moriah-1','5% OFF','5% de desconto em uma próxima compra elegível.','#FFD400','#101010',3,NULL,0,14,true,10,NOW(),NOW()),
-  ('main-demo-02','moriah-1','Refrigerante grátis','Ganhe um refrigerante em uma próxima compra elegível.','#101010','#FFFFFF',3,NULL,0,14,true,20,NOW(),NOW()),
-  ('main-demo-03','moriah-1','Sobremesa grátis','Uma sobremesa selecionada pela casa.','#FFFFFF','#101010',2,NULL,0,14,true,30,NOW(),NOW()),
-  ('main-demo-04','moriah-1','10% OFF','10% de desconto em uma próxima compra elegível.','#F5C400','#101010',2,NULL,0,14,true,40,NOW(),NOW())
+SELECT
+  seed.id,
+  COALESCE(
+    (SELECT "campaignKey" FROM "RouletteSettings" WHERE "id"='main'),
+    seed."campaignKey"
+  ),
+  seed.name,
+  seed.description,
+  seed.color,
+  seed."textColor",
+  seed.weight,
+  seed."quantityTotal",
+  seed."awardedCount",
+  seed."validityDays",
+  seed.active,
+  seed."sortOrder",
+  seed."createdAt",
+  seed."updatedAt"
+FROM (VALUES
+  ('main-demo-01'::text,'moriah-1'::text,'5% OFF'::text,'5% de desconto em uma próxima compra elegível.'::text,'#FFD400'::text,'#101010'::text,3::integer,NULL::integer,0::integer,14::integer,true,10::integer,NOW(),NOW()),
+  ('main-demo-02'::text,'moriah-1'::text,'Refrigerante grátis'::text,'Ganhe um refrigerante em uma próxima compra elegível.'::text,'#101010'::text,'#FFFFFF'::text,3::integer,NULL::integer,0::integer,14::integer,true,20::integer,NOW(),NOW()),
+  ('main-demo-03'::text,'moriah-1'::text,'Sobremesa grátis'::text,'Uma sobremesa selecionada pela casa.'::text,'#FFFFFF'::text,'#101010'::text,2::integer,NULL::integer,0::integer,14::integer,true,30::integer,NOW(),NOW()),
+  ('main-demo-04'::text,'moriah-1'::text,'10% OFF'::text,'10% de desconto em uma próxima compra elegível.'::text,'#F5C400'::text,'#101010'::text,2::integer,NULL::integer,0::integer,14::integer,true,40::integer,NOW(),NOW())
 ) AS seed(
-  "id","campaignKey","name","description","color","textColor","weight",
-  "quantityTotal","awardedCount","validityDays","active","sortOrder","createdAt","updatedAt"
+  id,"campaignKey",name,description,color,"textColor",weight,
+  "quantityTotal","awardedCount","validityDays",active,"sortOrder","createdAt","updatedAt"
 )
 WHERE NOT EXISTS (
   SELECT 1 FROM "RoulettePrize"
-  WHERE "campaignKey" = COALESCE((SELECT "campaignKey" FROM "RouletteSettings" WHERE "id"='main'),'moriah-1')
-);
+  WHERE "campaignKey" = COALESCE(
+    (SELECT "campaignKey" FROM "RouletteSettings" WHERE "id"='main'),
+    'moriah-1'
+  )
+)
+ON CONFLICT ("id") DO NOTHING;
 
 UPDATE "RoulettePrize"
 SET "campaignKey" = COALESCE(
