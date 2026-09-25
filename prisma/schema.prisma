@@ -19,6 +19,7 @@ model AdminUser {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
   auditLogs    AdminAuditLog[]
+  pushDevices  AdminPushDevice[]
 
   @@index([active, role])
 }
@@ -35,6 +36,23 @@ model AdminAuditLog {
 
   @@index([actorId, createdAt])
   @@index([action, createdAt])
+}
+
+model AdminPushDevice {
+  id          String    @id @default(cuid())
+  adminUserId String
+  adminUser   AdminUser @relation(fields: [adminUserId], references: [id], onDelete: Cascade)
+  token       String    @unique
+  deviceName  String?
+  platform    String?
+  userAgent   String?
+  active      Boolean   @default(true)
+  lastSeenAt  DateTime  @default(now())
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([adminUserId, active])
+  @@index([active, lastSeenAt])
 }
 
 model AdminLoginAttempt {

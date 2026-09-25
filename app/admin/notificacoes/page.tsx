@@ -7,6 +7,7 @@ import {
   markNotificationSent,
   saveNotificationRule
 } from "./actions";
+import AdminPushSetup from "./admin-push-setup";
 
 export const dynamic="force-dynamic";
 
@@ -20,13 +21,14 @@ const statusClass=(status:string)=>{
 export default async function Page(){
   await requireAdmin();
 
-  const [messages,cfg,rules]=await Promise.all([
+  const [messages,cfg,rules,devices]=await Promise.all([
     prisma.notificationMessage.findMany({
       orderBy:{createdAt:"desc"},
       take:120
     }),
     prisma.integrationSettings.findUnique({where:{id:"main"}}),
-    prisma.notificationRule.findMany({orderBy:[{module:"asc"},{label:"asc"}]})
+    prisma.notificationRule.findMany({orderBy:[{module:"asc"},{label:"asc"}]}),
+    prisma.adminPushDevice.findMany({where:{active:true},include:{adminUser:{select:{username:true}}},orderBy:{lastSeenAt:"desc"},take:80})
   ]);
 
   const sent=messages.filter(message=>message.status==="SENT").length;
@@ -48,7 +50,7 @@ export default async function Page(){
       <div>
         <small>MORIAH CMS / ENGAJAMENTO</small>
         <h1>Notificações</h1>
-        <p>Central de mensagens internas, WhatsApp assistido e e-mail, com fila e diagnóstico de providers.</p>
+        <p>Central operacional do Admin: mensagens internas, WhatsApp assistido, e-mail e push PWA por dispositivo.</p>
       </div>
     </section>
 
@@ -56,7 +58,7 @@ export default async function Page(){
       <div><small>Mensagens</small><strong>{messages.length}</strong></div>
       <div><small>Enviadas</small><strong>{sent}</strong></div>
       <div><small>Prontas</small><strong>{ready}</strong></div>
-      <div><small>Bloqueadas / falhas</small><strong>{blocked}</strong></div>
+      <div><small>Dispositivos PWA</small><strong>{devices.length}</strong></div>
     </section>
 
     <section className="notificationRulesSection">
@@ -121,7 +123,7 @@ export default async function Page(){
     <section className="adminTwoCol" style={{marginBottom:20}}>
       <article className="adminSectionCard">
         <h2>Nova mensagem</h2>
-        <p>Mensagens internas são registradas imediatamente. WhatsApp abre o envio assistido. E-mail pode ser disparado se o provider estiver configurado.</p>
+        <p>Mensagens internas são registradas imediatamente. PUSH sem destinatário envia para todos os dispositivos Admin ativos.</p>
 
         <form action={createNotification} className="adminFormGrid">
           <label>Canal
@@ -133,10 +135,10 @@ export default async function Page(){
             </select>
           </label>
           <label>Público / segmento
-            <input name="audience" defaultValue="INTERNAL" placeholder="Equipe, hóspedes, check-in..."/>
+            <input name="audience" defaultValue="ADMIN" placeholder="ADMIN, RECEPCAO, COZINHA..."/>
           </label>
           <label className="span2">Destinatário
-            <input name="recipient" placeholder="Telefone, e-mail ou token. Vazio apenas para interna."/>
+            <input name="recipient" placeholder="Telefone/e-mail. Para PUSH, deixe vazio para todos os dispositivos Admin."/>
           </label>
           <label className="span2">Título
             <input name="title" required maxLength={180}/>
@@ -154,12 +156,22 @@ export default async function Page(){
         <div className="adminStatusLine"><span>Notificação interna</span><b className="adminChip ok">PRONTA</b></div>
         <div className="adminStatusLine"><span>WhatsApp assistido</span><b className="adminChip ok">PRONTO</b></div>
         <div className="adminStatusLine"><span>E-mail / Resend</span><b className={"adminChip "+(emailReady?"ok":"warn")}>{emailReady?"PRONTO":"PENDENTE"}</b></div>
-        <div className="adminStatusLine"><span>Firebase Web Push público</span><b className={"adminChip "+(pushPublicReady?"ok":"warn")}>{pushPublicReady?"CONFIGURADO":"PENDENTE"}</b></div>
+        <div className="adminStatusLine"><span>Firebase Web Push Admin</span><b className={"adminChip "+(pushPublicReady?"ok":"warn")}>{pushPublicReady?"CONFIGURADO":"PENDENTE"}</b></div>
         <div className="adminStatusLine"><span>Firebase server-side</span><b className={"adminChip "+(pushServerReady?"ok":"warn")}>{pushServerReady?"CONFIGURADO":"PENDENTE"}</b></div>
 
         <div className="adminPageNote" style={{marginTop:18}}>
           Push automático só deve ser habilitado quando houver credencial server-side e inscrições de dispositivos. A central não finge envio quando essas peças ainda não existem.
         </div>
+      </aside>
+    </section>
+
+    <section className="adminTwoCol" style={{marginBottom:20}}>
+      <article className="adminSectionCard">
+        <AdminPushSetup/>
+      </article>
+      <aside className="adminSectionCard">
+        <div className="adminListCardHead"><div><small>PWA ADMIN / DISPOSITIVOS</small><h2>Dispositivos inscritos</h2><p>Somente sessões autenticadas no Admin podem registrar um token.</p></div><span className="adminChip ok">{devices.length} ativos</span></div>
+        {devices.length===0?<div className="adminEmptyState"><strong>Nenhum dispositivo ativo.</strong><p>Abra o Admin no celular ou computador e ative as notificações.</p></div>:<div className="adminStack">{devices.map(device=><div className="adminStatusLine" key={device.id}><span><b>{device.deviceName||device.platform||"Dispositivo"}</b><small> • {device.adminUser.username} • {device.lastSeenAt.toLocaleString("pt-BR")}</small></span><b className="adminChip ok">ATIVO</b></div>)}</div>}
       </aside>
     </section>
 
@@ -203,9 +215,9 @@ export default async function Page(){
             {message.error&&<div className="adminPageNote" style={{marginTop:12}}>{message.error}</div>}
 
             <div className="adminInlineActions">
-              {message.channel==="EMAIL"&&message.status!=="SENT"&&message.status!=="CANCELLED"&&<form action={dispatchNotification}>
+              {(message.channel==="EMAIL"||message.channel==="PUSH")&&message.status!=="SENT"&&message.status!=="CANCELLED"&&<form action={dispatchNotification}>
                 <input type="hidden" name="id" value={message.id}/>
-                <button className="highlight">Enviar e-mail</button>
+                <button className="highlight">{message.channel==="PUSH"?"Enviar push":"Enviar e-mail"}</button>
               </form>}
 
               {message.channel==="WHATSAPP"&&message.status!=="SENT"&&message.status!=="CANCELLED"&&wa&&<>

@@ -1,9 +1,20 @@
+import type {Metadata,Viewport} from "next";
 import Link from "next/link";
 import {getAdminSession} from "../../lib/admin-auth";
 import {prisma} from "../../lib/prisma";
 import AdminNavigation from "./components/admin-navigation";
 import {logoutAdmin} from "./login/actions";
 import AdminPresenceControl from "./components/admin-presence-control";
+import AdminPwaRegister from "./components/admin-pwa-register";
+
+export const metadata:Metadata={
+  title:{default:"Moriah Admin",template:"%s | Moriah Admin"},
+  description:"Central administrativa da Pousada Moriah",
+  manifest:"/admin/manifest.webmanifest",
+  appleWebApp:{capable:true,title:"Moriah Admin",statusBarStyle:"black-translucent"},
+  icons:{icon:"/icon.svg",apple:"/icon.svg"}
+};
+export const viewport:Viewport={themeColor:"#0b2631"};
 
 export default async function AdminLayout({children}:{children:React.ReactNode}){
   const session=await getAdminSession();
@@ -24,7 +35,7 @@ export default async function AdminLayout({children}:{children:React.ReactNode})
 
   const onDuty=Boolean(user?.onDuty);
 
-  return <div className="adminApp">
+  return <div className="adminApp"><AdminPwaRegister/>
     <aside className="adminSidebar">
       <div className="adminBrand">
         <span className="adminBrandMark">M</span>

@@ -3,6 +3,7 @@
 import {revalidatePath} from "next/cache";
 import {requireAdmin} from "../../../lib/admin-auth";
 import {prisma} from "../../../lib/prisma";
+import {sendAdminPush} from "../../../lib/admin-push";
 
 const CHANNELS=new Set(["IN_APP","WHATSAPP","EMAIL","PUSH"]);
 
@@ -14,7 +15,7 @@ function validRecipient(channel:string,recipient:string|null){
   if(channel==="IN_APP")return true;
   if(channel==="EMAIL")return Boolean(recipient&&/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recipient));
   if(channel==="WHATSAPP")return Boolean(recipient&&recipient.replace(/\D/g,"").length>=10);
-  if(channel==="PUSH")return Boolean(recipient);
+  if(channel==="PUSH")return true;
   return false;
 }
 
@@ -30,13 +31,16 @@ export async function createNotification(formData:FormData){
   if(!CHANNELS.has(channel)||!title||!body)throw new Error("Notificação inválida.");
   if(!validRecipient(channel,recipient))throw new Error("Destinatário inválido para o canal escolhido.");
 
+  const pushReady=Boolean(process.env.FIREBASE_SERVICE_ACCOUNT_JSON);
   const status=channel==="IN_APP"
     ?"SENT"
     :channel==="EMAIL"&&process.env.RESEND_API_KEY&&process.env.RESEND_FROM_EMAIL
       ?"READY"
       :channel==="WHATSAPP"
         ?"READY"
-        :"BLOCKED";
+        :channel==="PUSH"&&pushReady
+          ?"READY"
+          :"BLOCKED";
 
   await prisma.notificationMessage.create({
     data:{
@@ -49,7 +53,7 @@ export async function createNotification(formData:FormData){
       sentAt:channel==="IN_APP"?new Date():null,
       error:status==="BLOCKED"
         ?channel==="PUSH"
-          ?"Push requer credenciais server-side e dispositivo inscrito."
+          ?"Push requer FIREBASE_SERVICE_ACCOUNT_JSON."
           :"Provider externo ainda não configurado."
         :null
     }
@@ -112,6 +116,59 @@ export async function dispatchNotification(formData:FormData){
       where:{id},
       data:{status:"SENT",sentAt:new Date(),error:null}
     });
+  }else if(message.channel==="PUSH"){
+    const devices=await prisma.adminPushDevice.findMany({
+      where:{
+        active:true,
+        ...(message.recipient?{token:message.recipient}: {})
+      },
+      select:{id:true,token:true}
+    });
+
+    if(!devices.length){
+      await prisma.notificationMessage.update({
+        where:{id},
+        data:{status:"BLOCKED",error:"Nenhum dispositivo Admin ativo está inscrito para push."}
+      });
+      revalidatePath("/admin/notificacoes");
+      return;
+    }
+
+    try{
+      const result=await sendAdminPush({
+        tokens:devices.map(device=>device.token),
+        title:message.title,
+        body:message.body,
+        url:"/admin/notificacoes"
+      });
+
+      const failedTokens=result.results.filter(item=>!item.ok).map(item=>item.token);
+      if(failedTokens.length){
+        await prisma.adminPushDevice.updateMany({
+          where:{token:{in:failedTokens}},
+          data:{active:false}
+        });
+      }
+
+      await prisma.notificationMessage.update({
+        where:{id},
+        data:{
+          status:result.sent>0?"SENT":"FAILED",
+          sentAt:result.sent>0?new Date():null,
+          error:result.failed
+            ?`${result.sent} enviada(s), ${result.failed} falha(s).`
+            :null
+        }
+      });
+    }catch(error){
+      await prisma.notificationMessage.update({
+        where:{id},
+        data:{
+          status:"FAILED",
+          error:error instanceof Error?error.message:"Falha no Firebase Push."
+        }
+      });
+    }
   }else{
     throw new Error("Este canal exige envio assistido ou provider adicional.");
   }
