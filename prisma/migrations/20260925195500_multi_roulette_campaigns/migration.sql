@@ -64,3 +64,10 @@ WHERE NOT EXISTS (
   SELECT 1 FROM "RoulettePrize"
   WHERE "campaignKey" = COALESCE((SELECT "campaignKey" FROM "RouletteSettings" WHERE "id"='main'),'moriah-1')
 );
+
+UPDATE "RoulettePrize"
+SET "campaignKey" = COALESCE(
+  (SELECT "campaignKey" FROM "RouletteSettings" WHERE "id"='main'),
+  'moriah-1'
+)
+WHERE "id" LIKE 'main-demo-%';
