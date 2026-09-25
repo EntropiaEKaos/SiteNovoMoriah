@@ -115,6 +115,26 @@ export async function receiveIngredientPurchase(fd:FormData){
     actionUrl:"/admin/restaurante/compras"
   });
 
+  const impacted=await prisma.restaurantProduct.findMany({
+    where:{active:true,recipes:{some:{ingredientId}}},
+    include:{recipes:{include:{ingredient:true}},category:true}
+  });
+  for(const product of impacted){
+    const theoreticalCost=Math.round(product.recipes.reduce((sum,row)=>sum+row.quantity*row.ingredient.costPerUnitCents,0));
+    const target=product.targetCmvPct??product.category.targetCmvPct;
+    const currentPct=product.priceCents>0?theoreticalCost/product.priceCents*100:0;
+    if(target!=null&&currentPct>target){
+      await queueSystemNotification({
+        module:"INVENTORY",
+        eventKey:"CMV_TARGET_EXCEEDED",
+        title:"CMV acima da meta: "+product.name,
+        body:"CMV teórico "+currentPct.toFixed(1)+"% • meta "+target.toFixed(1)+"%. Revise preço, ficha ou compra.",
+        dedupeKey:"cmv-target:"+product.id+":"+String(Math.round(currentPct*10)),
+        actionUrl:"/admin/restaurante/bi"
+      });
+    }
+  }
+
   revalidatePath("/admin/restaurante/compras");
   revalidatePath("/admin/restaurante/insumos");
   revalidatePath("/admin/restaurante/bi");
@@ -191,4 +211,22 @@ export async function updateIngredientPlanning(fd:FormData){
   });
   revalidatePath("/admin/restaurante/compras");
   revalidatePath("/admin/restaurante/insumos");
+}
+
+export async function saveCmvTarget(fd:FormData){
+  await requireAdmin();
+  const productId=String(fd.get("productId")||"");
+  const categoryId=String(fd.get("categoryId")||"");
+  const raw=String(fd.get("targetCmvPct")||"").trim().replace(",",".");
+  const target=raw===""?null:Number(raw);
+  if(target!==null&&(!Number.isFinite(target)||target<1||target>99))throw new Error("Meta de CMV inválida.");
+  if(productId){
+    await prisma.restaurantProduct.update({where:{id:productId},data:{targetCmvPct:target}});
+  }else if(categoryId){
+    await prisma.restaurantCategory.update({where:{id:categoryId},data:{targetCmvPct:target}});
+  }else{
+    throw new Error("Produto ou categoria obrigatório.");
+  }
+  revalidatePath("/admin/restaurante/bi");
+  revalidatePath("/admin/restaurante/cardapio");
 }
