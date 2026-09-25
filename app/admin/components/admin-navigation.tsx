@@ -90,7 +90,8 @@ const sections=[
       ["Integrações","/admin/integracoes",Plug],
       ["Configurações","/admin/configuracoes",Settings],
       ["Notificações","/admin/notificacoes",Bell],
-      ["Saúde do sistema","/admin/sistema/saude",Gauge]
+      ["Saúde do sistema","/admin/sistema/saude",Gauge],
+      ["Implantação","/admin/sistema/implantacao",Sparkles]
     ]
   }
 ] as const;
