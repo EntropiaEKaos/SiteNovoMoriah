@@ -1,6 +1,8 @@
 import {NextRequest,NextResponse} from "next/server";
 
-const allowed=new Set(["pt","en","es"]);
+import {siteLocales} from "../../../i18n/catalog";
+
+const allowed=new Set<string>(siteLocales);
 
 export async function GET(req:NextRequest){
   const locale=req.nextUrl.searchParams.get("locale")||"pt";
