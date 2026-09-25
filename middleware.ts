@@ -15,6 +15,27 @@ function decodeBase64Url(value:string){
   return atob(padded);
 }
 
+function restaurantHost(req:NextRequest){
+  const host=(req.headers.get("host")||"").split(":")[0].toLowerCase();
+  const configured=(process.env.RESTAURANT_SUBDOMAIN_HOST||"").trim().toLowerCase();
+  if(configured&&host===configured)return true;
+  return host.startsWith("restaurante.")||host.startsWith("food.");
+}
+
+function restaurantRewrite(req:NextRequest){
+  if(!restaurantHost(req))return null;
+  const path=req.nextUrl.pathname;
+  const target=path==="/"||path==="/cardapio"
+    ?"/restaurante-standalone"
+    :path==="/pedido-confirmado"
+      ?"/restaurante-standalone/obrigado"
+      :null;
+  if(!target)return null;
+  const url=req.nextUrl.clone();
+  url.pathname=target;
+  return NextResponse.rewrite(url);
+}
+
 async function valid(req:NextRequest){
   const secret=process.env.SESSION_SECRET;
   if(!secret)return false;
@@ -67,6 +88,11 @@ async function valid(req:NextRequest){
 }
 
 export async function middleware(req:NextRequest){
+  const rewritten=restaurantRewrite(req);
+  if(rewritten)return rewritten;
+
+  if(!req.nextUrl.pathname.startsWith("/admin"))return NextResponse.next();
+
   if(req.nextUrl.pathname==="/admin/login"||req.nextUrl.pathname==="/admin/setup"){
     return NextResponse.next();
   }
@@ -78,4 +104,6 @@ export async function middleware(req:NextRequest){
   return NextResponse.redirect(url);
 }
 
-export const config={matcher:["/admin/:path*"]};
+export const config={
+  matcher:["/((?!api/|_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|manifest.webmanifest|sw.js|icon.svg|apple-icon).*)"]
+};
