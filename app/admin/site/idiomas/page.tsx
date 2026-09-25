@@ -126,7 +126,7 @@ export default async function SiteLanguages(){
   if(restaurantSettings)entities.push({
     type:"RESTAURANT_SETTINGS",id:restaurantSettings.id,title:"Moriah Food / textos gerais",translations:restaurantSettings.translations,
     fields:[{name:"menuTitle",label:"Título do cardápio"},{name:"menuSubtitle",label:"Subtítulo do cardápio",long:true}]
-  }));
+  });
   products.forEach(row=>entities.push({
     type:"PRODUCT",id:row.id,title:"Moriah Food: "+row.name,subtitle:row.category.name,translations:row.translations,
     fields:[
@@ -148,7 +148,7 @@ export default async function SiteLanguages(){
   if(chatSettings)entities.push({
     type:"CHAT_SETTINGS",id:chatSettings.id,title:"Assistente virtual / Groq",translations:chatSettings.translations,
     fields:[{name:"chatName",label:"Nome do assistente"},{name:"chatWelcome",label:"Mensagem de boas-vindas",long:true}]
-  }));
+  });
   events.forEach(row=>entities.push({
     type:"EVENT",id:row.id,title:"Evento: "+row.title,translations:row.translations,
     fields:[
