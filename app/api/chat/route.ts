@@ -187,6 +187,8 @@ async function cmsContext(){
     "O PMS Moriah suporta check-in financeiro com adicionais, pagamento parcial ou externo, saldo, recibo de check-in, Moriah Food, KDS e recibos de restaurante.",
     "Para solicitar reserva: /reservar. Para cardápio: /restaurante."
   ].filter(Boolean).join("\n");
+  publicContextCache={value,expiresAt:Date.now()+45_000};
+  return value;
 }
 
 type ChatAction={href:string;label:string;external?:boolean};
