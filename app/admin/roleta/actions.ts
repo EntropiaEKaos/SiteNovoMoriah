@@ -84,7 +84,7 @@ export async function saveRouletteSettings(formData:FormData){
   await prisma.rouletteSettings.upsert({where:{id:"main"},create:{id:"main",...data},update:data});
   await audit(session.userId,"ROULETTE_SETTINGS_UPDATED","main",{campaignKey,active:data.active,themeMode:data.themeMode,themePreset:data.themePreset});
   revalidatePath("/admin/roleta");
-  revalidatePath("/et/roleta");
+  revalidatePath("/etc/roleta");
 }
 
 export async function createRoulettePrize(formData:FormData){
@@ -106,7 +106,7 @@ export async function createRoulettePrize(formData:FormData){
   const prize=await prisma.roulettePrize.create({data});
   await audit(session.userId,"ROULETTE_PRIZE_CREATED",prize.id,{name,weight:data.weight,quantityTotal});
   revalidatePath("/admin/roleta");
-  revalidatePath("/et/roleta");
+  revalidatePath("/etc/roleta");
 }
 
 export async function updateRoulettePrize(formData:FormData){
@@ -132,7 +132,7 @@ export async function updateRoulettePrize(formData:FormData){
   await prisma.roulettePrize.update({where:{id},data});
   await audit(session.userId,"ROULETTE_PRIZE_UPDATED",id,{name,weight:data.weight,quantityTotal,active:data.active});
   revalidatePath("/admin/roleta");
-  revalidatePath("/et/roleta");
+  revalidatePath("/etc/roleta");
 }
 
 export async function toggleRoulettePrize(formData:FormData){
@@ -143,7 +143,7 @@ export async function toggleRoulettePrize(formData:FormData){
   await prisma.roulettePrize.update({where:{id},data:{active:!current.active}});
   await audit(session.userId,"ROULETTE_PRIZE_TOGGLED",id,{active:!current.active});
   revalidatePath("/admin/roleta");
-  revalidatePath("/et/roleta");
+  revalidatePath("/etc/roleta");
 }
 
 export async function redeemRouletteSpin(formData:FormData){
