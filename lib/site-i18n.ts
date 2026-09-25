@@ -10,19 +10,20 @@ export async function getSiteLocale():Promise<SiteLocale>{
   return value&&allowed.has(value)?value:"pt";
 }
 
-export function localizeRecord<T extends Record<string,unknown>>(record:T|null|undefined,locale:SiteLocale):T|null{
+export function localizeRecord<T>(record:T|null|undefined,locale:SiteLocale):T|null{
   if(!record)return null;
   if(locale==="pt")return record;
-  const raw=record.translations;
+  const objectRecord=record as unknown as Record<string,unknown>;
+  const raw=objectRecord.translations;
   if(!raw||typeof raw!=="object"||Array.isArray(raw))return record;
   const byLocale=(raw as Record<string,unknown>)[locale];
   if(!byLocale||typeof byLocale!=="object"||Array.isArray(byLocale))return record;
   const patch=byLocale as Record<string,unknown>;
-  const next={...record};
+  const next={...objectRecord};
   for(const [key,value] of Object.entries(patch)){
     if(value!==null&&value!==undefined&&value!=="") (next as Record<string,unknown>)[key]=value;
   }
-  return next;
+  return next as unknown as T;
 }
 
 export const uiText={
