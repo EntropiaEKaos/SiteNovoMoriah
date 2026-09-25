@@ -79,3 +79,5 @@
   .reviewGrid{grid-template-columns:1fr}
   .deliveryBadges{justify-content:center}
 }
+
+.reviewPlaceholder{opacity:.58;border-style:dashed;cursor:default;user-select:none}
