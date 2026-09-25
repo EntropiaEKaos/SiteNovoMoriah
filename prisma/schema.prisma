@@ -263,6 +263,7 @@ model BookingLead {
 }
 
 model IntegrationSettings {
+  translations Json?
   id                        String   @id @default("main")
   firebaseApiKey            String?
   firebaseAuthDomain        String?
