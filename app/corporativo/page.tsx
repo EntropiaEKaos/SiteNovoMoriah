@@ -1,5 +1,6 @@
 import type {Metadata} from "next";
 import {loadSpecialSections,corporateSeed} from "../../lib/special-site-pages";
+import SpecialPageSection from "../special-page-section";
 
 export const dynamic="force-dynamic";
 
@@ -22,6 +23,7 @@ export default async function CorporatePage(){
   const benefits=sections.find(section=>section.anchorId==="beneficios")||sections.find(section=>section.type==="STATS");
   const quote=sections.find(section=>section.type==="TESTIMONIALS");
   const offer=sections.find(section=>section.type==="CTA");
+  const extraSections=sections.filter(section=>section!==hero&&section!==process&&section!==benefits&&section!==quote&&section!==offer);
 
   return <main className="corporateLanding">
     <header className="corporateTop">
@@ -63,6 +65,8 @@ export default async function CorporatePage(){
       <header><small>{benefits.eyebrow}</small><h2>{benefits.title}</h2></header>
       <div>{rows(benefits.body).map((item,index)=><article key={item.title+index}><b>{item.title}</b><p>{item.description}</p></article>)}</div>
     </section>}
+
+    {extraSections.map((section,index)=><SpecialPageSection key={"corporate-extra-"+index} section={section}/>)}
 
     {quote&&<section className="corporateQuote">
       <span>“</span>
