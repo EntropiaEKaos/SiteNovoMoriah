@@ -75,11 +75,11 @@ export default async function Page(){
 
         <div className="adminInlineActions">
           <Link href={"/admin/hospedagens/"+room.id}>Editar</Link>
-          <form action={toggleAccommodation}>
+          <form action={toggleAccommodation} data-feedback-success="Status da hospedagem atualizado.">
             <input type="hidden" name="id" value={room.id}/>
             <button className={room.active?"":"highlight"}>{room.active?"Desativar":"Ativar"}</button>
           </form>
-          <form action={deleteAccommodation}>
+          <form action={deleteAccommodation} data-feedback-success="Hospedagem excluída com sucesso.">
             <input type="hidden" name="id" value={room.id}/>
             <button className="danger">Excluir</button>
           </form>
