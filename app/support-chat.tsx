@@ -262,7 +262,7 @@ export default function SupportChat(){
             <small className="chatBubbleMeta">{message.role==="assistant"?"Moriah":"Você"}</small>
             <p>{message.content}</p>
 
-            {message.booking&&<a
+            {message.booking&&!message.actions?.some(action=>action.href===message.booking?.href)&&<a
               className="chatBookingCta"
               href={message.booking.href}
               onClick={()=>metric("BOOKING_CTA")}
