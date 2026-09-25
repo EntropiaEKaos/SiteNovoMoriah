@@ -34,10 +34,33 @@ function dateTime(formData:FormData,name:string){
   return date;
 }
 function httpsUrl(value:string){
-  if(!value)return null;
+  if(!value)return "";
   const url=new URL(value);
   if(url.protocol!=="https:")throw new Error("Use uma URL HTTPS.");
   return url.toString();
+}
+function campaignId(formData:FormData){
+  const id=text(formData,"settingsId",40)||"main";
+  if(!["main","delivery"].includes(id))throw new Error("Campanha inválida.");
+  return id;
+}
+function reviewLinks(formData:FormData):Prisma.InputJsonValue{
+  const links=[
+    ["GOOGLE","Google","googleReviewUrl"],
+    ["IFOOD","iFood","ifoodReviewUrl"],
+    ["99FOOD","99Food","food99ReviewUrl"],
+    ["KEETA","Keeta","keetaReviewUrl"]
+  ].map(([key,label,field])=>({
+    key,
+    label:"Avaliar no "+label,
+    url:httpsUrl(text(formData,field,500))
+  })).filter(item=>item.url);
+  return links as Prisma.InputJsonValue;
+}
+function revalidateRoulette(){
+  revalidatePath("/admin/roleta");
+  revalidatePath("/etc/roleta");
+  revalidatePath("/etc/roleta/entregas");
 }
 async function audit(userId:string,action:string,targetId:string|null,details:Prisma.InputJsonObject){
   await prisma.adminAuditLog.create({data:{
@@ -51,9 +74,9 @@ async function audit(userId:string,action:string,targetId:string|null,details:Pr
 
 export async function saveRouletteSettings(formData:FormData){
   const session=await requireAdmin();
+  const id=campaignId(formData);
   const campaignKey=text(formData,"campaignKey",80).toLowerCase();
   if(!/^[a-z0-9][a-z0-9_-]{2,79}$/.test(campaignKey))throw new Error("Identificador de campanha inválido.");
-  const googleReviewUrl=httpsUrl(text(formData,"googleReviewUrl",500));
   const activeFrom=dateTime(formData,"activeFrom");
   const activeUntil=dateTime(formData,"activeUntil");
   if(activeFrom&&activeUntil&&activeFrom>=activeUntil)throw new Error("O fim da campanha deve ser posterior ao início.");
@@ -64,12 +87,13 @@ export async function saveRouletteSettings(formData:FormData){
     title:text(formData,"title",120)||"Roleta da Sorte Moriah",
     subtitle:text(formData,"subtitle",240)||"Cadastre-se e descubra seu prêmio.",
     introText:text(formData,"introText",1200)||"Sua participação é independente de avaliações.",
-    googleReviewUrl,
-    googleReviewLabel:text(formData,"googleReviewLabel",100)||"Avaliar a Moriah no Google",
+    googleReviewUrl:id==="main"?(httpsUrl(text(formData,"googleReviewUrl",500))||null):null,
+    googleReviewLabel:text(formData,"googleReviewLabel",100)||"Avaliar a Moriah",
+    reviewLinks:reviewLinks(formData),
     termsText:text(formData,"termsText",1600)||"Ao participar, você autoriza o uso do nome e telefone apenas para administrar esta promoção e validar a entrega do prêmio.",
     activeFrom,
     activeUntil,
-    themeMode:["AUTO_EVENT","CUSTOM"].includes(text(formData,"themeMode",30))?text(formData,"themeMode",30):"AUTO_EVENT",
+    themeMode:["AUTO_EVENT","CUSTOM"].includes(text(formData,"themeMode",30))?text(formData,"themeMode",30):"CUSTOM",
     themePreset:text(formData,"themePreset",40)||"CELEBRATION",
     themePrimaryColor:color(formData,"themePrimaryColor","#0B607A"),
     themeSecondaryColor:color(formData,"themeSecondaryColor","#073B4C"),
@@ -81,18 +105,21 @@ export async function saveRouletteSettings(formData:FormData){
     showEventBanner:formData.get("showEventBanner")==="on"
   };
 
-  await prisma.rouletteSettings.upsert({where:{id:"main"},create:{id:"main",...data},update:data});
-  await audit(session.userId,"ROULETTE_SETTINGS_UPDATED","main",{campaignKey,active:data.active,themeMode:data.themeMode,themePreset:data.themePreset});
-  revalidatePath("/admin/roleta");
-  revalidatePath("/etc/roleta");
+  await prisma.rouletteSettings.upsert({where:{id},create:{id,...data},update:data});
+  await audit(session.userId,"ROULETTE_SETTINGS_UPDATED",id,{campaignKey,active:data.active,themeMode:data.themeMode,themePreset:data.themePreset});
+  revalidateRoulette();
 }
 
 export async function createRoulettePrize(formData:FormData){
   const session=await requireAdmin();
+  const settingsId=campaignId(formData);
+  const settings=await prisma.rouletteSettings.findUnique({where:{id:settingsId}});
+  if(!settings)throw new Error("Campanha não encontrada.");
   const name=text(formData,"name",100);
   if(!name)throw new Error("Nome do prêmio é obrigatório.");
   const quantityTotal=nullableInteger(formData,"quantityTotal",1,1_000_000);
   const data={
+    campaignKey:settings.campaignKey,
     name,
     description:text(formData,"description",500)||null,
     color:color(formData,"color","#FFC845"),
@@ -104,9 +131,8 @@ export async function createRoulettePrize(formData:FormData){
     sortOrder:integer(formData,"sortOrder",100,0,100_000)
   };
   const prize=await prisma.roulettePrize.create({data});
-  await audit(session.userId,"ROULETTE_PRIZE_CREATED",prize.id,{name,weight:data.weight,quantityTotal});
-  revalidatePath("/admin/roleta");
-  revalidatePath("/etc/roleta");
+  await audit(session.userId,"ROULETTE_PRIZE_CREATED",prize.id,{campaignKey:settings.campaignKey,name,weight:data.weight,quantityTotal});
+  revalidateRoulette();
 }
 
 export async function updateRoulettePrize(formData:FormData){
@@ -130,9 +156,8 @@ export async function updateRoulettePrize(formData:FormData){
     sortOrder:integer(formData,"sortOrder",current.sortOrder,0,100_000)
   };
   await prisma.roulettePrize.update({where:{id},data});
-  await audit(session.userId,"ROULETTE_PRIZE_UPDATED",id,{name,weight:data.weight,quantityTotal,active:data.active});
-  revalidatePath("/admin/roleta");
-  revalidatePath("/etc/roleta");
+  await audit(session.userId,"ROULETTE_PRIZE_UPDATED",id,{campaignKey:current.campaignKey,name,weight:data.weight,quantityTotal,active:data.active});
+  revalidateRoulette();
 }
 
 export async function toggleRoulettePrize(formData:FormData){
@@ -141,9 +166,8 @@ export async function toggleRoulettePrize(formData:FormData){
   const current=await prisma.roulettePrize.findUnique({where:{id}});
   if(!current)throw new Error("Prêmio não encontrado.");
   await prisma.roulettePrize.update({where:{id},data:{active:!current.active}});
-  await audit(session.userId,"ROULETTE_PRIZE_TOGGLED",id,{active:!current.active});
-  revalidatePath("/admin/roleta");
-  revalidatePath("/etc/roleta");
+  await audit(session.userId,"ROULETTE_PRIZE_TOGGLED",id,{campaignKey:current.campaignKey,active:!current.active});
+  revalidateRoulette();
 }
 
 export async function redeemRouletteSpin(formData:FormData){
@@ -154,6 +178,6 @@ export async function redeemRouletteSpin(formData:FormData){
   if(spin.redeemedAt)return;
   if(spin.expiresAt&&spin.expiresAt<new Date())throw new Error("Este prêmio está expirado.");
   await prisma.rouletteSpin.update({where:{id},data:{redeemedAt:new Date(),redeemedBy:session.username}});
-  await audit(session.userId,"ROULETTE_PRIZE_REDEEMED",id,{claimCode:spin.claimCode,prize:spin.prize.name,phone:spin.entry.phone});
-  revalidatePath("/admin/roleta");
+  await audit(session.userId,"ROULETTE_PRIZE_REDEEMED",id,{campaignKey:spin.entry.campaignKey,claimCode:spin.claimCode,prize:spin.prize.name,phone:spin.entry.phone});
+  revalidateRoulette();
 }
