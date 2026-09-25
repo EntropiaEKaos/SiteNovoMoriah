@@ -15,12 +15,14 @@ const ambientClass=(animation:string)=>animation==="SNOW"?styles.ambientSnow:ani
 export default function RouletteGame({
   settingsId,
   variant,
+  preview,
   settings,
   initialPrizes,
   theme
 }:{
   settingsId:"main"|"delivery";
   variant:"main"|"delivery";
+  preview:boolean;
   settings:Settings;
   initialPrizes:Prize[];
   theme:Theme;
@@ -57,6 +59,7 @@ export default function RouletteGame({
   }
 
   async function spin(){
+    if(preview){setError("Modo demonstração: ative a campanha para registrar uma jogada real.");return;}
     if(spinning)return;
     setSpinning(true);
     setError("");
@@ -101,7 +104,7 @@ export default function RouletteGame({
     <section className={styles.card+" "+(delivery?styles.deliveryCard:"")}>
       <header className={styles.header}>
         <div className={styles.headerGlow}/>
-        <span>{delivery?"MORIAH FOOD • ROLETA ENTREGAS":"MORIAH • ROLETA 3.0"}</span>
+        <span>{delivery?"MORIAH FOOD • ROLETA ENTREGAS":"MORIAH • ROLETA 3.0"}{preview?" • PREVIEW":""}</span>
         <h1>{settings.title}</h1>
         <p>{settings.subtitle}</p>
         {delivery&&<div className={styles.deliveryBadges}><span>iFood</span><span>99Food</span><span>Keeta</span></div>}
@@ -138,7 +141,7 @@ export default function RouletteGame({
         <div className={styles.wheelStage}><div className={styles.wheelHalo}/><WheelCanvas ref={ref} slices={slices} theme={wheelTheme}/></div>
         {step==="wheel"&&<>
           {error&&<p className={styles.error}>{error}</p>}
-          <button className={styles.spinButton} onClick={spin} disabled={spinning||!slices.length}><span>{spinning?"Girando…":"GIRAR A ROLETA"}</span><i/></button>
+          <button className={styles.spinButton} onClick={spin} disabled={spinning||!slices.length||preview}><span>{preview?"PREVIEW VISUAL":spinning?"Girando…":"GIRAR A ROLETA"}</span><i/></button>
           <small>Resultado definido no servidor e registrado para auditoria.</small>
         </>}
         {step==="done"&&result&&<div className={styles.result}>
