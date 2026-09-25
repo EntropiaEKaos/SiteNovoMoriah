@@ -13,6 +13,7 @@ import {loadPublicSiteSettings,type PublicSiteSettings} from "../lib/public-site
 import SiteBuilderRenderer from "./site-builder-renderer";
 import PublicSiteChrome from "./public-site-chrome";
 import EventShowcase from "./event-showcase";
+import {getSiteLocale,localizeRecord} from "../lib/site-i18n";
 
 export const dynamic="force-dynamic";
 
@@ -84,6 +85,7 @@ type HomePageWithSections=SitePage&{sections:SiteSection[]};
 type NavPage={slug:string;title:string;navLabel:string|null};
 
 export default async function Home(){
+  const locale=await getSiteLocale();
   let settings:PublicSiteSettings|null=null;
   let rooms:Accommodation[]=[];
   let promo:Promotion|null=null;
@@ -135,12 +137,21 @@ export default async function Home(){
     ?"https://wa.me/"+wa+"?text="+encodeURIComponent("Olá! Vim pelo site da Pousada Moriah e gostaria de informações sobre hospedagem.")
     :null;
 
-  const sections=page?.published!==false&&page?.sections.length?page.sections:fallbackSections;
+  const localizedSettings=localizeRecord(settings,locale);
+  const localizedRooms=rooms.map(room=>localizeRecord(room,locale)!).filter(Boolean);
+  const localizedPromo=localizeRecord(promo,locale);
+  const localizedPosts=posts.map(post=>localizeRecord(post,locale)!).filter(Boolean);
+  const localizedPage=localizeRecord(page,locale);
+  const localizedNavPages=navPages.map(item=>localizeRecord(item,locale)!).filter(Boolean);
+  const localizedEvents=homeEvents.map(event=>localizeRecord(event,locale)!).filter(Boolean);
+  const sections=localizedPage?.published!==false&&localizedPage?.sections.length
+    ?localizedPage.sections.map(section=>localizeRecord(section,locale)!).filter(Boolean)
+    :fallbackSections;
 
-  return <PublicSiteChrome settings={settings} navPages={navPages}>
+  return <PublicSiteChrome settings={localizedSettings} navPages={localizedNavPages} locale={locale}>
     <>
-      <SiteBuilderRenderer sections={sections} settings={settings} rooms={rooms} promo={promo} posts={posts} media={media} whatsappHref={whatsappHref}/>
-      <EventShowcase events={homeEvents}/>
+      <SiteBuilderRenderer sections={sections} settings={localizedSettings} rooms={localizedRooms} promo={localizedPromo} posts={localizedPosts} media={media} whatsappHref={whatsappHref}/>
+      <EventShowcase events={localizedEvents}/>
     </>
   </PublicSiteChrome>;
 }
