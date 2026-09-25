@@ -59,6 +59,7 @@ const sections=[
     label:"MORIAH FOOD",
     items:[
       ["Restaurante","/admin/restaurante",UtensilsCrossed],
+      ["Site do Restaurante","/admin/restaurante/site",LayoutDashboard],
       ["Cardápio Studio","/admin/restaurante/cardapio",BookOpen],
       ["Kitchen 4.0 / KDS","/admin/restaurante/pedidos",ChefHat],
       ["Expedição","/admin/restaurante/cozinha/expedicao",PackageCheck],
@@ -75,6 +76,7 @@ const sections=[
       ["Site Studio / Home","/admin/site",LayoutDashboard],
       ["Páginas do site","/admin/site/paginas",BookOpen],
       ["Idiomas PT / EN / ES","/admin/site/idiomas",Languages],
+      ["Moriah Corporativo","/admin/site/corporativo",Briefcase],
       ["Galeria","/admin/galeria",Images],
       ["Mídia","/admin/midia",Image],
       ["Blog","/admin/blog",BookOpen],

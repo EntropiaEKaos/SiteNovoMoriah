@@ -62,12 +62,16 @@ export default function Menu({
   products,
   bookingToken,
   accepting,
-  locale
+  locale,
+  successPath="/restaurante/obrigado",
+  standalone=false
 }:{
   products:Product[];
   bookingToken:string;
   accepting:boolean;
   locale:"pt"|"en"|"es";
+  successPath?:string;
+  standalone?:boolean;
 }){
   const t=locale==="en"?{
     search:"Search menu",clear:"Clear search",accepting:"Accepting orders",paused:"Orders paused",stayLinked:"Stay linked",categories:"Menu categories",empty:"No items found.",emptyHelp:"Try another name, ingredient or category.",item:"item",items:"items",featured:"Popular",prepared:"Prepared by the Moriah kitchen.",unavailable:"Unavailable",choose:"Choose",add:"Add",order:"YOUR ORDER",emptyCart:"Your cart is empty",emptyCartHelp:"Add menu items to build your order.",note:"Note:",edit:"Edit",subtotal:"Subtotal",finish:"CHECKOUT",delivery:"Delivery details",name:"Name",who:"Who will receive it?",room:"Room / location",linkedRoom:"Stay already linked",roomPickup:"Room or pickup",payment:"Payment",chargeStay:"Charge to stay",notes:"General notes",notesPlaceholder:"e.g. deliver at reception...",place:"Place order",addItem:"Add an item",pausedBtn:"Orders paused",trust:"Prices, add-ons and stock are validated again before confirmation.",viewOrder:"View order",closeCart:"Close cart",close:"Close",required:"Required",chooseOne:"Choose",chooseRange:"Choose from",observation:"Any notes?",obsPlaceholder:"e.g. no onion, sauce on the side...",allergens:"Allergens:",addMore:"Add more",addOrder:"Add to order",sharedSuffix:"shared"}:locale==="es"?{
@@ -363,6 +367,8 @@ export default function Menu({
       <form action={placeRestaurantOrder} className="foodOrderFormV3">
         <input type="hidden" name="cart" value={payload}/>
         <input type="hidden" name="bookingToken" value={bookingToken}/>
+        <input type="hidden" name="successPath" value={successPath}/>
+        <input type="hidden" name="orderSource" value={standalone?"STANDALONE_MENU":bookingToken?"ROOM_QR":"PUBLIC_MENU"}/>
 
         <div className="foodCheckoutTitleV3">
           <small>{t.finish}</small>
@@ -370,7 +376,7 @@ export default function Menu({
         </div>
 
         <label><span><UserRound size={14}/>{t.name}</span><input name="guestName" required placeholder={t.who}/></label>
-        <label><span><BedDouble size={14}/>{t.room}</span><input name="roomLabel" placeholder={bookingToken?t.linkedRoom:t.roomPickup}/></label>
+        <label><span><BedDouble size={14}/>{standalone?"Entrega / retirada":t.room}</span><input name="roomLabel" placeholder={standalone?"Endereço, referência ou retirada no balcão":bookingToken?t.linkedRoom:t.roomPickup}/></label>
         <label><span><Phone size={14}/>WhatsApp</span><input name="phone" inputMode="tel" placeholder="(13) 99999-9999"/></label>
         <label><span><CreditCard size={14}/>{t.payment}</span>
           <select name="paymentMethod" defaultValue={bookingToken?"ROOM":"PIX"}>

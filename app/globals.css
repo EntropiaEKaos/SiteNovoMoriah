@@ -7552,3 +7552,509 @@ body:has(.externalCalendarWidget) .whatsappFloat{display:none!important}
   .modifierComposer,.modifierGroupGrid{grid-template-columns:1fr}
   .modifierComposer>form:first-child{grid-column:auto}
 }
+
+
+/* Standalone Restaurant + Corporate 1.0 */
+.restaurantStandalone,
+.corporateLanding{
+  min-height:100vh;
+  background:#f3f0e8;
+  color:#111;
+}
+.restaurantStandaloneTop,
+.corporateTop{
+  position:sticky;
+  top:0;
+  z-index:80;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:24px;
+  min-height:72px;
+  padding:12px clamp(20px,4vw,64px);
+  border-bottom:1px solid #2b2b2b;
+  background:rgba(10,10,10,.96);
+  color:#fff;
+  backdrop-filter:blur(18px);
+}
+.restaurantStandaloneBrand,
+.corporateBrand{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  color:#fff;
+}
+.restaurantStandaloneBrand>span,
+.corporateBrand>span,
+.restaurantStandaloneThanksMark{
+  display:grid;
+  place-items:center;
+  width:42px;
+  height:42px;
+  background:#ffd400;
+  color:#111;
+  font-weight:950;
+  font-size:24px;
+}
+.restaurantStandaloneBrand>div,
+.corporateBrand>div{display:grid}
+.restaurantStandaloneBrand b,
+.corporateBrand b{font-size:13px;letter-spacing:1.5px}
+.restaurantStandaloneBrand small,
+.corporateBrand small{font-size:8px;color:#8d8d8d;letter-spacing:1.4px}
+.restaurantStandaloneTop nav,
+.corporateTop nav{display:flex;gap:22px}
+.restaurantStandaloneTop nav a,
+.corporateTop nav a{color:#c7c7c7;font-size:11px;font-weight:850}
+.restaurantStandaloneTop nav a:hover,
+.corporateTop nav a:hover{color:#ffd400}
+.restaurantStandaloneWhatsapp,
+.corporateTopCta{
+  background:#ffd400;
+  color:#111;
+  padding:11px 14px;
+  font-size:10px;
+  font-weight:950;
+  box-shadow:4px 4px 0 #fff;
+}
+.restaurantStandaloneHero{
+  min-height:640px;
+  padding:clamp(56px,8vw,110px) clamp(20px,6vw,96px);
+  display:grid;
+  grid-template-columns:minmax(0,1.35fr) minmax(280px,.65fr);
+  gap:60px;
+  align-items:end;
+  background:
+    radial-gradient(circle at 88% 20%,rgba(255,212,0,.16),transparent 32%),
+    linear-gradient(135deg,#080808,#191919 58%,#111);
+  background-size:cover;
+  background-position:center;
+  color:#fff;
+}
+.restaurantStandaloneHeroCopy{max-width:850px}
+.restaurantStandaloneHeroCopy>small,
+.restaurantStandaloneSectionHead>small,
+.corporateHero small,
+.corporateProcess>header small,
+.corporateBenefits>header small,
+.corporateOfferCopy small{
+  color:#ffd400;
+  font-size:9px;
+  font-weight:950;
+  letter-spacing:2px;
+}
+.restaurantStandaloneHero h1{
+  margin:16px 0 18px;
+  max-width:900px;
+  font-size:clamp(58px,8vw,118px);
+  line-height:.86;
+  letter-spacing:-6px;
+}
+.restaurantStandaloneHero h2{
+  margin:0 0 16px;
+  max-width:720px;
+  font-size:clamp(20px,2.4vw,32px);
+  font-weight:750;
+}
+.restaurantStandaloneHero p{
+  max-width:680px;
+  color:#bdbdbd;
+  line-height:1.7;
+}
+.restaurantStandaloneHeroActions{
+  display:flex;
+  gap:12px;
+  flex-wrap:wrap;
+  margin-top:28px;
+}
+.restaurantStandaloneHeroActions a{
+  padding:14px 18px;
+  background:#ffd400;
+  color:#111;
+  font-weight:950;
+  font-size:11px;
+  box-shadow:5px 5px 0 #fff;
+}
+.restaurantStandaloneHeroActions a.secondary{
+  background:transparent;
+  color:#fff;
+  border:1px solid #555;
+  box-shadow:none;
+}
+.restaurantStandaloneHeroStatus{
+  border:1px solid #343434;
+  background:rgba(0,0,0,.45);
+  backdrop-filter:blur(12px);
+}
+.restaurantStandaloneHeroStatus>div{
+  padding:22px;
+  border-bottom:1px solid #303030;
+  display:grid;
+  gap:6px;
+}
+.restaurantStandaloneHeroStatus>div:last-child{border-bottom:0}
+.restaurantStandaloneHeroStatus small{color:#777;font-size:8px;letter-spacing:1.4px}
+.restaurantStandaloneHeroStatus b{font-size:18px;color:#ffd400}
+.restaurantStandaloneFeatures,
+.restaurantStandaloneMenu{
+  padding:clamp(64px,8vw,110px) clamp(20px,5vw,84px);
+  max-width:1600px;
+  margin:auto;
+}
+.restaurantStandaloneSectionHead{
+  max-width:780px;
+  margin-bottom:32px;
+}
+.restaurantStandaloneSectionHead h2{
+  margin:10px 0 12px;
+  font-size:clamp(40px,5vw,72px);
+  line-height:.94;
+  letter-spacing:-3px;
+}
+.restaurantStandaloneSectionHead p{
+  color:#6f695f;
+  line-height:1.65;
+}
+.restaurantStandaloneFeatureGrid{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:12px;
+}
+.restaurantStandaloneFeatureGrid article{
+  min-height:240px;
+  padding:24px;
+  border:1px solid #d8d2c4;
+  background:#fff;
+  display:flex;
+  flex-direction:column;
+}
+.restaurantStandaloneFeatureGrid article>span{
+  font-size:10px;
+  color:#8c8578;
+  font-weight:950;
+}
+.restaurantStandaloneFeatureGrid h3{
+  margin:auto 0 10px;
+  font-size:25px;
+  letter-spacing:-1px;
+}
+.restaurantStandaloneFeatureGrid p{
+  margin:0;
+  color:#706a61;
+  line-height:1.55;
+}
+.restaurantStandaloneMenu{
+  max-width:none;
+  background:#ebe7de;
+}
+.restaurantStandaloneMenu>.restaurantStandaloneSectionHead{
+  max-width:1600px;
+  margin-left:auto;
+  margin-right:auto;
+}
+.restaurantStandaloneMenu>.foodDeliveryV3{
+  max-width:1600px;
+  margin:auto;
+}
+.restaurantStandaloneCta{
+  margin:0;
+  padding:56px clamp(20px,6vw,96px);
+  background:#ffd400;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:30px;
+}
+.restaurantStandaloneCta small{font-size:9px;font-weight:950;letter-spacing:1.8px}
+.restaurantStandaloneCta h2{font-size:clamp(34px,4vw,58px);letter-spacing:-2px;margin:8px 0}
+.restaurantStandaloneCta p{margin:0;max-width:700px}
+.restaurantStandaloneCta>a{
+  flex:0 0 auto;
+  padding:14px 18px;
+  background:#111;
+  color:#fff;
+  font-weight:950;
+}
+.restaurantStandaloneFooter,
+.corporateFooter{
+  padding:30px clamp(20px,5vw,80px);
+  background:#090909;
+  color:#fff;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:20px;
+}
+.restaurantStandaloneFooter span,
+.corporateFooter span{color:#777;font-size:11px}
+.restaurantStandaloneFooter a,
+.corporateFooter a{color:#ffd400;font-weight:900;font-size:11px}
+.restaurantStandaloneThanks{
+  min-height:100vh;
+  padding:12vh 8vw;
+  display:grid;
+  place-items:start;
+  align-content:center;
+  background:
+    radial-gradient(circle at 80% 20%,rgba(255,212,0,.18),transparent 32%),
+    #0b0b0b;
+  color:#fff;
+}
+.restaurantStandaloneThanks small{margin-top:24px;color:#ffd400;letter-spacing:1.8px;font-weight:900}
+.restaurantStandaloneThanks h1{max-width:900px;font-size:clamp(56px,8vw,110px);line-height:.88;letter-spacing:-5px;margin:16px 0}
+.restaurantStandaloneThanks p{max-width:680px;color:#aaa;line-height:1.7}
+.restaurantStandaloneThanks>div:last-child{display:flex;gap:10px;flex-wrap:wrap;margin-top:22px}
+.restaurantStandaloneThanks a{padding:13px 16px;background:#ffd400;color:#111;font-weight:950}
+.restaurantStandaloneThanks a.secondary{background:transparent;color:#fff;border:1px solid #444}
+
+.corporateHero{
+  min-height:720px;
+  padding:clamp(70px,9vw,130px) clamp(20px,7vw,110px);
+  display:grid;
+  grid-template-columns:minmax(0,1.35fr) minmax(250px,.65fr);
+  gap:70px;
+  align-items:end;
+  background:
+    radial-gradient(circle at 88% 22%,rgba(255,212,0,.16),transparent 30%),
+    linear-gradient(135deg,#070707,#171717);
+  background-size:cover;
+  background-position:center;
+  color:#fff;
+}
+.corporateHero>div{max-width:850px}
+.corporateHero h1{
+  margin:14px 0 16px;
+  font-size:clamp(64px,8.6vw,126px);
+  line-height:.84;
+  letter-spacing:-6px;
+}
+.corporateHero h2{
+  max-width:700px;
+  margin:0 0 14px;
+  font-size:clamp(22px,2.5vw,34px);
+}
+.corporateHero p{max-width:680px;color:#aaa;line-height:1.7}
+.corporateHero>div>a{
+  display:inline-flex;
+  margin-top:24px;
+  padding:14px 18px;
+  background:#ffd400;
+  color:#111;
+  font-size:11px;
+  font-weight:950;
+  box-shadow:5px 5px 0 #fff;
+}
+.corporateHero aside{
+  display:grid;
+  grid-template-columns:auto 1fr;
+  border-top:1px solid #444;
+}
+.corporateHero aside span,
+.corporateHero aside b{
+  padding:17px 10px;
+  border-bottom:1px solid #333;
+}
+.corporateHero aside span{color:#ffd400;font-size:11px}
+.corporateHero aside b{font-size:18px}
+.corporateProcess,
+.corporateBenefits{
+  padding:clamp(70px,8vw,120px) clamp(20px,6vw,100px);
+}
+.corporateProcess>header,
+.corporateBenefits>header{max-width:850px;margin-bottom:40px}
+.corporateProcess h2,
+.corporateBenefits h2,
+.corporateOffer h2{
+  font-size:clamp(44px,6vw,82px);
+  line-height:.9;
+  letter-spacing:-4px;
+  margin:12px 0;
+}
+.corporateProcess>header p{color:#777168;max-width:680px;line-height:1.6}
+.corporateProcess>div{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:1px;
+  background:#cfc8bb;
+  border:1px solid #cfc8bb;
+}
+.corporateProcess article{
+  min-height:310px;
+  padding:24px;
+  background:#fff;
+  display:flex;
+  flex-direction:column;
+}
+.corporateProcess article>span{color:#8a8377;font-size:10px;font-weight:950}
+.corporateProcess h3{font-size:25px;letter-spacing:-1px;margin:auto 0 12px}
+.corporateProcess p{color:#706a61;line-height:1.55;margin:0}
+.corporateBenefits{background:#111;color:#fff}
+.corporateBenefits>div{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:10px;
+}
+.corporateBenefits article{
+  min-height:180px;
+  padding:24px;
+  border:1px solid #333;
+  background:#161616;
+}
+.corporateBenefits article b{font-size:21px;color:#ffd400}
+.corporateBenefits article p{color:#999;line-height:1.55}
+.corporateQuote{
+  padding:90px 8vw;
+  text-align:center;
+  background:#ffd400;
+}
+.corporateQuote>span{font-size:90px;line-height:.5;font-weight:950}
+.corporateQuote blockquote{
+  max-width:1050px;
+  margin:20px auto;
+  font-size:clamp(42px,6vw,84px);
+  line-height:.95;
+  letter-spacing:-3px;
+  font-weight:950;
+}
+.corporateQuote p{max-width:720px;margin:20px auto;line-height:1.6}
+.corporateQuote small{font-weight:950;letter-spacing:1.8px}
+.corporateOffer{
+  padding:clamp(70px,8vw,120px) clamp(20px,7vw,110px);
+  display:grid;
+  grid-template-columns:.9fr 1.2fr auto;
+  gap:50px;
+  align-items:center;
+  background:#f6f2e8;
+}
+.corporateOfferCopy strong{
+  display:block;
+  margin-top:24px;
+  font-size:clamp(38px,5vw,68px);
+  color:#111;
+}
+.corporateOfferCopy>span{color:#80796e}
+.corporateOfferItems{display:grid;gap:4px}
+.corporateOfferItems>div{
+  display:flex;
+  gap:14px;
+  padding:14px 0;
+  border-bottom:1px solid #d7d1c4;
+}
+.corporateOfferItems i{
+  width:28px;height:28px;display:grid;place-items:center;
+  background:#ffd400;font-style:normal;font-weight:950;
+}
+.corporateOfferItems p{margin:0;display:grid;gap:4px}
+.corporateOfferItems p span{color:#777168;font-size:12px}
+.corporateOffer>a{
+  padding:16px 18px;
+  background:#111;
+  color:#fff;
+  font-weight:950;
+  white-space:nowrap;
+}
+.corporateFooter>div{display:grid;gap:4px}
+
+@media(max-width:1050px){
+  .restaurantStandaloneTop nav,.corporateTop nav{display:none}
+  .restaurantStandaloneHero,.corporateHero{grid-template-columns:1fr;min-height:auto}
+  .restaurantStandaloneHeroStatus{max-width:680px}
+  .restaurantStandaloneFeatureGrid,.corporateProcess>div{grid-template-columns:1fr 1fr}
+  .corporateBenefits>div{grid-template-columns:1fr 1fr}
+  .corporateOffer{grid-template-columns:1fr 1fr}
+  .corporateOffer>a{grid-column:1/-1;justify-self:start}
+}
+@media(max-width:680px){
+  .restaurantStandaloneTop,.corporateTop{min-height:62px;padding:10px 14px}
+  .restaurantStandaloneBrand small,.corporateBrand small,
+  .restaurantStandaloneWhatsapp,.corporateTopCta{display:none}
+  .restaurantStandaloneHero,.corporateHero{padding:58px 20px;gap:36px}
+  .restaurantStandaloneHero h1,.corporateHero h1{letter-spacing:-3.5px}
+  .restaurantStandaloneFeatures,.restaurantStandaloneMenu,
+  .corporateProcess,.corporateBenefits{padding:58px 18px}
+  .restaurantStandaloneFeatureGrid,.corporateProcess>div,.corporateBenefits>div,.corporateOffer{grid-template-columns:1fr}
+  .restaurantStandaloneCta,.restaurantStandaloneFooter,.corporateFooter{align-items:flex-start;flex-direction:column}
+  .corporateOffer{padding:58px 18px;gap:28px}
+  .corporateQuote{padding:70px 18px}
+}
+
+
+/* Generic editable sections for special landing pages */
+.specialVisualSection{
+  padding:clamp(64px,8vw,108px) clamp(20px,6vw,96px);
+  background:#f4f1e8;
+  color:#111;
+}
+.specialVisualSection.theme-dark{background:#111;color:#fff}
+.specialVisualSection.theme-yellow{background:#ffd400;color:#111}
+.specialVisualSection.theme-soft{background:#ebe7de;color:#111}
+.specialVisualInner{max-width:1500px;margin:auto}
+.specialVisualInner>small{
+  display:block;
+  margin-bottom:10px;
+  color:#b49700;
+  font-size:9px;
+  font-weight:950;
+  letter-spacing:1.8px;
+}
+.specialVisualSection.theme-dark .specialVisualInner>small{color:#ffd400}
+.specialVisualInner>h2{
+  max-width:950px;
+  margin:0;
+  font-size:clamp(40px,5.5vw,78px);
+  line-height:.94;
+  letter-spacing:-3px;
+}
+.specialVisualLead{
+  max-width:760px;
+  margin:18px 0 0;
+  color:#716a60;
+  line-height:1.65;
+}
+.specialVisualSection.theme-dark .specialVisualLead{color:#aaa}
+.specialVisualBody{
+  max-width:900px;
+  margin-top:24px;
+  color:#716a60;
+  line-height:1.7;
+}
+.specialVisualSection.theme-dark .specialVisualBody{color:#aaa}
+.specialVisualGrid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:10px;
+  margin-top:34px;
+}
+.specialVisualGrid article{
+  min-height:180px;
+  padding:22px;
+  border:1px solid rgba(128,120,108,.28);
+  background:rgba(255,255,255,.72);
+}
+.specialVisualSection.theme-dark .specialVisualGrid article{background:#181818;border-color:#333}
+.specialVisualGrid article>span{font-size:9px;font-weight:950;color:#9a927f}
+.specialVisualGrid h3{margin:24px 0 8px;font-size:22px;letter-spacing:-.8px}
+.specialVisualGrid p{margin:0;color:#746e64;line-height:1.55}
+.specialVisualSection.theme-dark .specialVisualGrid p{color:#999}
+.specialVisualActions{display:flex;gap:10px;flex-wrap:wrap;margin-top:28px}
+.specialVisualActions a{
+  display:inline-flex;
+  padding:13px 16px;
+  background:#111;
+  color:#fff;
+  font-size:11px;
+  font-weight:950;
+}
+.specialVisualSection.theme-dark .specialVisualActions a,
+.specialVisualSection.theme-yellow .specialVisualActions a{background:#fff;color:#111}
+.specialVisualActions a.secondary{
+  background:transparent!important;
+  color:currentColor!important;
+  border:1px solid currentColor;
+}
+@media(max-width:900px){
+  .specialVisualGrid{grid-template-columns:1fr 1fr}
+}
+@media(max-width:620px){
+  .specialVisualGrid{grid-template-columns:1fr}
+}
