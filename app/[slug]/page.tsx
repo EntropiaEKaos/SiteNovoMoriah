@@ -100,6 +100,7 @@ export default async function DynamicSitePage({
       posts={localizedPosts}
       media={media}
       whatsappHref={whatsappHref}
+      locale={locale}
     />:<section className="siteEmptyPage">
       <small>MORIAH / {localizedPage.slug.toUpperCase()}</small>
       <h1>{localizedPage.title}</h1>
