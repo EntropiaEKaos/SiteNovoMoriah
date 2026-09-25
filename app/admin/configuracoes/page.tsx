@@ -97,7 +97,7 @@ export default async function Page(){
       O Preview ainda não recebeu a migration de Identidade Visual. A tela continua acessível, mas os campos de branding só poderão ser salvos depois da migration do Preview.
     </section>}
 
-    <form action={saveSettings} className="adminStack">
+    <form action={saveSettings} className="adminStack" data-feedback-success="Configurações salvas com sucesso.">
       <section className="adminTwoCol">
         <article className="adminSectionCard">
           <h2>Identidade pública</h2>
