@@ -218,8 +218,8 @@ export default async function Page(){
       </div>
       <div className="adminPageHeroActions">
         <Link className="adminSecondaryAction" href="/admin/eventos">Eventos</Link>
-        <Link className="adminSecondaryAction" href="/etc/roleta" target="_blank">Principal ↗</Link>
-        <Link className="adminPrimaryAction" href="/etc/roleta/entregas" target="_blank">Entregas ↗</Link>
+        <Link className="adminSecondaryAction" href="/etc/roleta?preview=1" target="_blank">Principal ↗</Link>
+        <Link className="adminPrimaryAction" href="/etc/roleta/entregas?preview=1" target="_blank">Entregas ↗</Link>
       </div>
     </section>
 
@@ -234,8 +234,8 @@ export default async function Page(){
       <strong>Avaliações não liberam prêmio.</strong> Os links Google/iFood/99Food/Keeta são convites opcionais; nome, telefone, sorteio e auditoria funcionam independentemente deles.
     </section>
 
-    <CampaignEditor id="main" settings={main} media={media} prizes={mainPrizes} publicHref="/etc/roleta"/>
-    <CampaignEditor id="delivery" settings={delivery} media={media} prizes={deliveryPrizes} publicHref="/etc/roleta/entregas"/>
+    <CampaignEditor id="main" settings={main} media={media} prizes={mainPrizes} publicHref="/etc/roleta?preview=1"/>
+    <CampaignEditor id="delivery" settings={delivery} media={media} prizes={deliveryPrizes} publicHref="/etc/roleta/entregas?preview=1"/>
 
     <section className="adminSectionCard" style={{marginTop:28}}>
       <h2>Auditoria unificada</h2>
