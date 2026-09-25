@@ -187,25 +187,25 @@ export default async function SiteEditor(){
 
             <div className="adminInlineActions">
               <Link className="highlight" href={"/admin/site/"+section.id}>Editar textos e visual</Link>
-              <form action={moveSiteSection}>
+              <form action={moveSiteSection} data-feedback-success="Ordem da seção atualizada.">
                 <input type="hidden" name="id" value={section.id}/>
                 <input type="hidden" name="direction" value="UP"/>
                 <button disabled={index===0}>↑ Subir</button>
               </form>
-              <form action={moveSiteSection}>
+              <form action={moveSiteSection} data-feedback-success="Ordem da seção atualizada.">
                 <input type="hidden" name="id" value={section.id}/>
                 <input type="hidden" name="direction" value="DOWN"/>
                 <button disabled={index===page.sections.length-1}>↓ Descer</button>
               </form>
-              <form action={duplicateSiteSection}>
+              <form action={duplicateSiteSection} data-feedback-success="Seção duplicada com sucesso.">
                 <input type="hidden" name="id" value={section.id}/>
                 <button>Duplicar</button>
               </form>
-              <form action={toggleSiteSection}>
+              <form action={toggleSiteSection} data-feedback-success="Visibilidade da seção atualizada.">
                 <input type="hidden" name="id" value={section.id}/>
                 <button>{section.active?"Ocultar":"Publicar"}</button>
               </form>
-              <form action={deleteSiteSection}>
+              <form action={deleteSiteSection} data-feedback-success="Seção excluída com sucesso.">
                 <input type="hidden" name="id" value={section.id}/>
                 <button className="danger">Excluir</button>
               </form>
