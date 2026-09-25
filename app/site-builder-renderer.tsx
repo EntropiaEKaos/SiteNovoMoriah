@@ -27,6 +27,7 @@ import type {
   SiteSection
 } from "@prisma/client";
 import type {PublicSiteSettings} from "../lib/public-site-settings";
+import type {SiteLocale} from "../lib/site-i18n";
 
 type Props={
   sections:SiteSection[];
@@ -36,6 +37,7 @@ type Props={
   posts:BlogPost[];
   media:Media[];
   whatsappHref:string|null;
+  locale:SiteLocale;
 };
 
 function lines(value:string|null|undefined){
@@ -123,8 +125,23 @@ export default function SiteBuilderRenderer({
   promo,
   posts,
   media,
-  whatsappHref
+  whatsappHref,
+  locale
 }:Props){
+  const localeTag=locale==="en"?"en-US":locale==="es"?"es-ES":"pt-BR";
+  const t=locale==="en"?{
+    checkIn:"Check-in",checkOut:"Check-out",guests:"Guests",search:"Search stays",direct:"Direct booking",ownTeam:"Service by our own team",experience:"Moriah experience",
+    recommended:"Recommended",shared:"Shared room",upTo:"up to",beds:"bed(s)",guestsShort:"guest(s)",from:"From",rate:"Rate",perBed:"per bed / night",directMoriah:"Book directly with Moriah",bedsAvailable:"See available beds",availability:"Check availability",
+    read:"Read article",address:"ADDRESS",whatsapp:"WHATSAPP",talk:"Talk to our team",next:"NEXT STEP",openVideo:"Open video",videoHelp:"Add a video URL in Site Studio."
+  }:locale==="es"?{
+    checkIn:"Entrada",checkOut:"Salida",guests:"Huéspedes",search:"Buscar hospedaje",direct:"Reserva directa",ownTeam:"Atención del propio alojamiento",experience:"Experiencia Moriah",
+    recommended:"Recomendado",shared:"Habitación compartida",upTo:"hasta",beds:"cama(s)",guestsShort:"huésped(es)",from:"Desde",rate:"Tarifa",perBed:"por cama / noche",directMoriah:"Reserva directa con Moriah",bedsAvailable:"Ver camas disponibles",availability:"Ver disponibilidad",
+    read:"Leer artículo",address:"DIRECCIÓN",whatsapp:"WHATSAPP",talk:"Hablar con el equipo",next:"SIGUIENTE PASO",openVideo:"Abrir vídeo",videoHelp:"Añade una URL de vídeo en Site Studio."
+  }:{
+    checkIn:"Check-in",checkOut:"Check-out",guests:"Hóspedes",search:"Buscar hospedagem",direct:"Reserva direta",ownTeam:"Atendimento da própria pousada",experience:"Experiência Moriah",
+    recommended:"Recomendado",shared:"Quarto compartilhado",upTo:"até",beds:"cama(s)",guestsShort:"hóspede(s)",from:"A partir de",rate:"Tarifa",perBed:"valor por cama / noite",directMoriah:"Reserva direta com a Moriah",bedsAvailable:"Ver camas disponíveis",availability:"Ver disponibilidade",
+    read:"Ler artigo",address:"ENDEREÇO",whatsapp:"WHATSAPP",talk:"Falar com a equipe",next:"PRÓXIMO PASSO",openVideo:"Abrir vídeo",videoHelp:"Adicione uma URL de vídeo no Site Studio."
+  };
   return <div className="siteBuilderPublic">
     {sections.map(section=>{
       if(section.type==="HERO"){
@@ -147,23 +164,23 @@ export default function SiteBuilderRenderer({
             <p>{body}</p>
             <form action="/reservar" method="get" className="siteSearchBar">
               <label>
-                <span><CalendarDays size={16}/> Check-in</span>
+                <span><CalendarDays size={16}/> {t.checkIn}</span>
                 <input type="date" name="checkIn" required/>
               </label>
               <label>
-                <span><CalendarDays size={16}/> Check-out</span>
+                <span><CalendarDays size={16}/> {t.checkOut}</span>
                 <input type="date" name="checkOut" required/>
               </label>
               <label>
-                <span><Users size={16}/> Hóspedes</span>
+                <span><Users size={16}/> {t.guests}</span>
                 <input type="number" name="guests" min="1" max="50" defaultValue="2" required/>
               </label>
-              <button type="submit"><Search size={18}/> Buscar hospedagem</button>
+              <button type="submit"><Search size={18}/> {t.search}</button>
             </form>
             <div className="siteHeroSignals">
-              <span><ShieldCheck size={15}/> Reserva direta</span>
-              <span><CheckCircle2 size={15}/> Atendimento da própria pousada</span>
-              <span><Star size={15}/> Experiência Moriah</span>
+              <span><ShieldCheck size={15}/> {t.direct}</span>
+              <span><CheckCircle2 size={15}/> {t.ownTeam}</span>
+              <span><Star size={15}/> {t.experience}</span>
             </div>
           </div>
         </section>;
@@ -182,13 +199,13 @@ export default function SiteBuilderRenderer({
             {rooms.map((room,index)=><article className="siteStayCard" key={room.id}>
               <Link className="siteStayImageWrap" href={"/hospedagens/"+room.id} aria-label={"Ver detalhes de "+room.name}>
                 {room.coverImage?<img src={room.coverImage} alt={room.name}/>:<div className="siteStayImagePlaceholder"><BedDouble size={30}/></div>}
-                {room.featured&&<span className="siteStayFeatured">Recomendado</span>}
+                {room.featured&&<span className="siteStayFeatured">{t.recommended}</span>}
                 <span className="siteStayIndex">{String(index+1).padStart(2,"0")}</span>
               </Link>
               <div className="siteStayBody">
                 <div className="siteStayMeta">
-                  <small>{room.sharedRoom?"Quarto compartilhado":room.type}</small>
-                  <small><Users size={12}/> {room.sharedRoom?room.bedCount+" cama(s)":("até "+room.capacity+" hóspede(s)")}</small>
+                  <small>{room.sharedRoom?t.shared:room.type}</small>
+                  <small><Users size={12}/> {room.sharedRoom?room.bedCount+" "+t.beds:(t.upTo+" "+room.capacity+" "+t.guestsShort)}</small>
                 </div>
                 <h3><Link className="siteStayTitleLink" href={"/hospedagens/"+room.id}>{room.name}</Link></h3>
                 <p>{room.description}</p>
@@ -197,14 +214,14 @@ export default function SiteBuilderRenderer({
                 </div>}
                 <div className="siteStayOffer">
                   <div>
-                    <small>{room.priceCents!=null?"A partir de":"Tarifa"}</small>
+                    <small>{room.priceCents!=null?t.from:t.rate}</small>
                     <strong>{room.priceCents!=null
                       ?(room.priceCents/100).toLocaleString("pt-BR",{style:"currency",currency:"BRL"})
                       :"Sob consulta"}</strong>
-                    <span>{room.sharedRoom?"valor por cama / noite":"Reserva direta com a Moriah"}</span>
+                    <span>{room.sharedRoom?t.perBed:t.directMoriah}</span>
                   </div>
                   <Link href={"/reservar?accommodationId="+room.id}>
-                    {room.sharedRoom?"Ver camas disponíveis":"Ver disponibilidade"} <ArrowRight size={15}/>
+                    {room.sharedRoom?t.bedsAvailable:t.availability} <ArrowRight size={15}/>
                   </Link>
                 </div>
               </div>
@@ -295,7 +312,7 @@ export default function SiteBuilderRenderer({
               <small>{post.publishedAt?.toLocaleDateString("pt-BR")||"JOURNAL"}</small>
               <h3>{post.title}</h3>
               <p>{post.excerpt||post.content.slice(0,150)}</p>
-              <Link href={"/blog/"+post.slug}>Ler artigo <ArrowRight size={14}/></Link>
+              <Link href={"/blog/"+post.slug}>{t.read} <ArrowRight size={14}/></Link>
             </article>)}
           </div>
           {section.ctaLabel&&section.ctaHref&&<div className="siteSectionAction">
@@ -387,9 +404,9 @@ export default function SiteBuilderRenderer({
             <p>{section.body||"Nossa equipe está pronta para ajudar com sua estadia."}</p>
           </div>
           <div className="siteContactCards">
-            <div><MapPin/><small>ENDEREÇO</small><b>{settings?.address||"Praia Grande — SP"}</b></div>
-            {whatsappHref&&<a href={whatsappHref} target="_blank" rel="noreferrer"><MessageCircle/><small>WHATSAPP</small><b>Falar com a equipe</b></a>}
-            {section.ctaLabel&&section.ctaHref&&<Link href={section.ctaHref}><ArrowRight/><small>PRÓXIMO PASSO</small><b>{section.ctaLabel}</b></Link>}
+            <div><MapPin/><small>{t.address}</small><b>{settings?.address||"Praia Grande — SP"}</b></div>
+            {whatsappHref&&<a href={whatsappHref} target="_blank" rel="noreferrer"><MessageCircle/><small>{t.whatsapp}</small><b>{t.talk}</b></a>}
+            {section.ctaLabel&&section.ctaHref&&<Link href={section.ctaHref}><ArrowRight/><small>{t.next}</small><b>{section.ctaLabel}</b></Link>}
           </div>
         </section>;
       }
@@ -409,8 +426,8 @@ export default function SiteBuilderRenderer({
               allowFullScreen
             />:section.videoUrl?<a href={section.videoUrl} target="_blank" rel="noreferrer" className="siteVideoFallback">
               {section.imageUrl&&<img src={section.imageUrl} alt={section.imageAlt||section.title||"Vídeo"}/>}
-              <span><Play/> Abrir vídeo</span>
-            </a>:<div className="siteVideoPlaceholder"><Play size={44}/><b>Adicione uma URL de vídeo no Site Studio.</b></div>}
+              <span><Play/> {t.openVideo}</span>
+            </a>:<div className="siteVideoPlaceholder"><Play size={44}/><b>{t.videoHelp}</b></div>}
           </div>
         </section>;
       }
