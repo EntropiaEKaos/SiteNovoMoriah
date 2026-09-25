@@ -41,7 +41,7 @@ export default async function RoulettePage({settingsId,preview=false}:{settingsI
       {id:"preview-m1",campaignKey:settings.campaignKey,name:"5% OFF",description:"Prêmio demonstrativo.",color:"#FFD400",textColor:"#101010",weight:3,quantityTotal:null,awardedCount:0,validityDays:14,active:true,sortOrder:10,createdAt:now,updatedAt:now},
       {id:"preview-m2",campaignKey:settings.campaignKey,name:"Sobremesa grátis",description:"Prêmio demonstrativo.",color:"#101010",textColor:"#FFFFFF",weight:2,quantityTotal:null,awardedCount:0,validityDays:14,active:true,sortOrder:20,createdAt:now,updatedAt:now},
       {id:"preview-m3",campaignKey:settings.campaignKey,name:"10% OFF",description:"Prêmio demonstrativo.",color:"#FFFFFF",textColor:"#101010",weight:2,quantityTotal:null,awardedCount:0,validityDays:14,active:true,sortOrder:30,createdAt:now,updatedAt:now}
-    ] as typeof prizes;
+    ]) as typeof prizes;
   }
   const open=Boolean(preview||(settings.active&&(!settings.activeFrom||settings.activeFrom<=now)&&(!settings.activeUntil||settings.activeUntil>now)&&available.length));
   if(!open)return <main className={styles.shell}><section className={styles.card}><header className={styles.header}><span>MORIAH • EXPERIÊNCIA</span><h1>{settings.title}</h1><p>A campanha está sendo preparada ou está temporariamente indisponível.</p></header></section></main>;
