@@ -590,7 +590,6 @@ model StaffPosition {
   createdAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt
 
-  @@index([campaignKey, active, sortOrder])
   @@index([active, sortOrder])
 }
 
