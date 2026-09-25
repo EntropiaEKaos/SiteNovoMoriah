@@ -54,6 +54,25 @@ export default async function PMS(){
   ]);
 
   const inHouse=bookings.filter(booking=>booking.status==="CHECKED_IN").length;
+  const bookingOperationalBalance=(booking:typeof bookings[number])=>{
+    const paid=booking.payments
+      .filter(payment=>payment.status==="PAID"&&payment.reference!=="RESTAURANT_FOLIO")
+      .reduce((value,payment)=>value+payment.amountCents,0);
+    const charges=booking.charges.reduce((value,charge)=>value+charge.amountCents,0);
+    const restaurant=booking.restaurantRoomCharges.reduce((value,charge)=>value+charge.amountCents,0);
+    return Math.max(0,(booking.quotedTotalCents||0)+charges-paid)+restaurant;
+  };
+  const overdueDepartures=bookings.filter(booking=>
+    booking.status==="CHECKED_IN"&&booking.checkOut&&booking.checkOut<todayStart
+  );
+  const arrivalsWaiting=bookings.filter(booking=>
+    booking.status==="CONFIRMED"&&booking.checkIn&&booking.checkIn>=todayStart&&booking.checkIn<tomorrow
+  );
+  const balancesWaiting=bookings.filter(booking=>
+    ["CONFIRMED","CHECKED_IN"].includes(booking.status)&&bookingOperationalBalance(booking)>0
+  ).sort((a,b)=>bookingOperationalBalance(b)-bookingOperationalBalance(a));
+  const actionCount=overdueDepartures.length+arrivalsWaiting.length+balancesWaiting.length+tasks.length;
+
   const openBalance=bookings.reduce((sum,booking)=>{
     const paid=booking.payments
       .filter(payment=>payment.status==="PAID"&&payment.reference!=="RESTAURANT_FOLIO")
@@ -81,6 +100,35 @@ export default async function PMS(){
       <div><small>Entradas hoje</small><strong>{arrivalsToday}</strong></div>
       <div><small>Saídas hoje</small><strong>{departuresToday}</strong></div>
       <div><small>Saldo em aberto</small><strong style={{fontSize:20}}>{money(openBalance)}</strong></div>
+    </section>
+
+    <section className="frontDeskActionCenter">
+      <div className="frontDeskActionHead">
+        <div><small>ACTION CENTER / HOJE</small><h2>{actionCount?"Atenção operacional":"Operação em dia"}</h2></div>
+        <span className={"adminChip "+(actionCount?"warn":"ok")}>{actionCount} item(ns)</span>
+      </div>
+      <div className="frontDeskActionGrid">
+        <article>
+          <small>CHECK-INS</small><strong>{arrivalsWaiting.length}</strong>
+          <p>Reservas confirmadas com entrada prevista para hoje.</p>
+          <div>{arrivalsWaiting.slice(0,4).map(row=><Link key={row.id} href={"/admin/reservas/"+row.id}>{row.name} →</Link>)}</div>
+        </article>
+        <article className={overdueDepartures.length?"isUrgent":""}>
+          <small>CHECK-OUT ATRASADO</small><strong>{overdueDepartures.length}</strong>
+          <p>Hóspedes ainda na casa após a data prevista de saída.</p>
+          <div>{overdueDepartures.slice(0,4).map(row=><Link key={row.id} href={"/admin/reservas/"+row.id}>{row.name} →</Link>)}</div>
+        </article>
+        <article>
+          <small>SALDOS EM ABERTO</small><strong>{balancesWaiting.length}</strong>
+          <p>Contas de hospedagem/restaurante que ainda exigem fechamento.</p>
+          <div>{balancesWaiting.slice(0,4).map(row=><Link key={row.id} href={"/admin/reservas/"+row.id}>{row.name} • {money(bookingOperationalBalance(row))}</Link>)}</div>
+        </article>
+        <article>
+          <small>GOVERNANÇA</small><strong>{tasks.length}</strong>
+          <p>Tarefas de limpeza ou turnover ainda não concluídas.</p>
+          <div>{tasks.slice(0,4).map(row=><span key={row.id}>{row.accommodation.name} • {row.status}</span>)}</div>
+        </article>
+      </div>
     </section>
 
     <section className="adminTwoCol">
