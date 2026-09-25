@@ -918,3 +918,68 @@ model RestaurantRoomCharge {
  settledAt DateTime?
  @@index([bookingId,status])
 }
+
+model RouletteSettings {
+  id                 String   @id @default("main")
+  active             Boolean  @default(false)
+  campaignKey        String   @default("moriah-1")
+  title              String   @default("Roleta da Sorte Moriah")
+  subtitle           String   @default("Cadastre-se e descubra seu prêmio.")
+  introText          String   @default("Sua participação é independente de avaliações. Se quiser, compartilhe sua experiência no Google.")
+  googleReviewUrl    String?
+  googleReviewLabel  String   @default("Avaliar a Moriah no Google")
+  termsText          String   @default("Ao participar, você autoriza o uso do nome e telefone apenas para administrar esta promoção e validar a entrega do prêmio.")
+  activeFrom         DateTime?
+  activeUntil        DateTime?
+  updatedAt          DateTime @updatedAt
+}
+
+model RoulettePrize {
+  id             String         @id @default(cuid())
+  name           String
+  description    String?
+  color          String         @default("#FFC845")
+  textColor      String         @default("#1B252B")
+  weight         Int            @default(1)
+  quantityTotal  Int?
+  awardedCount   Int            @default(0)
+  validityDays   Int?
+  active         Boolean        @default(true)
+  sortOrder      Int            @default(100)
+  spins          RouletteSpin[]
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  @@index([active, sortOrder])
+}
+
+model RouletteEntry {
+  id          String        @id @default(cuid())
+  campaignKey String
+  name        String
+  phone       String
+  consentAt   DateTime
+  spin        RouletteSpin?
+  createdAt   DateTime      @default(now())
+
+  @@unique([campaignKey, phone])
+  @@index([createdAt])
+}
+
+model RouletteSpin {
+  id             String        @id @default(cuid())
+  entryId        String        @unique
+  entry          RouletteEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  prizeId        String
+  prize          RoulettePrize @relation(fields: [prizeId], references: [id], onDelete: Restrict)
+  claimCode      String        @unique
+  wheelSnapshot  Json
+  resultSnapshot Json
+  expiresAt      DateTime?
+  redeemedAt     DateTime?
+  redeemedBy     String?
+  createdAt      DateTime      @default(now())
+
+  @@index([prizeId, createdAt])
+  @@index([redeemedAt, createdAt])
+}

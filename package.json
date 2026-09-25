@@ -23,7 +23,8 @@
     "ical.js": "2.2.1",
     "@aws-sdk/client-s3": "3.1139.0",
     "@aws-sdk/s3-request-presigner": "3.1139.0",
-    "firebase": "12.3.0"
+    "firebase": "12.3.0",
+    "pixi.js": "8.21.0"
   },
   "devDependencies": {
     "@types/node": "22.18.6",

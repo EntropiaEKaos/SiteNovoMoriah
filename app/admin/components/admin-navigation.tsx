@@ -13,6 +13,7 @@ import {
   ChefHat,
   Clock3,
   Gauge,
+  Gift,
   Image,
   Images,
   PackageCheck,
@@ -49,7 +50,8 @@ const sections=[
     items:[
       ["Tarifas","/admin/tarifas",WalletCards],
       ["Preço dinâmico","/admin/preco-dinamico",Gauge],
-      ["Promoções","/admin/promocoes",Megaphone]
+      ["Promoções","/admin/promocoes",Megaphone],
+      ["Roleta da sorte","/admin/roleta",Gift]
     ]
   },
   {
