@@ -49,7 +49,7 @@ function TranslationForm({entity,locale}:{entity:Entity;locale:Locale}){
 
 export default async function SiteLanguages(){
   await requireAdmin();
-  const [settings,pages,sections,rooms,promotions,posts,categories,products,restaurantSettings,modifierGroups,modifierOptions,events]=await Promise.all([
+  const [settings,pages,sections,rooms,promotions,posts,categories,products,restaurantSettings,modifierGroups,modifierOptions,chatSettings,events]=await Promise.all([
     prisma.siteSettings.findUnique({where:{id:"main"}}),
     prisma.sitePage.findMany({orderBy:[{sortOrder:"asc"},{createdAt:"asc"}]}),
     prisma.siteSection.findMany({include:{page:{select:{title:true,slug:true}}},orderBy:[{pageId:"asc"},{sortOrder:"asc"}]}),
@@ -61,6 +61,7 @@ export default async function SiteLanguages(){
     prisma.restaurantSettings.findUnique({where:{id:"main"}}),
     prisma.restaurantModifierGroup.findMany({orderBy:{name:"asc"}}),
     prisma.restaurantModifierOption.findMany({include:{group:true},orderBy:{name:"asc"}}),
+    prisma.integrationSettings.findUnique({where:{id:"main"}}),
     prisma.moriahEvent.findMany({orderBy:{startsAt:"desc"},take:80})
   ]);
 
@@ -144,6 +145,10 @@ export default async function SiteLanguages(){
     type:"MOD_OPTION",id:row.id,title:"Adicional: "+row.name,subtitle:row.group.name,translations:row.translations,
     fields:[{name:"name",label:"Nome da opção"}]
   }));
+  if(chatSettings)entities.push({
+    type:"CHAT_SETTINGS",id:chatSettings.id,title:"Assistente virtual / Groq",translations:chatSettings.translations,
+    fields:[{name:"chatName",label:"Nome do assistente"},{name:"chatWelcome",label:"Mensagem de boas-vindas",long:true}]
+  }));
   events.forEach(row=>entities.push({
     type:"EVENT",id:row.id,title:"Evento: "+row.title,translations:row.translations,
     fields:[
@@ -172,6 +177,7 @@ export default async function SiteLanguages(){
     ["PRODUCT","Produtos do Moriah Food"],
     ["MOD_GROUP","Grupos de adicionais"],
     ["MOD_OPTION","Opções de adicionais"],
+    ["CHAT_SETTINGS","Assistente virtual"],
     ["EVENT","Eventos"]
   ];
 
