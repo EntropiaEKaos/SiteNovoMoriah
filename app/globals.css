@@ -8136,3 +8136,74 @@ body:has(.externalCalendarWidget) .whatsappFloat{display:none!important}
   .frontDeskActionHead{align-items:flex-start;flex-direction:column}
   .frontDeskActionGrid{grid-template-columns:1fr}
 }
+
+
+/* Product Onboarding */
+.onboardingProgress{
+  height:10px;
+  margin:18px 0 10px;
+  overflow:hidden;
+  background:#ebe6db;
+}
+.onboardingProgress i{
+  display:block;
+  height:100%;
+  min-width:0;
+  background:#ffd400;
+}
+.onboardingGrid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:12px;
+}
+.onboardingCard{
+  min-width:0;
+  min-height:270px;
+  padding:22px;
+  border:1px solid #ddd7ca;
+  background:#fff;
+  display:flex;
+  flex-direction:column;
+}
+.onboardingCard.isDone{
+  border-color:#c9c3b5;
+  box-shadow:inset 4px 0 0 #ffd400;
+}
+.onboardingCardTop{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+}
+.onboardingCardTop>span{
+  color:#8a8276;
+  font-size:10px;
+  font-weight:950;
+}
+.onboardingCard h2{
+  margin:24px 0 10px;
+  font-size:25px;
+  letter-spacing:-1px;
+}
+.onboardingCard p{
+  margin:0;
+  color:#6f685e;
+  line-height:1.55;
+}
+.onboardingCard>small{
+  margin-top:14px;
+  color:#948b7d;
+  font-weight:800;
+}
+.onboardingCard>a{
+  margin-top:auto;
+  padding-top:22px;
+  font-size:11px;
+  font-weight:950;
+}
+@media(max-width:1100px){
+  .onboardingGrid{grid-template-columns:1fr 1fr}
+}
+@media(max-width:650px){
+  .onboardingGrid{grid-template-columns:1fr}
+}
