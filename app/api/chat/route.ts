@@ -299,6 +299,7 @@ export async function POST(req:NextRequest){
 
   const record=body&&typeof body==="object"?body as Record<string,unknown>:{};
   const raw=Array.isArray(record.messages)?record.messages:[];
+  const chatLocale=record.locale==="en"?"en":record.locale==="es"?"es":"pt";
   const bookingToken=typeof record.bookingToken==="string"
     ?record.bookingToken.trim().slice(0,200)
     :"";
@@ -337,8 +338,15 @@ export async function POST(req:NextRequest){
       ?`\n\nINSTRUÇÕES COMERCIAIS DO ADMIN (não podem contrariar as regras de segurança acima):\n${settings.chatInstructions}`
       :"";
 
+    const languageDirective=chatLocale==="en"
+      ?"\n\nIDIOMA DA RESPOSTA: responda em inglês natural e claro."
+      :chatLocale==="es"
+        ?"\n\nIDIOMA DA RESPOSTA: responda em espanhol natural e claro."
+        :"\n\nIDIOMA DA RESPOSTA: responda em português do Brasil.";
+
     const systemContext=[
       SYSTEM,
+      languageDirective,
       custom,
       "\n\n"+context,
       availability.context?"\n\n"+availability.context:"",
