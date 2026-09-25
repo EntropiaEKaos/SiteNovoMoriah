@@ -14,6 +14,9 @@ const fieldMap:Record<string,string[]>={
   BLOG:["title","excerpt","content"],
   CATEGORY:["name","description"],
   PRODUCT:["name","description","badge","tags","allergens"],
+  RESTAURANT_SETTINGS:["menuTitle","menuSubtitle"],
+  MOD_GROUP:["name"],
+  MOD_OPTION:["name"],
   EVENT:["title","eyebrow","summary","description","category","venue","address","badge","ctaLabel","priceLabel"]
 };
 
@@ -68,6 +71,15 @@ export async function saveSiteTranslation(fd:FormData){
   }else if(type==="PRODUCT"){
     const row=await prisma.restaurantProduct.findUnique({where:{id}}); if(!row)throw new Error("Produto não encontrado.");
     await prisma.restaurantProduct.update({where:{id},data:{translations:mergeTranslations(row.translations,locale,patch)}});
+  }else if(type==="RESTAURANT_SETTINGS"){
+    const row=await prisma.restaurantSettings.findUnique({where:{id}}); if(!row)throw new Error("Configuração do restaurante não encontrada.");
+    await prisma.restaurantSettings.update({where:{id},data:{translations:mergeTranslations(row.translations,locale,patch)}});
+  }else if(type==="MOD_GROUP"){
+    const row=await prisma.restaurantModifierGroup.findUnique({where:{id}}); if(!row)throw new Error("Grupo de adicional não encontrado.");
+    await prisma.restaurantModifierGroup.update({where:{id},data:{translations:mergeTranslations(row.translations,locale,patch)}});
+  }else if(type==="MOD_OPTION"){
+    const row=await prisma.restaurantModifierOption.findUnique({where:{id}}); if(!row)throw new Error("Adicional não encontrado.");
+    await prisma.restaurantModifierOption.update({where:{id},data:{translations:mergeTranslations(row.translations,locale,patch)}});
   }else if(type==="EVENT"){
     const row=await prisma.moriahEvent.findUnique({where:{id}}); if(!row)throw new Error("Evento não encontrado.");
     await prisma.moriahEvent.update({where:{id},data:{translations:mergeTranslations(row.translations,locale,patch)}});
