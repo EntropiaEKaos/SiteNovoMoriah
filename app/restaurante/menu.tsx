@@ -83,6 +83,7 @@ export default function Menu({
   const [query,setQuery]=useState("");
   const [selectedProduct,setSelectedProduct]=useState<Product|null>(null);
   const [cartOpen,setCartOpen]=useState(false);
+  const [fulfillmentType,setFulfillmentType]=useState<"DELIVERY"|"PICKUP">("DELIVERY");
 
   const categories=useMemo(()=>{
     const map=new Map<string,{
@@ -369,6 +370,7 @@ export default function Menu({
         <input type="hidden" name="bookingToken" value={bookingToken}/>
         <input type="hidden" name="successPath" value={successPath}/>
         <input type="hidden" name="orderSource" value={standalone?"STANDALONE_MENU":bookingToken?"ROOM_QR":"PUBLIC_MENU"}/>
+        {standalone&&<input type="hidden" name="fulfillmentType" value={fulfillmentType}/>} 
 
         <div className="foodCheckoutTitleV3">
           <small>{t.finish}</small>
@@ -376,8 +378,12 @@ export default function Menu({
         </div>
 
         <label><span><UserRound size={14}/>{t.name}</span><input name="guestName" required placeholder={t.who}/></label>
-        <label><span><BedDouble size={14}/>{standalone?"Entrega / retirada":t.room}</span><input name="roomLabel" placeholder={standalone?"Endereço, referência ou retirada no balcão":bookingToken?t.linkedRoom:t.roomPickup}/></label>
-        <label><span><Phone size={14}/>WhatsApp</span><input name="phone" inputMode="tel" placeholder="(13) 99999-9999"/></label>
+        {standalone&&<div className="foodFulfillmentChoice">
+          <button type="button" className={fulfillmentType==="DELIVERY"?"isActive":""} onClick={()=>setFulfillmentType("DELIVERY")}>Entrega</button>
+          <button type="button" className={fulfillmentType==="PICKUP"?"isActive":""} onClick={()=>setFulfillmentType("PICKUP")}>Retirada</button>
+        </div>}
+        <label><span><BedDouble size={14}/>{standalone?(fulfillmentType==="DELIVERY"?"Endereço de entrega":"Retirada"):t.room}</span><input name="roomLabel" required={standalone&&fulfillmentType==="DELIVERY"} placeholder={standalone?(fulfillmentType==="DELIVERY"?"Rua, número, complemento e referência":"Retirada no balcão"):bookingToken?t.linkedRoom:t.roomPickup}/></label>
+        <label><span><Phone size={14}/>WhatsApp</span><input name="phone" inputMode="tel" required={standalone} placeholder="(13) 99999-9999"/></label>
         <label><span><CreditCard size={14}/>{t.payment}</span>
           <select name="paymentMethod" defaultValue={bookingToken?"ROOM":"PIX"}>
             {bookingToken&&<option value="ROOM">{t.chargeStay}</option>}
