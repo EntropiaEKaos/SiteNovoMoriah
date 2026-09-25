@@ -20,6 +20,7 @@ model AdminUser {
   updatedAt    DateTime @updatedAt
   auditLogs    AdminAuditLog[]
   pushDevices  AdminPushDevice[]
+  notificationReads AdminNotificationRead[]
 
   @@index([active, role])
 }
@@ -433,12 +434,27 @@ model NotificationMessage {
   scheduledAt DateTime?
   sentAt      DateTime?
   error       String?
+  actionUrl   String?
   createdAt   DateTime @default(now())
+  reads       AdminNotificationRead[]
   updatedAt   DateTime @updatedAt
 
   @@index([status, createdAt])
   @@index([channel, createdAt])
   @@index([audience, status, createdAt])
+}
+
+model AdminNotificationRead {
+  id             String              @id @default(cuid())
+  adminUserId    String
+  adminUser      AdminUser           @relation(fields: [adminUserId], references: [id], onDelete: Cascade)
+  notificationId String
+  notification   NotificationMessage @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+  readAt         DateTime            @default(now())
+
+  @@unique([adminUserId, notificationId])
+  @@index([adminUserId, readAt])
+  @@index([notificationId])
 }
 
 model NotificationRule {
