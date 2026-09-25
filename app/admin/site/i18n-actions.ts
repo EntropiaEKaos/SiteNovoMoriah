@@ -3,6 +3,7 @@
 import {revalidatePath} from "next/cache";
 import {requireAdmin} from "../../../lib/admin-auth";
 import {prisma} from "../../../lib/prisma";
+import {Prisma} from "@prisma/client";
 
 const allowedLocales=new Set(["en","es"]);
 const fieldMap:Record<string,string[]>={
@@ -33,10 +34,10 @@ function values(fd:FormData,type:string){
   return result;
 }
 
-function mergeTranslations(current:unknown,locale:string,patch:Record<string,unknown>){
+function mergeTranslations(current:unknown,locale:string,patch:Record<string,unknown>):Prisma.InputJsonValue{
   const root=current&&typeof current==="object"&&!Array.isArray(current)?{...(current as Record<string,unknown>)}:{};
   root[locale]=patch;
-  return root;
+  return JSON.parse(JSON.stringify(root)) as Prisma.InputJsonValue;
 }
 
 export async function saveSiteTranslation(fd:FormData){
