@@ -22,7 +22,7 @@ function parseLinks(raw:unknown,fallbackUrl:string|null,fallbackLabel:string){
   return links;
 }
 
-export default async function RoulettePage({settingsId}:{settingsId:"main"|"delivery"}){
+export default async function RoulettePage({settingsId,preview=false}:{settingsId:"main"|"delivery";preview?:boolean}){
   const now=new Date();
   const settings=await prisma.rouletteSettings.findUnique({where:{id:settingsId}});
   if(!settings)return <main className={styles.shell}><section className={styles.card}><header className={styles.header}><span>MORIAH • EXPERIÊNCIA</span><h1>Roleta Moriah</h1><p>A campanha está sendo preparada. Volte em breve.</p></header></section></main>;
@@ -31,8 +31,19 @@ export default async function RoulettePage({settingsId}:{settingsId:"main"|"deli
     where:{active:true,campaignKey:settings.campaignKey},
     orderBy:[{sortOrder:"asc"},{createdAt:"asc"}]
   });
-  const available=prizes.filter(prize=>prize.quantityTotal===null||prize.awardedCount<prize.quantityTotal);
-  const open=Boolean(settings.active&&(!settings.activeFrom||settings.activeFrom<=now)&&(!settings.activeUntil||settings.activeUntil>now)&&available.length);
+  let available=prizes.filter(prize=>prize.quantityTotal===null||prize.awardedCount<prize.quantityTotal);
+  if(preview&&!available.length){
+    available=(settingsId==="delivery"?[
+      {id:"preview-d1",campaignKey:settings.campaignKey,name:"10% OFF",description:"Prêmio demonstrativo.",color:"#FFD400",textColor:"#101010",weight:3,quantityTotal:null,awardedCount:0,validityDays:14,active:true,sortOrder:10,createdAt:now,updatedAt:now},
+      {id:"preview-d2",campaignKey:settings.campaignKey,name:"Frete grátis",description:"Prêmio demonstrativo.",color:"#101010",textColor:"#FFFFFF",weight:2,quantityTotal:null,awardedCount:0,validityDays:14,active:true,sortOrder:20,createdAt:now,updatedAt:now},
+      {id:"preview-d3",campaignKey:settings.campaignKey,name:"Refrigerante grátis",description:"Prêmio demonstrativo.",color:"#FFFFFF",textColor:"#101010",weight:2,quantityTotal:null,awardedCount:0,validityDays:14,active:true,sortOrder:30,createdAt:now,updatedAt:now}
+    ]:[
+      {id:"preview-m1",campaignKey:settings.campaignKey,name:"5% OFF",description:"Prêmio demonstrativo.",color:"#FFD400",textColor:"#101010",weight:3,quantityTotal:null,awardedCount:0,validityDays:14,active:true,sortOrder:10,createdAt:now,updatedAt:now},
+      {id:"preview-m2",campaignKey:settings.campaignKey,name:"Sobremesa grátis",description:"Prêmio demonstrativo.",color:"#101010",textColor:"#FFFFFF",weight:2,quantityTotal:null,awardedCount:0,validityDays:14,active:true,sortOrder:20,createdAt:now,updatedAt:now},
+      {id:"preview-m3",campaignKey:settings.campaignKey,name:"10% OFF",description:"Prêmio demonstrativo.",color:"#FFFFFF",textColor:"#101010",weight:2,quantityTotal:null,awardedCount:0,validityDays:14,active:true,sortOrder:30,createdAt:now,updatedAt:now}
+    ] as typeof prizes;
+  }
+  const open=Boolean(preview||(settings.active&&(!settings.activeFrom||settings.activeFrom<=now)&&(!settings.activeUntil||settings.activeUntil>now)&&available.length));
   if(!open)return <main className={styles.shell}><section className={styles.card}><header className={styles.header}><span>MORIAH • EXPERIÊNCIA</span><h1>{settings.title}</h1><p>A campanha está sendo preparada ou está temporariamente indisponível.</p></header></section></main>;
 
   let event:null|Awaited<ReturnType<typeof prisma.moriahEvent.findFirst>>=null;
@@ -77,6 +88,7 @@ export default async function RoulettePage({settingsId}:{settingsId:"main"|"deli
       termsText:settings.termsText
     }}
     theme={theme}
+    preview={preview}
     initialPrizes={available.map(prize=>({
       id:prize.id,name:prize.name,description:prize.description,color:prize.color,
       textColor:prize.textColor,weight:Math.max(1,prize.weight)
