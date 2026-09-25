@@ -802,6 +802,7 @@ model RestaurantStockMovement {
 }
 
 model RestaurantSettings {
+ translations Json?
  id String @id @default("main")
  openTime String @default("07:00")
  closeTime String @default("22:00")
@@ -884,6 +885,7 @@ model RestaurantProductionBatch {
  @@index([ingredientId,status])
 }
 model RestaurantModifierGroup {
+ translations Json?
  id String @id @default(cuid())
  name String
  required Boolean @default(false)
@@ -894,6 +896,7 @@ model RestaurantModifierGroup {
  products RestaurantProductModifierGroup[]
 }
 model RestaurantModifierOption {
+ translations Json?
  id String @id @default(cuid())
  groupId String
  group RestaurantModifierGroup @relation(fields:[groupId],references:[id],onDelete:Cascade)
