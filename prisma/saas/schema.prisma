@@ -1,0 +1,197 @@
+// Executable SaaS control-plane schema.
+// Safety: this schema uses SAAS_DATABASE_URL / SAAS_DIRECT_URL only.
+// Never point these variables at the Moriah Production database.
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../../generated/saas-client"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("SAAS_DATABASE_URL")
+  directUrl = env("SAAS_DIRECT_URL")
+}
+
+model Tenant {
+  id        String   @id @default(cuid())
+  slug      String   @unique
+  name      String
+  legalName String?
+  segment   String
+  status    String   @default("TRIAL")
+  plan      String   @default("STARTER")
+  timezone  String   @default("America/Sao_Paulo")
+  currency  String   @default("BRL")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  properties  Property[]
+  memberships Membership[]
+  features    TenantFeature[]
+  settings    TenantSettings?
+  subscription Subscription?
+  onboarding   Onboarding?
+  provisioningRuns ProvisioningRun[]
+  @@index([status,plan])
+}
+
+model Property {
+  id String @id @default(cuid())
+  tenantId String
+  tenant Tenant @relation(fields:[tenantId],references:[id],onDelete:Cascade)
+  slug String
+  name String
+  type String @default("HOTEL")
+  active Boolean @default(true)
+  timezone String @default("America/Sao_Paulo")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@unique([tenantId,slug])
+  @@index([tenantId,active])
+}
+
+model Membership {
+  id String @id @default(cuid())
+  tenantId String
+  tenant Tenant @relation(fields:[tenantId],references:[id],onDelete:Cascade)
+  principalId String
+  role String
+  active Boolean @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@unique([tenantId,principalId])
+  @@index([principalId,active])
+}
+
+model TenantFeature {
+  id String @id @default(cuid())
+  tenantId String
+  tenant Tenant @relation(fields:[tenantId],references:[id],onDelete:Cascade)
+  feature String
+  enabled Boolean @default(true)
+  config Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@unique([tenantId,feature])
+}
+
+model TenantSettings {
+  id String @id @default(cuid())
+  tenantId String @unique
+  tenant Tenant @relation(fields:[tenantId],references:[id],onDelete:Cascade)
+  displayName String?
+  logoUrl String?
+  primaryColor String @default("#111111")
+  accentColor String @default("#d90429")
+  customDomain String? @unique
+  metadata Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model PlatformAdmin {
+  id String @id @default(cuid())
+  principalId String @unique
+  role String @default("PLATFORM_ADMIN")
+  active Boolean @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model PlanCatalog {
+  id String @id @default(cuid())
+  code String @unique
+  name String
+  active Boolean @default(true)
+  monthlyPriceCents Int
+  yearlyPriceCents Int?
+  currency String @default("BRL")
+  trialDays Int @default(14)
+  features Json
+  limits Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  subscriptions Subscription[]
+}
+
+model Subscription {
+  id String @id @default(cuid())
+  tenantId String @unique
+  tenant Tenant @relation(fields:[tenantId],references:[id],onDelete:Cascade)
+  planId String
+  plan PlanCatalog @relation(fields:[planId],references:[id],onDelete:Restrict)
+  status String @default("TRIAL")
+  provider String?
+  providerCustomerId String?
+  providerSubscriptionId String? @unique
+  trialEndsAt DateTime?
+  currentPeriodStart DateTime?
+  currentPeriodEnd DateTime?
+  graceUntil DateTime?
+  failedAttempts Int @default(0)
+  cancelAtPeriodEnd Boolean @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  events SubscriptionEvent[]
+  @@index([status,currentPeriodEnd])
+}
+
+model SubscriptionEvent {
+  id String @id @default(cuid())
+  subscriptionId String
+  subscription Subscription @relation(fields:[subscriptionId],references:[id],onDelete:Cascade)
+  providerEventKey String? @unique
+  type String
+  payload Json?
+  createdAt DateTime @default(now())
+  @@index([subscriptionId,createdAt])
+}
+
+model Onboarding {
+  id String @id @default(cuid())
+  tenantId String @unique
+  tenant Tenant @relation(fields:[tenantId],references:[id],onDelete:Cascade)
+  ownerPrincipalId String
+  segment String
+  status String @default("STARTED")
+  currentStep String @default("ORGANIZATION")
+  completedSteps Json?
+  selectedPlanCode String?
+  selectedFeatures Json?
+  errorCode String?
+  errorMessage String?
+  startedAt DateTime @default(now())
+  completedAt DateTime?
+  updatedAt DateTime @updatedAt
+}
+
+model ProvisioningRun {
+  id String @id @default(cuid())
+  tenantId String
+  tenant Tenant @relation(fields:[tenantId],references:[id],onDelete:Cascade)
+  idempotencyKey String @unique
+  status String @default("RUNNING")
+  step String
+  attempts Int @default(0)
+  result Json?
+  errorCode String?
+  errorMessage String?
+  startedAt DateTime @default(now())
+  finishedAt DateTime?
+  @@index([tenantId,status,startedAt])
+}
+
+model PlatformAuditLog {
+  id String @id @default(cuid())
+  actorPrincipalId String?
+  actorType String
+  tenantId String?
+  action String
+  targetType String?
+  targetId String?
+  metadata Json?
+  createdAt DateTime @default(now())
+  @@index([tenantId,createdAt])
+  @@index([actorPrincipalId,createdAt])
+  @@index([action,createdAt])
+}
