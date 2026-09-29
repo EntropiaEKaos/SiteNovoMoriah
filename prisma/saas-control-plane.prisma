@@ -1,0 +1,98 @@
+// SaaS Control Plane draft. Never migrate directly to Production.
+model SaasPlatformAdmin {
+ id String @id @default(cuid())
+ principalId String @unique
+ role String @default("PLATFORM_ADMIN")
+ active Boolean @default(true)
+ createdAt DateTime @default(now())
+ updatedAt DateTime @updatedAt
+}
+model SaasPlanCatalog {
+ id String @id @default(cuid())
+ code String @unique
+ name String
+ active Boolean @default(true)
+ monthlyPriceCents Int
+ yearlyPriceCents Int?
+ currency String @default("BRL")
+ trialDays Int @default(14)
+ features Json
+ limits Json
+ createdAt DateTime @default(now())
+ updatedAt DateTime @updatedAt
+ subscriptions SaasSubscription[]
+}
+model SaasSubscription {
+ id String @id @default(cuid())
+ tenantId String @unique
+ planId String
+ plan SaasPlanCatalog @relation(fields:[planId],references:[id],onDelete:Restrict)
+ status String @default("TRIAL")
+ provider String?
+ providerCustomerId String?
+ providerSubscriptionId String? @unique
+ trialEndsAt DateTime?
+ currentPeriodStart DateTime?
+ currentPeriodEnd DateTime?
+ cancelAtPeriodEnd Boolean @default(false)
+ createdAt DateTime @default(now())
+ updatedAt DateTime @updatedAt
+ events SaasSubscriptionEvent[]
+ @@index([status,currentPeriodEnd])
+ @@index([provider,providerCustomerId])
+}
+model SaasSubscriptionEvent {
+ id String @id @default(cuid())
+ subscriptionId String
+ subscription SaasSubscription @relation(fields:[subscriptionId],references:[id],onDelete:Cascade)
+ providerEventId String? @unique
+ type String
+ payload Json?
+ createdAt DateTime @default(now())
+ @@index([subscriptionId,createdAt])
+}
+model SaasOnboarding {
+ id String @id @default(cuid())
+ tenantId String @unique
+ ownerPrincipalId String
+ segment String
+ status String @default("STARTED")
+ currentStep String @default("ORGANIZATION")
+ completedSteps Json?
+ selectedPlanCode String?
+ selectedFeatures Json?
+ errorCode String?
+ errorMessage String?
+ startedAt DateTime @default(now())
+ completedAt DateTime?
+ updatedAt DateTime @updatedAt
+ @@index([status,updatedAt])
+}
+model SaasProvisioningRun {
+ id String @id @default(cuid())
+ tenantId String
+ idempotencyKey String @unique
+ status String @default("RUNNING")
+ step String
+ attempts Int @default(0)
+ result Json?
+ errorCode String?
+ errorMessage String?
+ startedAt DateTime @default(now())
+ finishedAt DateTime?
+ @@index([tenantId,status,startedAt])
+}
+model SaasPlatformAuditLog {
+ id String @id @default(cuid())
+ actorPrincipalId String?
+ actorType String
+ tenantId String?
+ action String
+ targetType String?
+ targetId String?
+ metadata Json?
+ createdAt DateTime @default(now())
+ @@index([tenantId,createdAt])
+ @@index([actorPrincipalId,createdAt])
+ @@index([action,createdAt])
+}
