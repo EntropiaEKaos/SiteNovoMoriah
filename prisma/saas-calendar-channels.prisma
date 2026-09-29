@@ -1,0 +1,77 @@
+// Calendar/Channels SaaS domain draft. Isolated design artifact: never migrate directly to Production.
+
+model SaasCalendarChannel {
+  id String @id @default(cuid())
+  tenantId String
+  propertyId String
+  accommodationId String?
+  provider String
+  name String
+  direction String @default("IMPORT")
+  feedUrlEncrypted String?
+  exportTokenHash String? @unique
+  active Boolean @default(true)
+  syncIntervalMinutes Int @default(30)
+  lastSyncAt DateTime?
+  lastSuccessAt DateTime?
+  lastError String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  events SaasCalendarChannelEvent[]
+  @@unique([id,tenantId,propertyId])
+  @@index([tenantId,propertyId,provider,active])
+  @@index([tenantId,propertyId,accommodationId,active])
+}
+
+model SaasCalendarChannelEvent {
+  id String @id @default(cuid())
+  tenantId String
+  propertyId String
+  channelId String
+  channel SaasCalendarChannel @relation(fields:[channelId,tenantId,propertyId],references:[id,tenantId,propertyId],onDelete:Cascade)
+  externalUid String
+  startsAt DateTime
+  endsAt DateTime
+  status String @default("BLOCKED")
+  summary String?
+  rawFingerprint String?
+  importedAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@unique([tenantId,propertyId,channelId,externalUid])
+  @@index([tenantId,propertyId,startsAt,endsAt])
+}
+
+model SaasCalendarWidget {
+  id String @id @default(cuid())
+  tenantId String
+  propertyId String
+  publicTokenHash String @unique
+  enabled Boolean @default(true)
+  title String?
+  locale String @default("pt-BR")
+  theme Json?
+  bookingUrl String?
+  showPrices Boolean @default(true)
+  showRemainingUnits Boolean @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@unique([tenantId,propertyId])
+  @@index([tenantId,propertyId,enabled])
+}
+
+model SaasCalendarSyncRun {
+  id String @id @default(cuid())
+  tenantId String
+  propertyId String
+  channelId String
+  status String @default("RUNNING")
+  startedAt DateTime @default(now())
+  finishedAt DateTime?
+  imported Int @default(0)
+  updated Int @default(0)
+  skipped Int @default(0)
+  errorCode String?
+  errorMessage String?
+  @@index([tenantId,propertyId,channelId,startedAt])
+  @@index([status,startedAt])
+}
