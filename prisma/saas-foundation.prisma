@@ -2,83 +2,194 @@
 // Do not migrate this file directly against production.
 
 model SaasTenant {
-  id          String   @id @default(cuid())
-  slug        String   @unique
-  name        String
-  legalName   String?
-  status      String   @default("TRIAL")
-  plan        String   @default("STARTER")
-  timezone    String   @default("America/Sao_Paulo")
-  currency    String   @default("BRL")
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  properties  SaasProperty[]
+  id String @id @default(cuid())
+  slug String @unique
+  name String
+  legalName String?
+  status String @default("TRIAL")
+  plan String @default("STARTER")
+  timezone String @default("America/Sao_Paulo")
+  currency String @default("BRL")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  properties SaasProperty[]
   memberships SaasMembership[]
-  features    SaasTenantFeature[]
-  settings    SaasTenantSettings?
-
-  @@index([status, plan])
+  features SaasTenantFeature[]
+  settings SaasTenantSettings?
+  accommodations SaasAccommodation[]
+  @@index([status,plan])
 }
 
 model SaasProperty {
-  id        String   @id @default(cuid())
-  tenantId  String
-  tenant    SaasTenant @relation(fields:[tenantId],references:[id],onDelete:Cascade)
-  slug      String
-  name      String
-  type      String   @default("HOTEL")
-  active    Boolean  @default(true)
-  timezone  String   @default("America/Sao_Paulo")
+  id String @id @default(cuid())
+  tenantId String
+  tenant SaasTenant @relation(fields:[tenantId],references:[id],onDelete:Cascade)
+  slug String
+  name String
+  type String @default("HOTEL")
+  active Boolean @default(true)
+  timezone String @default("America/Sao_Paulo")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  @@unique([tenantId, slug])
-  @@index([tenantId, active])
+  accommodations SaasAccommodation[]
+  @@unique([tenantId,slug])
+  @@unique([id,tenantId])
+  @@index([tenantId,active])
 }
 
 model SaasMembership {
-  id          String   @id @default(cuid())
-  tenantId    String
-  tenant      SaasTenant @relation(fields:[tenantId],references:[id],onDelete:Cascade)
+  id String @id @default(cuid())
+  tenantId String
+  tenant SaasTenant @relation(fields:[tenantId],references:[id],onDelete:Cascade)
   principalId String
-  role        String
-  active      Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  @@unique([tenantId, principalId])
-  @@index([principalId, active])
-  @@index([tenantId, role, active])
+  role String
+  active Boolean @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@unique([tenantId,principalId])
+  @@index([principalId,active])
+  @@index([tenantId,role,active])
 }
 
 model SaasTenantFeature {
-  id        String   @id @default(cuid())
-  tenantId  String
-  tenant    SaasTenant @relation(fields:[tenantId],references:[id],onDelete:Cascade)
-  feature   String
-  enabled   Boolean  @default(true)
-  config    Json?
+  id String @id @default(cuid())
+  tenantId String
+  tenant SaasTenant @relation(fields:[tenantId],references:[id],onDelete:Cascade)
+  feature String
+  enabled Boolean @default(true)
+  config Json?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  @@unique([tenantId, feature])
-  @@index([tenantId, enabled])
+  @@unique([tenantId,feature])
+  @@index([tenantId,enabled])
 }
 
 model SaasTenantSettings {
-  id             String   @id @default(cuid())
-  tenantId       String   @unique
-  tenant         SaasTenant @relation(fields:[tenantId],references:[id],onDelete:Cascade)
-  displayName    String?
-  logoUrl        String?
-  faviconUrl     String?
-  primaryColor   String   @default("#111111")
-  secondaryColor String   @default("#ef233c")
-  accentColor    String   @default("#d90429")
-  customDomain   String?  @unique
-  supportPhone   String?
-  supportEmail   String?
-  metadata       Json?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  id String @id @default(cuid())
+  tenantId String @unique
+  tenant SaasTenant @relation(fields:[tenantId],references:[id],onDelete:Cascade)
+  displayName String?
+  logoUrl String?
+  faviconUrl String?
+  primaryColor String @default("#111111")
+  secondaryColor String @default("#ef233c")
+  accentColor String @default("#d90429")
+  customDomain String? @unique
+  supportPhone String?
+  supportEmail String?
+  metadata Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model SaasAccommodation {
+  id String @id @default(cuid())
+  tenantId String
+  propertyId String
+  tenant SaasTenant @relation(fields:[tenantId],references:[id],onDelete:Cascade)
+  property SaasProperty @relation(fields:[propertyId,tenantId],references:[id,tenantId],onDelete:Cascade)
+  internalCode String?
+  name String
+  type String
+  description String?
+  active Boolean @default(true)
+  capacity Int @default(2)
+  sharedRoom Boolean @default(false)
+  bedCount Int @default(0)
+  basePriceCents Int?
+  currency String @default("BRL")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  holds SaasInventoryHold[]
+  blocks SaasInventoryBlock[]
+  ratePlans SaasRatePlan[]
+  rateRules SaasRateRule[]
+  @@unique([tenantId,propertyId,internalCode])
+  @@unique([id,tenantId,propertyId])
+  @@index([tenantId,propertyId,active])
+}
+
+model SaasInventoryHold {
+  id String @id @default(cuid())
+  tenantId String
+  propertyId String
+  accommodationId String
+  accommodation SaasAccommodation @relation(fields:[accommodationId,tenantId,propertyId],references:[id,tenantId,propertyId],onDelete:Cascade)
+  startsAt DateTime
+  endsAt DateTime
+  units Int @default(1)
+  token String @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  @@index([tenantId,propertyId,accommodationId,startsAt,endsAt])
+  @@index([expiresAt])
+}
+
+model SaasInventoryBlock {
+  id String @id @default(cuid())
+  tenantId String
+  propertyId String
+  accommodationId String
+  accommodation SaasAccommodation @relation(fields:[accommodationId,tenantId,propertyId],references:[id,tenantId,propertyId],onDelete:Cascade)
+  startsAt DateTime
+  endsAt DateTime
+  reason String
+  notes String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([tenantId,propertyId,accommodationId,startsAt,endsAt])
+}
+
+model SaasRatePlan {
+  id String @id @default(cuid())
+  tenantId String
+  propertyId String
+  accommodationId String
+  accommodation SaasAccommodation @relation(fields:[accommodationId,tenantId,propertyId],references:[id,tenantId,propertyId],onDelete:Cascade)
+  name String
+  currency String @default("BRL")
+  basePriceCents Int
+  minNights Int @default(1)
+  maxNights Int?
+  active Boolean @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  overrides SaasRateOverride[]
+  @@unique([id,tenantId,propertyId])
+  @@index([tenantId,propertyId,accommodationId,active])
+}
+
+model SaasRateRule {
+  id String @id @default(cuid())
+  tenantId String
+  propertyId String
+  accommodationId String
+  accommodation SaasAccommodation @relation(fields:[accommodationId,tenantId,propertyId],references:[id,tenantId,propertyId],onDelete:Cascade)
+  name String
+  adjustmentType String @default("PERCENT")
+  adjustmentValue Int
+  active Boolean @default(true)
+  priority Int @default(100)
+  startsAt DateTime?
+  endsAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([tenantId,propertyId,accommodationId,active,priority])
+}
+
+model SaasRateOverride {
+  id String @id @default(cuid())
+  tenantId String
+  propertyId String
+  ratePlanId String
+  ratePlan SaasRatePlan @relation(fields:[ratePlanId,tenantId,propertyId],references:[id,tenantId,propertyId],onDelete:Cascade)
+  startsAt DateTime
+  endsAt DateTime
+  priceCents Int
+  minNights Int?
+  closedToArrival Boolean @default(false)
+  closedToDeparture Boolean @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([tenantId,propertyId,ratePlanId,startsAt,endsAt])
 }
