@@ -1,0 +1,101 @@
+// Reservation/guest SaaS domain draft. Isolated design artifact: never migrate directly to Production.
+
+model SaasGuest {
+  id String @id @default(cuid())
+  tenantId String
+  fullName String
+  email String?
+  phone String?
+  documentType String?
+  documentNumber String?
+  birthDate DateTime?
+  notes String?
+  monthlyGuest Boolean @default(false)
+  collaborator Boolean @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  reservations SaasReservation[]
+  @@unique([id,tenantId])
+  @@index([tenantId,fullName])
+  @@index([tenantId,email])
+  @@index([tenantId,phone])
+}
+
+model SaasReservation {
+  id String @id @default(cuid())
+  tenantId String
+  propertyId String
+  accommodationId String
+  guestId String?
+  guest SaasGuest? @relation(fields:[guestId,tenantId],references:[id,tenantId],onDelete:SetNull)
+  source String @default("DIRECT")
+  externalReference String?
+  status String @default("PENDING")
+  checkIn DateTime
+  checkOut DateTime
+  adults Int @default(1)
+  children Int @default(0)
+  currency String @default("BRL")
+  roomAmountCents Int @default(0)
+  extrasAmountCents Int @default(0)
+  discountAmountCents Int @default(0)
+  totalAmountCents Int @default(0)
+  paidAmountCents Int @default(0)
+  notes String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  companions SaasReservationCompanion[]
+  charges SaasReservationCharge[]
+  payments SaasReservationPayment[]
+  @@unique([id,tenantId,propertyId])
+  @@unique([tenantId,propertyId,source,externalReference])
+  @@index([tenantId,propertyId,accommodationId,checkIn,checkOut])
+  @@index([tenantId,propertyId,status,checkIn])
+}
+
+model SaasReservationCompanion {
+  id String @id @default(cuid())
+  tenantId String
+  propertyId String
+  reservationId String
+  reservation SaasReservation @relation(fields:[reservationId,tenantId,propertyId],references:[id,tenantId,propertyId],onDelete:Cascade)
+  fullName String
+  documentType String?
+  documentNumber String?
+  birthDate DateTime?
+  createdAt DateTime @default(now())
+  @@index([tenantId,propertyId,reservationId])
+}
+
+model SaasReservationCharge {
+  id String @id @default(cuid())
+  tenantId String
+  propertyId String
+  reservationId String
+  reservation SaasReservation @relation(fields:[reservationId,tenantId,propertyId],references:[id,tenantId,propertyId],onDelete:Cascade)
+  category String
+  description String
+  quantity Int @default(1)
+  unitAmountCents Int
+  totalAmountCents Int
+  createdAt DateTime @default(now())
+  createdByPrincipalId String?
+  @@index([tenantId,propertyId,reservationId,category])
+}
+
+model SaasReservationPayment {
+  id String @id @default(cuid())
+  tenantId String
+  propertyId String
+  reservationId String
+  reservation SaasReservation @relation(fields:[reservationId,tenantId,propertyId],references:[id,tenantId,propertyId],onDelete:Cascade)
+  method String
+  provider String?
+  externalReference String?
+  amountCents Int
+  status String @default("CONFIRMED")
+  paidAt DateTime?
+  createdAt DateTime @default(now())
+  @@index([tenantId,propertyId,reservationId,status])
+  @@index([tenantId,provider,externalReference])
+}
