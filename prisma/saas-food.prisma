@@ -1,0 +1,135 @@
+// Restaurant/Kitchen/Delivery SaaS domain draft. Never migrate directly to Production.
+model SaasRestaurant {
+ id String @id @default(cuid())
+ tenantId String
+ propertyId String?
+ slug String
+ name String
+ active Boolean @default(true)
+ currency String @default("BRL")
+ timezone String @default("America/Sao_Paulo")
+ createdAt DateTime @default(now())
+ updatedAt DateTime @updatedAt
+ categories SaasMenuCategory[]
+ products SaasMenuProduct[]
+ orders SaasFoodOrder[]
+ @@unique([tenantId,slug])
+ @@unique([id,tenantId])
+ @@index([tenantId,propertyId,active])
+}
+model SaasMenuCategory {
+ id String @id @default(cuid())
+ tenantId String
+ restaurantId String
+ restaurant SaasRestaurant @relation(fields:[restaurantId,tenantId],references:[id,tenantId],onDelete:Cascade)
+ name String
+ sortOrder Int @default(0)
+ active Boolean @default(true)
+ products SaasMenuProduct[]
+ @@unique([id,tenantId,restaurantId])
+ @@index([tenantId,restaurantId,active,sortOrder])
+}
+model SaasMenuProduct {
+ id String @id @default(cuid())
+ tenantId String
+ restaurantId String
+ categoryId String?
+ restaurant SaasRestaurant @relation(fields:[restaurantId,tenantId],references:[id,tenantId],onDelete:Cascade)
+ category SaasMenuCategory? @relation(fields:[categoryId,tenantId,restaurantId],references:[id,tenantId,restaurantId],onDelete:SetNull)
+ name String
+ description String?
+ priceCents Int
+ active Boolean @default(true)
+ available Boolean @default(true)
+ stock Int?
+ imageUrl String?
+ createdAt DateTime @default(now())
+ updatedAt DateTime @updatedAt
+ modifierGroups SaasModifierGroup[]
+ @@unique([id,tenantId,restaurantId])
+ @@index([tenantId,restaurantId,categoryId,active,available])
+}
+model SaasModifierGroup {
+ id String @id @default(cuid())
+ tenantId String
+ restaurantId String
+ productId String
+ product SaasMenuProduct @relation(fields:[productId,tenantId,restaurantId],references:[id,tenantId,restaurantId],onDelete:Cascade)
+ name String
+ minSelections Int @default(0)
+ maxSelections Int @default(1)
+ required Boolean @default(false)
+ options SaasModifierOption[]
+ @@unique([id,tenantId,restaurantId])
+ @@index([tenantId,restaurantId,productId])
+}
+model SaasModifierOption {
+ id String @id @default(cuid())
+ tenantId String
+ restaurantId String
+ groupId String
+ group SaasModifierGroup @relation(fields:[groupId,tenantId,restaurantId],references:[id,tenantId,restaurantId],onDelete:Cascade)
+ name String
+ priceDeltaCents Int @default(0)
+ active Boolean @default(true)
+ @@index([tenantId,restaurantId,groupId,active])
+}
+model SaasFoodOrder {
+ id String @id @default(cuid())
+ tenantId String
+ restaurantId String
+ restaurant SaasRestaurant @relation(fields:[restaurantId,tenantId],references:[id,tenantId],onDelete:Restrict)
+ channel String @default("DIRECT")
+ externalReference String?
+ status String @default("RECEIVED")
+ customerName String?
+ customerPhone String?
+ fulfillment String @default("DELIVERY")
+ deliveryAddress Json?
+ subtotalCents Int @default(0)
+ deliveryFeeCents Int @default(0)
+ discountCents Int @default(0)
+ totalCents Int @default(0)
+ paymentMethod String?
+ paymentStatus String @default("PENDING")
+ notes String?
+ createdAt DateTime @default(now())
+ acceptedAt DateTime?
+ preparingAt DateTime?
+ readyAt DateTime?
+ dispatchedAt DateTime?
+ completedAt DateTime?
+ cancelledAt DateTime?
+ items SaasFoodOrderItem[]
+ kitchenEvents SaasKitchenEvent[]
+ @@unique([id,tenantId,restaurantId])
+ @@unique([tenantId,restaurantId,channel,externalReference])
+ @@index([tenantId,restaurantId,status,createdAt])
+}
+model SaasFoodOrderItem {
+ id String @id @default(cuid())
+ tenantId String
+ restaurantId String
+ orderId String
+ order SaasFoodOrder @relation(fields:[orderId,tenantId,restaurantId],references:[id,tenantId,restaurantId],onDelete:Cascade)
+ productId String?
+ nameSnapshot String
+ quantity Int
+ unitPriceCents Int
+ modifiers Json?
+ totalCents Int
+ notes String?
+ @@index([tenantId,restaurantId,orderId])
+}
+model SaasKitchenEvent {
+ id String @id @default(cuid())
+ tenantId String
+ restaurantId String
+ orderId String
+ order SaasFoodOrder @relation(fields:[orderId,tenantId,restaurantId],references:[id,tenantId,restaurantId],onDelete:Cascade)
+ type String
+ actorPrincipalId String?
+ payload Json?
+ createdAt DateTime @default(now())
+ @@index([tenantId,restaurantId,orderId,createdAt])
+}
