@@ -1,0 +1,97 @@
+// Notifications/Rentals/Events SaaS domain draft. Never migrate directly to Production.
+model SaasNotificationRule {
+ id String @id @default(cuid())
+ tenantId String
+ propertyId String?
+ module String
+ event String
+ channel String
+ enabled Boolean @default(true)
+ config Json?
+ createdAt DateTime @default(now())
+ updatedAt DateTime @updatedAt
+ @@unique([tenantId,propertyId,module,event,channel])
+ @@index([tenantId,module,enabled])
+}
+model SaasNotificationMessage {
+ id String @id @default(cuid())
+ tenantId String
+ propertyId String?
+ module String
+ event String
+ channel String
+ recipient String?
+ dedupeKey String?
+ status String @default("PENDING")
+ payload Json
+ attempts Int @default(0)
+ lastError String?
+ scheduledAt DateTime?
+ sentAt DateTime?
+ createdAt DateTime @default(now())
+ updatedAt DateTime @updatedAt
+ @@unique([tenantId,dedupeKey])
+ @@index([tenantId,propertyId,status,createdAt])
+ @@index([tenantId,module,event])
+}
+model SaasRentalAsset {
+ id String @id @default(cuid())
+ tenantId String
+ propertyId String
+ code String
+ name String
+ type String
+ active Boolean @default(true)
+ quantity Int @default(1)
+ priceCents Int @default(0)
+ depositCents Int @default(0)
+ metadata Json?
+ createdAt DateTime @default(now())
+ updatedAt DateTime @updatedAt
+ bookings SaasRentalBooking[]
+ @@unique([tenantId,propertyId,code])
+ @@unique([id,tenantId,propertyId])
+ @@index([tenantId,propertyId,type,active])
+}
+model SaasRentalBooking {
+ id String @id @default(cuid())
+ tenantId String
+ propertyId String
+ assetId String
+ asset SaasRentalAsset @relation(fields:[assetId,tenantId,propertyId],references:[id,tenantId,propertyId],onDelete:Restrict)
+ customerName String
+ customerPhone String?
+ startsAt DateTime
+ endsAt DateTime
+ quantity Int @default(1)
+ amountCents Int @default(0)
+ depositCents Int @default(0)
+ paidCents Int @default(0)
+ status String @default("RESERVED")
+ notes String?
+ createdAt DateTime @default(now())
+ updatedAt DateTime @updatedAt
+ @@index([tenantId,propertyId,assetId,startsAt,endsAt])
+ @@index([tenantId,propertyId,status,startsAt])
+}
+model SaasEvent {
+ id String @id @default(cuid())
+ tenantId String
+ propertyId String?
+ slug String
+ title String
+ description String?
+ startsAt DateTime
+ endsAt DateTime?
+ status String @default("DRAFT")
+ visibility String @default("PUBLIC")
+ imageUrl String?
+ theme Json?
+ capacity Int?
+ metadata Json?
+ createdAt DateTime @default(now())
+ updatedAt DateTime @updatedAt
+ @@unique([tenantId,slug])
+ @@unique([id,tenantId])
+ @@index([tenantId,propertyId,status,startsAt])
+}
