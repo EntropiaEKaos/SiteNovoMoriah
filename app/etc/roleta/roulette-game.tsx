@@ -7,7 +7,7 @@ import styles from "./roleta.module.css";
 
 type ReviewLink={key:string;label:string;url:string};
 type Settings={title:string;subtitle:string;introText:string;reviewLinks:ReviewLink[];termsText:string};
-type Prize=WheelSlice&{description:string|null};
+type Prize=WheelSlice&{description:string|null;mystery?:boolean;jackpot?:boolean};
 type Theme={preset:string;primary:string;secondary:string;accent:string;surface:string;text:string;background:string;backgroundImage:string|null;animationStyle:string;spectaclePreset:string;spinTurns:number;spinDurationMs:number;idleMotionEnabled:boolean;chaseLightsEnabled:boolean;jackpotCrownEnabled:boolean;spinCalloutEnabled:boolean;winConfettiEnabled:boolean;spinButtonText:string;spinCalloutText:string;event:{title:string;badge:string|null;slug:string;startsAt:string}|null};
 
 const ambientClass=(animation:string)=>animation==="SNOW"?styles.ambientSnow:animation==="BUBBLES"?styles.ambientBubbles:animation==="SPARKLES"?styles.ambientSparkles:animation==="NONE"?styles.ambientNone:styles.ambientConfetti;
@@ -35,7 +35,7 @@ export default function RouletteGame({
   const [spinning,setSpinning]=useState(false);
   const [error,setError]=useState("");
   const [slices,setSlices]=useState<WheelSlice[]>(initialPrizes);
-  const [result,setResult]=useState<{name:string;description:string|null;claimCode:string;expiresAt:string|null}|null>(null);
+  const [result,setResult]=useState<{name:string;description:string|null;claimCode:string;expiresAt:string|null;mystery:boolean;jackpot:boolean;redemptionCta:string|null}|null>(null);
 
   const vars={
     "--roulette-primary":theme.primary,
@@ -78,7 +78,10 @@ export default function RouletteGame({
         name:data.prize.name,
         description:data.prize.description||null,
         claimCode:data.claimCode,
-        expiresAt:data.expiresAt
+        expiresAt:data.expiresAt,
+        mystery:Boolean(data.prize.mystery),
+        jackpot:Boolean(data.prize.jackpot),
+        redemptionCta:data.prize.redemptionCta||null
       });
       setStep("done");
     }catch(err){
@@ -106,7 +109,7 @@ export default function RouletteGame({
     <section className={styles.card+" "+(delivery?styles.deliveryCard:"")}>
       <header className={styles.header}>
         <div className={styles.headerGlow}/>
-        <span>{delivery?"MORIAH FOOD • ROLETA ENTREGAS":"MORIAH • ROLETA 3.0"}{preview?" • PREVIEW":""}</span>
+        <span>{delivery?"MORIAH FOOD • ROLETA ENTREGAS":"MORIAH • ROLETA 4.0"}{preview?" • PREVIEW":""}</span>
         <h1>{settings.title}</h1>
         <p>{settings.subtitle}</p>
         {delivery&&<div className={styles.deliveryBadges}><span>iFood</span><span>99Food</span><span>Keeta</span></div>}
@@ -156,11 +159,12 @@ export default function RouletteGame({
           <small>Resultado definido no servidor e registrado para auditoria.</small>
         </>}
         {step==="done"&&result&&<div className={styles.result}>
-          <span>VOCÊ GANHOU</span>
+          <span>{result.jackpot?"★ JACKPOT! ★":result.mystery?"🎁 SURPRESA REVELADA":"VOCÊ GANHOU"}</span>
           <h2>{result.name}</h2>
           {result.description&&<p>{result.description}</p>}
           <div className={styles.claim}><small>CÓDIGO PARA RETIRADA</small><strong>{result.claimCode}</strong></div>
           {result.expiresAt&&<small>Válido até {new Date(result.expiresAt).toLocaleDateString("pt-BR")}.</small>}
+          {result.redemptionCta&&<strong className={styles.redemptionCta}>{result.redemptionCta}</strong>}
           <p>{delivery?"Informe o código no próximo atendimento elegível da Moriah Food.":"Apresente este código à equipe da Moriah."}</p>
         </div>}
       </div>}
