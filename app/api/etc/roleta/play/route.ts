@@ -103,7 +103,7 @@ export async function POST(req:NextRequest){
         prize:{id:winner.id,name:winner.name,description:winner.description},
         wheel
       };
-    },{isolationLevel:Prisma.TransactionIsolationLevel.Serializable});
+    },{isolationLevel:Prisma.TransactionIsolationLevel.ReadCommitted});
 
     return NextResponse.json(result,{headers:{"Cache-Control":"no-store"}});
   }catch(error){
@@ -112,7 +112,7 @@ export async function POST(req:NextRequest){
     if(message==="NO_PRIZES")return NextResponse.json({error:"Os prêmios desta campanha acabaram."},{status:409});
     if(message==="PRIZE_RACE")return NextResponse.json({error:"O estoque de prêmios mudou. Tente novamente."},{status:409});
     if(message.includes("telefone"))return NextResponse.json({error:message},{status:400});
-    console.error("ROULETTE_SPIN_FAILED",error);
+    const prismaCode=error instanceof Prisma.PrismaClientKnownRequestError?error.code:"UNKNOWN";\n    console.error("ROULETTE_SPIN_FAILED",{code:prismaCode,error});
     return NextResponse.json({error:"Não foi possível concluir o sorteio. Tente novamente."},{status:500});
   }
 }
