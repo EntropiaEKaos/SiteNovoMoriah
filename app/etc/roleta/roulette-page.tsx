@@ -31,7 +31,8 @@ export default async function RoulettePage({settingsId,preview=false}:{settingsI
     where:{active:true,campaignKey:settings.campaignKey},
     orderBy:[{sortOrder:"asc"},{createdAt:"asc"}]
   });
-  let available=prizes.filter(prize=>prize.quantityTotal===null||prize.awardedCount<prize.quantityTotal);
+  const localTime=new Intl.DateTimeFormat("pt-BR",{timeZone:"America/Sao_Paulo",hour:"2-digit",minute:"2-digit",hour12:false}).format(now);
+  let available=prizes.filter(prize=>(prize.quantityTotal===null||prize.awardedCount<prize.quantityTotal)&&(!prize.availableFrom||localTime>=prize.availableFrom)&&(!prize.availableUntil||localTime<=prize.availableUntil));
   if(preview&&!available.length){
     available=(settingsId==="delivery"?[
       {id:"preview-d1",campaignKey:settings.campaignKey,name:"10% OFF",description:"Prêmio demonstrativo.",color:"#FFD400",textColor:"#101010",weight:3,quantityTotal:null,awardedCount:0,validityDays:14,active:true,sortOrder:10,createdAt:now,updatedAt:now},
@@ -111,7 +112,7 @@ export default async function RoulettePage({settingsId,preview=false}:{settingsI
     preview={preview}
     initialPrizes={available.map(prize=>({
       id:prize.id,name:prize.name,description:prize.description,color:prize.color,
-      textColor:prize.textColor,weight:Math.max(1,prize.weight)
+      textColor:prize.textColor,weight:Math.max(1,prize.weight),mystery:prize.mystery,jackpot:prize.jackpot
     }))}
   />;
 }
