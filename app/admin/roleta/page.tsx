@@ -4,6 +4,7 @@ import {requireAdmin} from "../../../lib/admin-auth";
 import MediaPicker from "../components/media-picker";
 import {
   createRoulettePrize,
+  recordRouletteConversion,
   redeemRouletteSpin,
   saveRouletteSettings,
   toggleRoulettePrize,
@@ -231,6 +232,9 @@ export default async function Page(){
   const todayStart=new Date(new Date().setHours(0,0,0,0));
   const today=spins.filter(spin=>spin.createdAt>=todayStart).length;
   const redeemed=spins.filter(spin=>spin.redeemedAt).length;
+  const conversionCents=spins.reduce((sum,spin)=>sum+(spin.conversionCents||0),0);
+  const prizeCostCents=spins.reduce((sum,spin)=>sum+(spin.prize.costCents||0),0);
+  const roiCents=conversionCents-prizeCostCents;
 
   return <main className="adminPage rouletteAdminPage">
     <section className="adminPageHero">
@@ -250,7 +254,8 @@ export default async function Page(){
       <div><small>Jogadas auditadas</small><strong>{spins.length}</strong></div>
       <div><small>Hoje</small><strong>{today}</strong></div>
       <div><small>Entregues</small><strong>{redeemed}</strong></div>
-      <div><small>Temas de evento</small><strong>{events.length}</strong></div>
+      <div><small>Conversão atribuída</small><strong>{(conversionCents/100).toLocaleString("pt-BR",{style:"currency",currency:"BRL"})}</strong></div>
+      <div><small>ROI estimado</small><strong>{(roiCents/100).toLocaleString("pt-BR",{style:"currency",currency:"BRL"})}</strong></div>
     </section>
 
     <section className="adminPageNote" style={{marginBottom:24}}>
@@ -264,7 +269,7 @@ export default async function Page(){
       <h2>Auditoria unificada</h2>
       <div style={{overflowX:"auto"}}>
         <table className="adminDataTable">
-          <thead><tr><th>Campanha</th><th>Data</th><th>Cliente</th><th>Telefone</th><th>Prêmio</th><th>Código</th><th>Status</th><th>Ação</th></tr></thead>
+          <thead><tr><th>Campanha</th><th>Data</th><th>Cliente</th><th>Telefone</th><th>Prêmio</th><th>Código</th><th>Status</th><th>Conversão</th><th>Ação</th></tr></thead>
           <tbody>{spins.map(spin=>{
             const expired=Boolean(spin.expiresAt&&spin.expiresAt<now&&!spin.redeemedAt);
             return <tr key={spin.id}>
@@ -275,6 +280,10 @@ export default async function Page(){
               <td>{spin.prize.name}</td>
               <td><strong>{spin.claimCode}</strong></td>
               <td>{spin.redeemedAt?"ENTREGUE":expired?"EXPIRADO":"PENDENTE"}</td>
+              <td>{spin.convertedAt
+                ?(spin.conversionCents!/100).toLocaleString("pt-BR",{style:"currency",currency:"BRL"})
+                :<form action={recordRouletteConversion}><input type="hidden" name="id" value={spin.id}/><input name="conversionCents" type="number" min="0" placeholder="centavos" style={{width:90}}/><button>Registrar</button></form>
+              }</td>
               <td>{!spin.redeemedAt&&!expired?<form action={redeemRouletteSpin} data-feedback-success="Prêmio marcado como entregue."><input type="hidden" name="id" value={spin.id}/><button>Marcar entregue</button></form>:spin.redeemedBy||"—"}</td>
             </tr>;
           })}</tbody>
