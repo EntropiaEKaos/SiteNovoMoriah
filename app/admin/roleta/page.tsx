@@ -245,6 +245,7 @@ export default async function Page(){
       </div>
       <div className="adminPageHeroActions">
         <Link className="adminSecondaryAction" href="/admin/eventos">Eventos</Link>
+        <Link className="adminSecondaryAction" href="/admin/roleta/resgatar">Resgate rápido</Link>
         <Link className="adminSecondaryAction" href="/etc/roleta?preview=1" target="_blank">Principal ↗</Link>
         <Link className="adminPrimaryAction" href="/etc/roleta/entregas?preview=1" target="_blank">Entregas ↗</Link>
       </div>
