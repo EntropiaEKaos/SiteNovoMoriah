@@ -102,6 +102,7 @@ export default function RouletteGame({
       if(!response.ok)throw new Error(data.error||"Não foi possível girar.");
       setSlices(data.wheel);
       await ref.current?.spinTo(data.prize.id,data.wheel);
+      if("vibrate" in navigator)navigator.vibrate?.([80,45,140]);
       setResult({
         name:data.prize.name,
         description:data.prize.description||null,
