@@ -11,7 +11,7 @@ const TAU=Math.PI*2;
 
 function cleanHex(value:string,fallback:number){return /^#[0-9a-f]{6}$/i.test(value)?Number.parseInt(value.slice(1),16):fallback}
 
-const WheelCanvas=forwardRef<WheelHandle,{slices:WheelSlice[];theme:WheelTheme}>(({slices,theme},ref)=>{
+const WheelCanvas=forwardRef<WheelHandle,{slices:WheelSlice[];theme:WheelTheme;spinTurns:number;spinDurationMs:number}>(({slices,theme,spinTurns,spinDurationMs},ref)=>{
  const hostRef=useRef<HTMLDivElement>(null);
  const pixiRef=useRef<PixiModule|null>(null);
  const appRef=useRef<InstanceType<PixiModule["Application"]>|null>(null);
@@ -53,10 +53,10 @@ const WheelCanvas=forwardRef<WheelHandle,{slices:WheelSlice[];theme:WheelTheme}>
   try{
    draw(nextSlices);const wheel=wheelRef.current;const geometry=geometryRef.current.find(item=>item.id===winnerId);if(!wheel||!geometry)throw new Error("Prêmio não encontrado na roleta.");
    const start=wheel.rotation,currentMod=((start%TAU)+TAU)%TAU,desiredRaw=-Math.PI/2-geometry.center,desiredMod=((desiredRaw%TAU)+TAU)%TAU;let delta=desiredMod-currentMod;if(delta<=0)delta+=TAU;
-   const target=start+TAU*9+delta,duration=6200,started=performance.now();
+   const target=start+TAU*Math.max(3,Math.min(20,spinTurns))+delta,duration=Math.max(2500,Math.min(15000,spinDurationMs)),started=performance.now();
    await new Promise<void>(resolve=>{const tick=()=>{const progress=Math.min(1,(performance.now()-started)/duration);const eased=progress<.12?2.6*progress*progress:1-Math.pow(1-progress,4.2);wheel.rotation=start+(target-start)*Math.min(1,eased);wheel.scale.set(1+Math.sin(Math.min(progress,1)*Math.PI)*.012);if(progress>=1){wheel.rotation=target;wheel.scale.set(1);app.ticker.remove(tick);resolve()}};app.ticker.add(tick)});
   }finally{spinningRef.current=false}
- }}),[theme.primary,theme.secondary,theme.accent,theme.surface]);
+ }}),[theme.primary,theme.secondary,theme.accent,theme.surface,spinTurns,spinDurationMs]);
  return <div ref={hostRef} className={styles.wheelHost}/>;
 });
 WheelCanvas.displayName="WheelCanvas";
