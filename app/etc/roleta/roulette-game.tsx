@@ -153,7 +153,9 @@ export default function RouletteGame({
         <div className={styles.stepBadge}>01 • EXPERIÊNCIA</div>
         <h2>{delivery?"Seu pedido chegou. Que tal tentar a sorte?":"Quer contar como foi sua experiência?"}</h2>
         <p>{settings.introText}</p>
-
+        <button type="button" className={styles.primary} onClick={()=>setStep("identify")}>
+          {delivery?"IR PARA A ROLETA":"TENTAR A SORTE"}
+        </button>
       </div>}
 
       {step==="identify"&&<form className={styles.form} onSubmit={identify}>
