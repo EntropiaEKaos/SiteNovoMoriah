@@ -120,3 +120,21 @@
 @media(prefers-reduced-motion:reduce){.jackpotCrown,.chaseLights,.chaseLights i,.spinCallout,.spinButtonActive{animation:none!important}}
 
 .noIdleMotion .wheelHost{animation:none!important}
+
+
+/* Roulette 4.0 responsive/browser hardening */
+.wheelStage{box-sizing:border-box;width:min(610px,100%);max-width:100%;margin-inline:auto;contain:layout paint}
+.wheelHost{box-sizing:border-box;width:min(560px,100%);max-width:100%;aspect-ratio:1/1;margin-inline:auto;overflow:visible}
+.wheelHost canvas{display:block!important;width:100%!important;max-width:100%!important;height:auto!important;aspect-ratio:1/1;margin-inline:auto;touch-action:manipulation}
+.chaseLights{inset:0;transform:scale(.91)}
+.chaseLights i{transform:rotate(calc(var(--light-index) * 20deg)) translateY(calc(-1 * min(43vw,267px)))}
+.game,.wheelStage,.wheelHost{min-width:0}
+@media(max-width:640px){
+ .game{padding-inline:12px}
+ .wheelStage{width:100%;max-width:560px}
+ .wheelHost{width:100%}
+ .jackpotCrown{max-width:calc(100% - 24px);box-sizing:border-box}
+ .spinCallout{width:auto;max-width:100%;box-sizing:border-box;white-space:normal}
+ .spinButton{max-width:100%;box-sizing:border-box}
+}
+@supports(height:100dvh){.shell{min-height:100dvh}}
