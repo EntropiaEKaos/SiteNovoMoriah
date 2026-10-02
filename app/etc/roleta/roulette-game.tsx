@@ -147,7 +147,7 @@ export default function RouletteGame({
           <b>{theme.event.title}</b>
           <span>{new Date(theme.event.startsAt).toLocaleDateString("pt-BR",{day:"2-digit",month:"long"})} ↗</span>
         </a>}
-      </header>
+      </header>}
 
       {step==="intro"&&<div className={styles.intro}>
         <div className={styles.stepBadge}>01 • EXPERIÊNCIA</div>
