@@ -4,6 +4,7 @@ import {requireAdmin} from "../../../lib/admin-auth";
 import MediaPicker from "../components/media-picker";
 import {
   createRoulettePrize,
+  recordRouletteConversion,
   redeemRouletteSpin,
   saveRouletteSettings,
   toggleRoulettePrize,
@@ -67,7 +68,7 @@ function CampaignEditor({
   media:Array<{id:string;url:string;alt:string|null}>;
   prizes:Array<{
     id:string;name:string;description:string|null;color:string;textColor:string;weight:number;
-    quantityTotal:number|null;awardedCount:number;validityDays:number|null;active:boolean;sortOrder:number;
+    quantityTotal:number|null;awardedCount:number;validityDays:number|null;mystery:boolean;jackpot:boolean;costCents:number|null;availableFrom:string|null;availableUntil:string|null;redemptionCta:string|null;active:boolean;sortOrder:number;
   }>;
   publicHref:string;
 }){
@@ -154,6 +155,12 @@ function CampaignEditor({
           <label>Peso<input name="weight" type="number" min="1" defaultValue="1"/></label>
           <label>Quantidade<input name="quantityTotal" type="number" min="1"/></label>
           <label>Validade dias<input name="validityDays" type="number" min="1" max="365" defaultValue="14"/></label>
+          <label>Custo do prêmio (centavos)<input name="costCents" type="number" min="0" placeholder="Ex.: 500 = R$ 5,00"/></label>
+          <label>Disponível de<input name="availableFrom" type="time"/></label>
+          <label>Disponível até<input name="availableUntil" type="time"/></label>
+          <label className="span2">CTA de resgate<input name="redemptionCta" maxLength={120} placeholder="Ex.: Resgate nos próximos 30 minutos"/></label>
+          <label><span><input type="checkbox" name="mystery"/> Prêmio surpresa (???)</span></label>
+          <label><span><input type="checkbox" name="jackpot"/> Jackpot</span></label>
           <label>Ordem<input name="sortOrder" type="number" min="0" defaultValue="100"/></label>
           <label className="span2"><span><input type="checkbox" name="active" defaultChecked/> Ativo</span></label>
           <button className="span2">Adicionar prêmio</button>
@@ -185,6 +192,12 @@ function CampaignEditor({
             <label>Peso<input name="weight" type="number" min="1" defaultValue={prize.weight}/></label>
             <label>Quantidade<input name="quantityTotal" type="number" min={Math.max(1,prize.awardedCount)} defaultValue={prize.quantityTotal??""}/></label>
             <label>Validade<input name="validityDays" type="number" min="1" max="365" defaultValue={prize.validityDays??""}/></label>
+            <label>Custo (centavos)<input name="costCents" type="number" min="0" defaultValue={prize.costCents??""}/></label>
+            <label>Disponível de<input name="availableFrom" type="time" defaultValue={prize.availableFrom??""}/></label>
+            <label>Disponível até<input name="availableUntil" type="time" defaultValue={prize.availableUntil??""}/></label>
+            <label className="span2">CTA de resgate<input name="redemptionCta" maxLength={120} defaultValue={prize.redemptionCta??""}/></label>
+            <label><span><input type="checkbox" name="mystery" defaultChecked={prize.mystery}/> Prêmio surpresa (???)</span></label>
+            <label><span><input type="checkbox" name="jackpot" defaultChecked={prize.jackpot}/> Jackpot</span></label>
             <label>Ordem<input name="sortOrder" type="number" min="0" defaultValue={prize.sortOrder}/></label>
             <label className="span2"><span><input type="checkbox" name="active" defaultChecked={prize.active}/> Ativo</span></label>
             <button className="span2">Salvar prêmio</button>
@@ -219,16 +232,20 @@ export default async function Page(){
   const todayStart=new Date(new Date().setHours(0,0,0,0));
   const today=spins.filter(spin=>spin.createdAt>=todayStart).length;
   const redeemed=spins.filter(spin=>spin.redeemedAt).length;
+  const conversionCents=spins.reduce((sum,spin)=>sum+(spin.conversionCents||0),0);
+  const prizeCostCents=spins.reduce((sum,spin)=>sum+(spin.prize.costCents||0),0);
+  const roiCents=conversionCents-prizeCostCents;
 
   return <main className="adminPage rouletteAdminPage">
     <section className="adminPageHero">
       <div>
         <small>MORIAH / ENGAJAMENTO</small>
-        <h1>Roletas <span>3.0</span></h1>
+        <h1>Roletas <span>4.0</span></h1>
         <p>Motor PixiJS multi-campanha, prêmios isolados, temas sazonais e auditoria. Avaliações são sempre opcionais e não interferem no sorteio.</p>
       </div>
       <div className="adminPageHeroActions">
         <Link className="adminSecondaryAction" href="/admin/eventos">Eventos</Link>
+        <Link className="adminSecondaryAction" href="/admin/roleta/resgatar">Resgate rápido</Link>
         <Link className="adminSecondaryAction" href="/etc/roleta?preview=1" target="_blank">Principal ↗</Link>
         <Link className="adminPrimaryAction" href="/etc/roleta/entregas?preview=1" target="_blank">Entregas ↗</Link>
       </div>
@@ -238,7 +255,8 @@ export default async function Page(){
       <div><small>Jogadas auditadas</small><strong>{spins.length}</strong></div>
       <div><small>Hoje</small><strong>{today}</strong></div>
       <div><small>Entregues</small><strong>{redeemed}</strong></div>
-      <div><small>Temas de evento</small><strong>{events.length}</strong></div>
+      <div><small>Conversão atribuída</small><strong>{(conversionCents/100).toLocaleString("pt-BR",{style:"currency",currency:"BRL"})}</strong></div>
+      <div><small>ROI estimado</small><strong>{(roiCents/100).toLocaleString("pt-BR",{style:"currency",currency:"BRL"})}</strong></div>
     </section>
 
     <section className="adminPageNote" style={{marginBottom:24}}>
@@ -252,7 +270,7 @@ export default async function Page(){
       <h2>Auditoria unificada</h2>
       <div style={{overflowX:"auto"}}>
         <table className="adminDataTable">
-          <thead><tr><th>Campanha</th><th>Data</th><th>Cliente</th><th>Telefone</th><th>Prêmio</th><th>Código</th><th>Status</th><th>Ação</th></tr></thead>
+          <thead><tr><th>Campanha</th><th>Data</th><th>Cliente</th><th>Telefone</th><th>Prêmio</th><th>Código</th><th>Status</th><th>Conversão</th><th>Ação</th></tr></thead>
           <tbody>{spins.map(spin=>{
             const expired=Boolean(spin.expiresAt&&spin.expiresAt<now&&!spin.redeemedAt);
             return <tr key={spin.id}>
@@ -263,6 +281,10 @@ export default async function Page(){
               <td>{spin.prize.name}</td>
               <td><strong>{spin.claimCode}</strong></td>
               <td>{spin.redeemedAt?"ENTREGUE":expired?"EXPIRADO":"PENDENTE"}</td>
+              <td>{spin.convertedAt
+                ?(spin.conversionCents!/100).toLocaleString("pt-BR",{style:"currency",currency:"BRL"})
+                :<form action={recordRouletteConversion}><input type="hidden" name="id" value={spin.id}/><input name="conversionCents" type="number" min="0" placeholder="centavos" style={{width:90}}/><button>Registrar</button></form>
+              }</td>
               <td>{!spin.redeemedAt&&!expired?<form action={redeemRouletteSpin} data-feedback-success="Prêmio marcado como entregue."><input type="hidden" name="id" value={spin.id}/><button>Marcar entregue</button></form>:spin.redeemedBy||"—"}</td>
             </tr>;
           })}</tbody>

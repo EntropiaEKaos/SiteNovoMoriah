@@ -21,6 +21,12 @@ function nullableInteger(formData:FormData,name:string,min:number,max:number){
   if(!Number.isInteger(value)||value<min||value>max)throw new Error("Valor inválido em "+name+".");
   return value;
 }
+function clock(formData:FormData,name:string){
+  const value=text(formData,name,5);
+  if(!value)return null;
+  if(!/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(value))throw new Error("Horário inválido em "+name+".");
+  return value;
+}
 function color(formData:FormData,name:string,fallback:string){
   const value=text(formData,name,7);
   return /^#[0-9a-f]{6}$/i.test(value)?value.toUpperCase():fallback;
@@ -137,6 +143,12 @@ export async function createRoulettePrize(formData:FormData){
     weight:integer(formData,"weight",1,1,10_000),
     quantityTotal,
     validityDays:nullableInteger(formData,"validityDays",1,365),
+    mystery:formData.get("mystery")==="on",
+    jackpot:formData.get("jackpot")==="on",
+    costCents:nullableInteger(formData,"costCents",0,10_000_000),
+    availableFrom:clock(formData,"availableFrom"),
+    availableUntil:clock(formData,"availableUntil"),
+    redemptionCta:text(formData,"redemptionCta",120)||null,
     active:formData.get("active")==="on",
     sortOrder:integer(formData,"sortOrder",100,0,100_000)
   };
@@ -162,6 +174,12 @@ export async function updateRoulettePrize(formData:FormData){
     weight:integer(formData,"weight",current.weight,1,10_000),
     quantityTotal,
     validityDays:nullableInteger(formData,"validityDays",1,365),
+    mystery:formData.get("mystery")==="on",
+    jackpot:formData.get("jackpot")==="on",
+    costCents:nullableInteger(formData,"costCents",0,10_000_000),
+    availableFrom:clock(formData,"availableFrom"),
+    availableUntil:clock(formData,"availableUntil"),
+    redemptionCta:text(formData,"redemptionCta",120)||null,
     active:formData.get("active")==="on",
     sortOrder:integer(formData,"sortOrder",current.sortOrder,0,100_000)
   };
@@ -177,6 +195,17 @@ export async function toggleRoulettePrize(formData:FormData){
   if(!current)throw new Error("Prêmio não encontrado.");
   await prisma.roulettePrize.update({where:{id},data:{active:!current.active}});
   await audit(session.userId,"ROULETTE_PRIZE_TOGGLED",id,{campaignKey:current.campaignKey,active:!current.active});
+  revalidateRoulette();
+}
+
+export async function recordRouletteConversion(formData:FormData){
+  const session=await requireAdmin();
+  const id=text(formData,"id",80);
+  const conversionCents=integer(formData,"conversionCents",0,0,100_000_000);
+  const spin=await prisma.rouletteSpin.findUnique({where:{id},include:{entry:true,prize:true}});
+  if(!spin)throw new Error("Sorteio não encontrado.");
+  await prisma.rouletteSpin.update({where:{id},data:{conversionCents,convertedAt:new Date()}});
+  await audit(session.userId,"ROULETTE_CONVERSION_RECORDED",id,{campaignKey:spin.entry.campaignKey,claimCode:spin.claimCode,prize:spin.prize.name,conversionCents});
   revalidateRoulette();
 }
 

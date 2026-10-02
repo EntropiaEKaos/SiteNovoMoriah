@@ -1,13 +1,13 @@
 "use client";
 
 import type {CSSProperties,FormEvent} from "react";
-import {useRef,useState} from "react";
+import {useEffect,useRef,useState} from "react";
 import WheelCanvas,{WheelHandle,WheelSlice,WheelTheme} from "./wheel-canvas";
 import styles from "./roleta.module.css";
 
 type ReviewLink={key:string;label:string;url:string};
 type Settings={title:string;subtitle:string;introText:string;reviewLinks:ReviewLink[];termsText:string};
-type Prize=WheelSlice&{description:string|null};
+type Prize=WheelSlice&{description:string|null;mystery?:boolean;jackpot?:boolean};
 type Theme={preset:string;primary:string;secondary:string;accent:string;surface:string;text:string;background:string;backgroundImage:string|null;animationStyle:string;spectaclePreset:string;spinTurns:number;spinDurationMs:number;idleMotionEnabled:boolean;chaseLightsEnabled:boolean;jackpotCrownEnabled:boolean;spinCalloutEnabled:boolean;winConfettiEnabled:boolean;spinButtonText:string;spinCalloutText:string;event:{title:string;badge:string|null;slug:string;startsAt:string}|null};
 
 const ambientClass=(animation:string)=>animation==="SNOW"?styles.ambientSnow:animation==="BUBBLES"?styles.ambientBubbles:animation==="SPARKLES"?styles.ambientSparkles:animation==="NONE"?styles.ambientNone:styles.ambientConfetti;
@@ -35,7 +35,9 @@ export default function RouletteGame({
   const [spinning,setSpinning]=useState(false);
   const [error,setError]=useState("");
   const [slices,setSlices]=useState<WheelSlice[]>(initialPrizes);
-  const [result,setResult]=useState<{name:string;description:string|null;claimCode:string;expiresAt:string|null}|null>(null);
+  const [result,setResult]=useState<{name:string;description:string|null;claimCode:string;expiresAt:string|null;mystery:boolean;jackpot:boolean;redemptionCta:string|null}|null>(null);
+  const [remaining,setRemaining]=useState("");
+  const [copied,setCopied]=useState(false);
 
   const vars={
     "--roulette-primary":theme.primary,
@@ -48,6 +50,32 @@ export default function RouletteGame({
   } as CSSProperties;
   const wheelTheme:WheelTheme={primary:theme.primary,secondary:theme.secondary,accent:theme.accent,surface:theme.surface};
   const delivery=variant==="delivery";
+
+  useEffect(()=>{
+    if(!result?.expiresAt){setRemaining("");return;}
+    const tick=()=>{
+      const ms=new Date(result.expiresAt!).getTime()-Date.now();
+      if(ms<=0){setRemaining("Expirado");return;}
+      const days=Math.floor(ms/86_400_000),hours=Math.floor(ms%86_400_000/3_600_000),minutes=Math.floor(ms%3_600_000/60_000),seconds=Math.floor(ms%60_000/1000);
+      setRemaining((days?days+"d ":"")+String(hours).padStart(2,"0")+":"+String(minutes).padStart(2,"0")+":"+String(seconds).padStart(2,"0"));
+    };
+    tick();const timer=window.setInterval(tick,1000);return()=>window.clearInterval(timer);
+  },[result?.expiresAt]);
+
+  async function copyClaim(){
+    if(!result)return;
+    await navigator.clipboard?.writeText(result.claimCode);
+    setCopied(true);window.setTimeout(()=>setCopied(false),1800);
+  }
+  async function sharePrize(){
+    if(!result)return;
+    const share={title:"Ganhei na Roleta Moriah!",text:"Ganhei "+result.name+" na Roleta Moriah! Código de retirada: "+result.claimCode};
+    if(navigator.share){try{await navigator.share(share);return;}catch{}}
+    await navigator.clipboard?.writeText(share.text);
+    setCopied(true);window.setTimeout(()=>setCopied(false),1800);
+  }
+
+
 
   function identify(event:FormEvent){
     event.preventDefault();
@@ -74,11 +102,15 @@ export default function RouletteGame({
       if(!response.ok)throw new Error(data.error||"Não foi possível girar.");
       setSlices(data.wheel);
       await ref.current?.spinTo(data.prize.id,data.wheel);
+      if("vibrate" in navigator)navigator.vibrate?.([80,45,140]);
       setResult({
         name:data.prize.name,
         description:data.prize.description||null,
         claimCode:data.claimCode,
-        expiresAt:data.expiresAt
+        expiresAt:data.expiresAt,
+        mystery:Boolean(data.prize.mystery),
+        jackpot:Boolean(data.prize.jackpot),
+        redemptionCta:data.prize.redemptionCta||null
       });
       setStep("done");
     }catch(err){
@@ -106,7 +138,7 @@ export default function RouletteGame({
     <section className={styles.card+" "+(delivery?styles.deliveryCard:"")}>
       <header className={styles.header}>
         <div className={styles.headerGlow}/>
-        <span>{delivery?"MORIAH FOOD • ROLETA ENTREGAS":"MORIAH • ROLETA 3.0"}{preview?" • PREVIEW":""}</span>
+        <span>{delivery?"MORIAH FOOD • ROLETA ENTREGAS":"MORIAH • ROLETA 4.0"}{preview?" • PREVIEW":""}</span>
         <h1>{settings.title}</h1>
         <p>{settings.subtitle}</p>
         {delivery&&<div className={styles.deliveryBadges}><span>iFood</span><span>99Food</span><span>Keeta</span></div>}
@@ -156,11 +188,13 @@ export default function RouletteGame({
           <small>Resultado definido no servidor e registrado para auditoria.</small>
         </>}
         {step==="done"&&result&&<div className={styles.result}>
-          <span>VOCÊ GANHOU</span>
+          <span>{result.jackpot?"★ JACKPOT! ★":result.mystery?"🎁 SURPRESA REVELADA":"VOCÊ GANHOU"}</span>
           <h2>{result.name}</h2>
           {result.description&&<p>{result.description}</p>}
           <div className={styles.claim}><small>CÓDIGO PARA RETIRADA</small><strong>{result.claimCode}</strong></div>
-          {result.expiresAt&&<small>Válido até {new Date(result.expiresAt).toLocaleDateString("pt-BR")}.</small>}
+          <div className={styles.resultActions}><button type="button" onClick={copyClaim}>{copied?"COPIADO ✓":"COPIAR CÓDIGO"}</button><button type="button" onClick={sharePrize}>COMPARTILHAR</button></div>
+          {result.expiresAt&&<><small>Válido até {new Date(result.expiresAt).toLocaleDateString("pt-BR")}.</small>{remaining&&<div className={styles.expiryCountdown}>Tempo restante: <b>{remaining}</b></div>}</>}
+          {result.redemptionCta&&<strong className={styles.redemptionCta}>{result.redemptionCta}</strong>}
           <p>{delivery?"Informe o código no próximo atendimento elegível da Moriah Food.":"Apresente este código à equipe da Moriah."}</p>
         </div>}
       </div>}
