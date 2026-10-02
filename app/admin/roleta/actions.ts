@@ -21,6 +21,12 @@ function nullableInteger(formData:FormData,name:string,min:number,max:number){
   if(!Number.isInteger(value)||value<min||value>max)throw new Error("Valor inválido em "+name+".");
   return value;
 }
+function clock(formData:FormData,name:string){
+  const value=text(formData,name,5);
+  if(!value)return null;
+  if(!/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(value))throw new Error("Horário inválido em "+name+".");
+  return value;
+}
 function color(formData:FormData,name:string,fallback:string){
   const value=text(formData,name,7);
   return /^#[0-9a-f]{6}$/i.test(value)?value.toUpperCase():fallback;
@@ -140,8 +146,8 @@ export async function createRoulettePrize(formData:FormData){
     mystery:formData.get("mystery")==="on",
     jackpot:formData.get("jackpot")==="on",
     costCents:nullableInteger(formData,"costCents",0,10_000_000),
-    availableFrom:text(formData,"availableFrom",5)||null,
-    availableUntil:text(formData,"availableUntil",5)||null,
+    availableFrom:clock(formData,"availableFrom"),
+    availableUntil:clock(formData,"availableUntil"),
     redemptionCta:text(formData,"redemptionCta",120)||null,
     active:formData.get("active")==="on",
     sortOrder:integer(formData,"sortOrder",100,0,100_000)
@@ -171,8 +177,8 @@ export async function updateRoulettePrize(formData:FormData){
     mystery:formData.get("mystery")==="on",
     jackpot:formData.get("jackpot")==="on",
     costCents:nullableInteger(formData,"costCents",0,10_000_000),
-    availableFrom:text(formData,"availableFrom",5)||null,
-    availableUntil:text(formData,"availableUntil",5)||null,
+    availableFrom:clock(formData,"availableFrom"),
+    availableUntil:clock(formData,"availableUntil"),
     redemptionCta:text(formData,"redemptionCta",120)||null,
     active:formData.get("active")==="on",
     sortOrder:integer(formData,"sortOrder",current.sortOrder,0,100_000)
