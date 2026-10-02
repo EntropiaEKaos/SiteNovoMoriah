@@ -1,7 +1,7 @@
 "use client";
 
 import type {CSSProperties,FormEvent} from "react";
-import {useRef,useState} from "react";
+import {useEffect,useRef,useState} from "react";
 import WheelCanvas,{WheelHandle,WheelSlice,WheelTheme} from "./wheel-canvas";
 import styles from "./roleta.module.css";
 
@@ -36,6 +36,8 @@ export default function RouletteGame({
   const [error,setError]=useState("");
   const [slices,setSlices]=useState<WheelSlice[]>(initialPrizes);
   const [result,setResult]=useState<{name:string;description:string|null;claimCode:string;expiresAt:string|null;mystery:boolean;jackpot:boolean;redemptionCta:string|null}|null>(null);
+  const [remaining,setRemaining]=useState("");
+  const [copied,setCopied]=useState(false);
 
   const vars={
     "--roulette-primary":theme.primary,
@@ -48,6 +50,32 @@ export default function RouletteGame({
   } as CSSProperties;
   const wheelTheme:WheelTheme={primary:theme.primary,secondary:theme.secondary,accent:theme.accent,surface:theme.surface};
   const delivery=variant==="delivery";
+
+  useEffect(()=>{
+    if(!result?.expiresAt){setRemaining("");return;}
+    const tick=()=>{
+      const ms=new Date(result.expiresAt!).getTime()-Date.now();
+      if(ms<=0){setRemaining("Expirado");return;}
+      const days=Math.floor(ms/86_400_000),hours=Math.floor(ms%86_400_000/3_600_000),minutes=Math.floor(ms%3_600_000/60_000),seconds=Math.floor(ms%60_000/1000);
+      setRemaining((days?days+"d ":"")+String(hours).padStart(2,"0")+":"+String(minutes).padStart(2,"0")+":"+String(seconds).padStart(2,"0"));
+    };
+    tick();const timer=window.setInterval(tick,1000);return()=>window.clearInterval(timer);
+  },[result?.expiresAt]);
+
+  async function copyClaim(){
+    if(!result)return;
+    await navigator.clipboard?.writeText(result.claimCode);
+    setCopied(true);window.setTimeout(()=>setCopied(false),1800);
+  }
+  async function sharePrize(){
+    if(!result)return;
+    const share={title:"Ganhei na Roleta Moriah!",text:"Ganhei "+result.name+" na Roleta Moriah! Código de retirada: "+result.claimCode};
+    if(navigator.share){try{await navigator.share(share);return;}catch{}}
+    await navigator.clipboard?.writeText(share.text);
+    setCopied(true);window.setTimeout(()=>setCopied(false),1800);
+  }
+
+
 
   function identify(event:FormEvent){
     event.preventDefault();
@@ -163,7 +191,8 @@ export default function RouletteGame({
           <h2>{result.name}</h2>
           {result.description&&<p>{result.description}</p>}
           <div className={styles.claim}><small>CÓDIGO PARA RETIRADA</small><strong>{result.claimCode}</strong></div>
-          {result.expiresAt&&<small>Válido até {new Date(result.expiresAt).toLocaleDateString("pt-BR")}.</small>}
+          <div className={styles.resultActions}><button type="button" onClick={copyClaim}>{copied?"COPIADO ✓":"COPIAR CÓDIGO"}</button><button type="button" onClick={sharePrize}>COMPARTILHAR</button></div>
+          {result.expiresAt&&<><small>Válido até {new Date(result.expiresAt).toLocaleDateString("pt-BR")}.</small>{remaining&&<div className={styles.expiryCountdown}>Tempo restante: <b>{remaining}</b></div>}</>}
           {result.redemptionCta&&<strong className={styles.redemptionCta}>{result.redemptionCta}</strong>}
           <p>{delivery?"Informe o código no próximo atendimento elegível da Moriah Food.":"Apresente este código à equipe da Moriah."}</p>
         </div>}
