@@ -192,6 +192,17 @@ export async function toggleRoulettePrize(formData:FormData){
   revalidateRoulette();
 }
 
+export async function recordRouletteConversion(formData:FormData){
+  const session=await requireAdmin();
+  const id=text(formData,"id",80);
+  const conversionCents=integer(formData,"conversionCents",0,0,100_000_000);
+  const spin=await prisma.rouletteSpin.findUnique({where:{id},include:{entry:true,prize:true}});
+  if(!spin)throw new Error("Sorteio não encontrado.");
+  await prisma.rouletteSpin.update({where:{id},data:{conversionCents,convertedAt:new Date()}});
+  await audit(session.userId,"ROULETTE_CONVERSION_RECORDED",id,{campaignKey:spin.entry.campaignKey,claimCode:spin.claimCode,prize:spin.prize.name,conversionCents});
+  revalidateRoulette();
+}
+
 export async function redeemRouletteSpin(formData:FormData){
   const session=await requireAdmin();
   const id=text(formData,"id",80);
