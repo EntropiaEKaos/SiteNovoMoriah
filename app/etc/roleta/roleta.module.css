@@ -81,3 +81,27 @@
 }
 
 .reviewPlaceholder{opacity:.58;border-style:dashed;cursor:default;user-select:none}
+
+
+/* Arcade spectacle layer */
+.game{position:relative;overflow:visible}
+.wheelStage::before,.wheelStage::after{content:"";position:absolute;pointer-events:none;border-radius:50%;inset:5%;z-index:0}
+.wheelStage::before{border:3px solid color-mix(in srgb,var(--roulette-accent) 70%,transparent);box-shadow:0 0 18px var(--roulette-accent),0 0 55px color-mix(in srgb,var(--roulette-accent) 55%,transparent),inset 0 0 35px color-mix(in srgb,var(--roulette-primary) 35%,transparent);animation:arcadeRing 1.15s ease-in-out infinite}
+.wheelStage::after{inset:0;background:conic-gradient(from 0deg,transparent 0 8%,color-mix(in srgb,var(--roulette-accent) 42%,transparent) 10%,transparent 13% 25%,color-mix(in srgb,#fff 28%,transparent) 27%,transparent 30% 100%);filter:blur(7px);animation:arcadeOrbit 5s linear infinite}
+.wheelHost{z-index:2;animation:wheelIdle 2.2s ease-in-out infinite}
+.spinButton{min-height:76px;margin-top:14px;border:3px solid color-mix(in srgb,#fff 72%,var(--roulette-accent));border-radius:999px;background:linear-gradient(120deg,var(--roulette-accent),#fff4a8,var(--roulette-accent));background-size:220% 100%;box-shadow:0 0 0 7px color-mix(in srgb,var(--roulette-accent) 15%,transparent),0 12px 30px #0005,0 0 34px color-mix(in srgb,var(--roulette-accent) 68%,transparent);font-size:clamp(19px,3vw,28px);letter-spacing:1.4px;text-transform:uppercase;animation:spinCta 1s ease-in-out infinite,spinGradient 2.2s linear infinite}
+.spinButton::before{content:"★  PRÊMIO NA SUA FRENTE  ★";position:absolute;top:-25px;left:50%;transform:translateX(-50%);white-space:nowrap;padding:5px 11px;border-radius:999px;background:var(--roulette-secondary);color:#fff;font-size:9px;letter-spacing:1.5px;box-shadow:0 5px 16px #0004}
+.spinButton:not(:disabled):hover{transform:scale(1.055) translateY(-2px)}
+.spinButton:active:not(:disabled){transform:scale(.97)}
+.spinButton:disabled{animation:none;filter:saturate(.75)}
+.stepBadge{box-shadow:0 0 0 4px color-mix(in srgb,var(--roulette-primary) 10%,transparent)}
+.result{position:relative;overflow:hidden;box-shadow:0 20px 70px color-mix(in srgb,var(--roulette-primary) 45%,transparent)}
+.result::before{content:"";position:absolute;inset:-60%;background:conic-gradient(transparent,var(--roulette-accent),transparent 22%);opacity:.2;animation:arcadeOrbit 3s linear infinite}
+.result>*{position:relative;z-index:1}
+@keyframes arcadeRing{50%{transform:scale(1.035);opacity:.62;box-shadow:0 0 28px var(--roulette-accent),0 0 85px color-mix(in srgb,var(--roulette-accent) 65%,transparent),inset 0 0 45px color-mix(in srgb,var(--roulette-primary) 45%,transparent)}}
+@keyframes arcadeOrbit{to{transform:rotate(360deg)}}
+@keyframes wheelIdle{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-5px) scale(1.008)}}
+@keyframes spinCta{0%,100%{transform:scale(1)}50%{transform:scale(1.035)}}
+@keyframes spinGradient{to{background-position:-220% 0}}
+@media(max-width:640px){.spinButton{min-height:68px;font-size:20px}.spinButton::before{top:-22px;font-size:8px}.wheelStage{margin-top:12px}}
+@media(prefers-reduced-motion:reduce){.wheelStage::before,.wheelStage::after,.wheelHost,.spinButton,.result::before{animation:none!important}}
