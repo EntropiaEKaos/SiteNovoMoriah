@@ -13,6 +13,28 @@ function normalizePhone(raw:string){
   return digits;
 }
 
+function saoPauloMinutes(date:Date){
+  const parts=new Intl.DateTimeFormat("en-GB",{timeZone:"America/Sao_Paulo",hour:"2-digit",minute:"2-digit",hourCycle:"h23"}).formatToParts(date);
+  const hour=Number(parts.find(part=>part.type==="hour")?.value||0);
+  const minute=Number(parts.find(part=>part.type==="minute")?.value||0);
+  return hour*60+minute;
+}
+function parseClock(value:string|null){
+  if(!value)return null;
+  const match=/^(\d{2}):(\d{2})$/.exec(value);
+  if(!match)return null;
+  const hour=Number(match[1]),minute=Number(match[2]);
+  return hour<24&&minute<60?hour*60+minute:null;
+}
+function inWindow(nowMinutes:number,from:string|null,until:string|null){
+  const start=parseClock(from),end=parseClock(until);
+  if(start===null&&end===null)return true;
+  if(start!==null&&end===null)return nowMinutes>=start;
+  if(start===null&&end!==null)return nowMinutes<=end;
+  if(start===end)return true;
+  return start!<end!?nowMinutes>=start!&&nowMinutes<=end!:nowMinutes>=start!||nowMinutes<=end!;
+}
+
 export async function POST(req:NextRequest){
   try{
     const body=await req.json() as {name?:unknown;phone?:unknown;consent?:unknown;settingsId?:unknown};
@@ -43,11 +65,10 @@ export async function POST(req:NextRequest){
         where:{active:true,campaignKey:settings.campaignKey},
         orderBy:[{sortOrder:"asc"},{createdAt:"asc"}]
       });
-      const localTime=new Intl.DateTimeFormat("pt-BR",{timeZone:"America/Sao_Paulo",hour:"2-digit",minute:"2-digit",hour12:false}).format(now);
+      const localMinutes=saoPauloMinutes(now);
       const eligible=prizes.filter(prize=>{
         if(prize.quantityTotal!==null&&prize.awardedCount>=prize.quantityTotal)return false;
-        if(prize.availableFrom&&localTime<prize.availableFrom)return false;
-        if(prize.availableUntil&&localTime>prize.availableUntil)return false;
+        if(!inWindow(localMinutes,prize.availableFrom,prize.availableUntil))return false;
         return true;
       });
       if(!eligible.length)throw new Error("NO_PRIZES");
@@ -82,7 +103,7 @@ export async function POST(req:NextRequest){
         :null;
       const wheel=eligible.map(prize=>({
         id:prize.id,
-        name:prize.name,
+        name:prize.mystery?"???":prize.name,
         color:prize.color,
         textColor:prize.textColor,
         weight:Math.max(1,prize.weight)
