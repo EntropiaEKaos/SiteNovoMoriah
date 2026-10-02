@@ -67,7 +67,7 @@ function CampaignEditor({
   media:Array<{id:string;url:string;alt:string|null}>;
   prizes:Array<{
     id:string;name:string;description:string|null;color:string;textColor:string;weight:number;
-    quantityTotal:number|null;awardedCount:number;validityDays:number|null;active:boolean;sortOrder:number;
+    quantityTotal:number|null;awardedCount:number;validityDays:number|null;mystery:boolean;jackpot:boolean;costCents:number|null;availableFrom:string|null;availableUntil:string|null;redemptionCta:string|null;active:boolean;sortOrder:number;
   }>;
   publicHref:string;
 }){
@@ -154,6 +154,12 @@ function CampaignEditor({
           <label>Peso<input name="weight" type="number" min="1" defaultValue="1"/></label>
           <label>Quantidade<input name="quantityTotal" type="number" min="1"/></label>
           <label>Validade dias<input name="validityDays" type="number" min="1" max="365" defaultValue="14"/></label>
+          <label>Custo do prêmio (centavos)<input name="costCents" type="number" min="0" placeholder="Ex.: 500 = R$ 5,00"/></label>
+          <label>Disponível de<input name="availableFrom" type="time"/></label>
+          <label>Disponível até<input name="availableUntil" type="time"/></label>
+          <label className="span2">CTA de resgate<input name="redemptionCta" maxLength={120} placeholder="Ex.: Resgate nos próximos 30 minutos"/></label>
+          <label><span><input type="checkbox" name="mystery"/> Prêmio surpresa (???)</span></label>
+          <label><span><input type="checkbox" name="jackpot"/> Jackpot</span></label>
           <label>Ordem<input name="sortOrder" type="number" min="0" defaultValue="100"/></label>
           <label className="span2"><span><input type="checkbox" name="active" defaultChecked/> Ativo</span></label>
           <button className="span2">Adicionar prêmio</button>
@@ -185,6 +191,12 @@ function CampaignEditor({
             <label>Peso<input name="weight" type="number" min="1" defaultValue={prize.weight}/></label>
             <label>Quantidade<input name="quantityTotal" type="number" min={Math.max(1,prize.awardedCount)} defaultValue={prize.quantityTotal??""}/></label>
             <label>Validade<input name="validityDays" type="number" min="1" max="365" defaultValue={prize.validityDays??""}/></label>
+            <label>Custo (centavos)<input name="costCents" type="number" min="0" defaultValue={prize.costCents??""}/></label>
+            <label>Disponível de<input name="availableFrom" type="time" defaultValue={prize.availableFrom??""}/></label>
+            <label>Disponível até<input name="availableUntil" type="time" defaultValue={prize.availableUntil??""}/></label>
+            <label className="span2">CTA de resgate<input name="redemptionCta" maxLength={120} defaultValue={prize.redemptionCta??""}/></label>
+            <label><span><input type="checkbox" name="mystery" defaultChecked={prize.mystery}/> Prêmio surpresa (???)</span></label>
+            <label><span><input type="checkbox" name="jackpot" defaultChecked={prize.jackpot}/> Jackpot</span></label>
             <label>Ordem<input name="sortOrder" type="number" min="0" defaultValue={prize.sortOrder}/></label>
             <label className="span2"><span><input type="checkbox" name="active" defaultChecked={prize.active}/> Ativo</span></label>
             <button className="span2">Salvar prêmio</button>
@@ -224,7 +236,7 @@ export default async function Page(){
     <section className="adminPageHero">
       <div>
         <small>MORIAH / ENGAJAMENTO</small>
-        <h1>Roletas <span>3.0</span></h1>
+        <h1>Roletas <span>4.0</span></h1>
         <p>Motor PixiJS multi-campanha, prêmios isolados, temas sazonais e auditoria. Avaliações são sempre opcionais e não interferem no sorteio.</p>
       </div>
       <div className="adminPageHeroActions">
