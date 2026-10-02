@@ -53,6 +53,7 @@ const WheelCanvas=forwardRef<WheelHandle,{slices:WheelSlice[];theme:WheelTheme;s
   stopWaiting(){const app=appRef.current,tick=waitingTickRef.current;if(app&&tick)app.ticker.remove(tick);waitingTickRef.current=null;spinningRef.current=false},
   async spinTo(winnerId:string,nextSlices:WheelSlice[]){
   await readyRef.current;const app=appRef.current;if(!app)throw new Error("Roleta ainda está carregando.");
+  const waitingTick=waitingTickRef.current;if(waitingTick)app.ticker.remove(waitingTick);waitingTickRef.current=null;
   spinningRef.current=true;
   try{
    draw(nextSlices);const wheel=wheelRef.current;const geometry=geometryRef.current.find(item=>item.id===winnerId);if(!wheel||!geometry)throw new Error("Prêmio não encontrado na roleta.");
