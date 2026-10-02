@@ -137,6 +137,12 @@ export async function createRoulettePrize(formData:FormData){
     weight:integer(formData,"weight",1,1,10_000),
     quantityTotal,
     validityDays:nullableInteger(formData,"validityDays",1,365),
+    mystery:formData.get("mystery")==="on",
+    jackpot:formData.get("jackpot")==="on",
+    costCents:nullableInteger(formData,"costCents",0,10_000_000),
+    availableFrom:text(formData,"availableFrom",5)||null,
+    availableUntil:text(formData,"availableUntil",5)||null,
+    redemptionCta:text(formData,"redemptionCta",120)||null,
     active:formData.get("active")==="on",
     sortOrder:integer(formData,"sortOrder",100,0,100_000)
   };
@@ -162,6 +168,12 @@ export async function updateRoulettePrize(formData:FormData){
     weight:integer(formData,"weight",current.weight,1,10_000),
     quantityTotal,
     validityDays:nullableInteger(formData,"validityDays",1,365),
+    mystery:formData.get("mystery")==="on",
+    jackpot:formData.get("jackpot")==="on",
+    costCents:nullableInteger(formData,"costCents",0,10_000_000),
+    availableFrom:text(formData,"availableFrom",5)||null,
+    availableUntil:text(formData,"availableUntil",5)||null,
+    redemptionCta:text(formData,"redemptionCta",120)||null,
     active:formData.get("active")==="on",
     sortOrder:integer(formData,"sortOrder",current.sortOrder,0,100_000)
   };
