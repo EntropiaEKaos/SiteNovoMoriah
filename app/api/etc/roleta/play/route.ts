@@ -29,7 +29,7 @@ export async function POST(req:NextRequest){
     if(settings.activeUntil&&settings.activeUntil<=now) return NextResponse.json({error:"Esta campanha já foi encerrada."},{status:409});
 
     const result=await prisma.$transaction(async tx=>{
-      await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${"moriah-roulette:"+settings.campaignKey}))`;
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${"moriah-roulette:"+settings.campaignKey}))`;
 
       const existing=await tx.rouletteEntry.findUnique({
         where:{campaignKey_phone:{campaignKey:settings.campaignKey,phone}},
