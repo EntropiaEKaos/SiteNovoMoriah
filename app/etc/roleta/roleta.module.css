@@ -105,3 +105,16 @@
 @keyframes spinGradient{to{background-position:-220% 0}}
 @media(max-width:640px){.spinButton{min-height:68px;font-size:20px}.spinButton::before{top:-22px;font-size:8px}.wheelStage{margin-top:12px}}
 @media(prefers-reduced-motion:reduce){.wheelStage::before,.wheelStage::after,.wheelHost,.spinButton,.result::before{animation:none!important}}
+
+.jackpotCrown{position:relative;z-index:4;width:max-content;max-width:92%;margin:4px auto -13px;padding:9px 18px 8px;border:2px solid #fff6;border-radius:14px;background:linear-gradient(135deg,var(--roulette-secondary),var(--roulette-primary));color:#fff;box-shadow:0 10px 30px #0005,0 0 25px color-mix(in srgb,var(--roulette-accent) 70%,transparent);transform:rotate(-1deg);animation:crownBounce 1.5s ease-in-out infinite}
+.jackpotCrown b,.jackpotCrown span{display:block}.jackpotCrown b{color:var(--roulette-accent);font-size:14px;letter-spacing:1.4px}.jackpotCrown span{margin-top:3px;font-size:8px;font-weight:900;letter-spacing:2.2px}
+.chaseLights{position:absolute;z-index:3;inset:7%;border-radius:50%;pointer-events:none;animation:arcadeOrbit 7s linear infinite}
+.chaseLights i{--light-index:0;position:absolute;left:50%;top:50%;width:10px;height:10px;margin:-5px;border-radius:50%;background:#fff;box-shadow:0 0 10px #fff,0 0 20px var(--roulette-accent);transform:rotate(calc(var(--light-index) * 20deg)) translateY(-267px);animation:bulbFlash .72s steps(2,end) infinite;animation-delay:calc(var(--light-index) * -.04s)}
+.spinCallout{width:max-content;max-width:100%;margin:8px auto 28px;padding:8px 15px;border-radius:999px;background:color-mix(in srgb,var(--roulette-secondary) 92%,#000);color:#fff;font-size:11px;font-weight:950;letter-spacing:.8px;box-shadow:0 8px 22px #0003;animation:calloutBounce 1.15s ease-in-out infinite}
+.spinButtonActive{box-shadow:0 0 0 10px color-mix(in srgb,var(--roulette-accent) 22%,transparent),0 0 70px var(--roulette-accent);animation:spinWorking .32s ease-in-out infinite alternate!important}
+@keyframes crownBounce{50%{transform:rotate(1deg) translateY(-4px) scale(1.025)}}
+@keyframes bulbFlash{50%{opacity:.18;transform:rotate(calc(var(--light-index) * 20deg)) translateY(-267px) scale(.7)}}
+@keyframes calloutBounce{50%{transform:translateY(-4px);box-shadow:0 13px 28px #0004}}
+@keyframes spinWorking{to{transform:scale(1.035);filter:brightness(1.2)}}
+@media(max-width:640px){.chaseLights{display:none}.jackpotCrown{margin-bottom:-8px}.spinCallout{font-size:9px;margin-bottom:24px}}
+@media(prefers-reduced-motion:reduce){.jackpotCrown,.chaseLights,.chaseLights i,.spinCallout,.spinButtonActive{animation:none!important}}
