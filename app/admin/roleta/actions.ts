@@ -102,6 +102,16 @@ export async function saveRouletteSettings(formData:FormData){
     themeTextColor:color(formData,"themeTextColor","#16333D"),
     themeBackgroundImageUrl:text(formData,"themeBackgroundImageUrl",1000)||null,
     animationStyle:["CONFETTI","SPARKLES","BUBBLES","SNOW","NONE"].includes(text(formData,"animationStyle",30))?text(formData,"animationStyle",30):"CONFETTI",
+    spectaclePreset:["SOFT","ANIMATED","MAX","INSANE"].includes(text(formData,"spectaclePreset",20))?text(formData,"spectaclePreset",20):"MAX",
+    spinTurns:integer(formData,"spinTurns",9,3,20),
+    spinDurationMs:integer(formData,"spinDurationMs",6200,2500,15000),
+    idleMotionEnabled:formData.get("idleMotionEnabled")==="on",
+    chaseLightsEnabled:formData.get("chaseLightsEnabled")==="on",
+    jackpotCrownEnabled:formData.get("jackpotCrownEnabled")==="on",
+    spinCalloutEnabled:formData.get("spinCalloutEnabled")==="on",
+    winConfettiEnabled:formData.get("winConfettiEnabled")==="on",
+    spinButtonText:text(formData,"spinButtonText",80)||"GIRAR AGORA!",
+    spinCalloutText:text(formData,"spinCalloutText",140)||"APERTE O BOTÃO E DESCUBRA SEU PRÊMIO",
     showEventBanner:formData.get("showEventBanner")==="on"
   };
 

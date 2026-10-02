@@ -39,7 +39,7 @@ function defaults(id:"main"|"delivery"){
     termsText:"Ao participar, você autoriza o uso do nome e telefone apenas para administrar esta promoção e validar a entrega do prêmio.",
     activeFrom:null,activeUntil:null,themeMode:"CUSTOM",themePreset:"NEON",themePrimaryColor:"#101010",
     themeSecondaryColor:"#181818",themeAccentColor:"#FFD400",themeSurfaceColor:"#FFFFFF",
-    themeTextColor:"#101010",themeBackgroundImageUrl:null,animationStyle:"SPARKLES",showEventBanner:false
+    themeTextColor:"#101010",themeBackgroundImageUrl:null,animationStyle:"SPARKLES",spectaclePreset:"MAX",spinTurns:9,spinDurationMs:6200,idleMotionEnabled:true,chaseLightsEnabled:true,jackpotCrownEnabled:true,spinCalloutEnabled:true,winConfettiEnabled:true,spinButtonText:"🎁 GIRAR AGORA! 🎁",spinCalloutText:"👇 APERTE O BOTÃO E DESCUBRA SEU PRÊMIO 👇",showEventBanner:false
   };
   return {
     id:"main",active:false,campaignKey:"moriah-1",title:"Roleta da Sorte Moriah",
@@ -49,7 +49,7 @@ function defaults(id:"main"|"delivery"){
     termsText:"Ao participar, você autoriza o uso do nome e telefone apenas para administrar esta promoção e validar a entrega do prêmio.",
     activeFrom:null,activeUntil:null,themeMode:"AUTO_EVENT",themePreset:"CELEBRATION",themePrimaryColor:"#0B607A",
     themeSecondaryColor:"#073B4C",themeAccentColor:"#FFC845",themeSurfaceColor:"#FFFFFF",
-    themeTextColor:"#16333D",themeBackgroundImageUrl:null,animationStyle:"CONFETTI",showEventBanner:true
+    themeTextColor:"#16333D",themeBackgroundImageUrl:null,animationStyle:"CONFETTI",spectaclePreset:"MAX",spinTurns:9,spinDurationMs:6200,idleMotionEnabled:true,chaseLightsEnabled:true,jackpotCrownEnabled:true,spinCalloutEnabled:true,winConfettiEnabled:true,spinButtonText:"🎁 GIRAR AGORA! 🎁",spinCalloutText:"👇 APERTE O BOTÃO E DESCUBRA SEU PRÊMIO 👇",showEventBanner:true
   };
 }
 
@@ -113,6 +113,17 @@ function CampaignEditor({
           <label>Modo<select name="themeMode" defaultValue={settings.themeMode}><option value="AUTO_EVENT">Automático por evento/data</option><option value="CUSTOM">Sempre usar tema padrão</option></select></label>
           <label>Preset<select name="themePreset" defaultValue={settings.themePreset}><option value="CELEBRATION">Celebração</option><option value="SUMMER">Verão / Praia</option><option value="CHRISTMAS">Natal</option><option value="HALLOWEEN">Halloween</option><option value="ROMANCE">Romântico</option><option value="NEON">Neon / Delivery</option><option value="ELEGANT">Elegante</option></select></label>
           <label>Animação<select name="animationStyle" defaultValue={settings.animationStyle}><option value="CONFETTI">Confete</option><option value="SPARKLES">Brilhos</option><option value="BUBBLES">Bolhas</option><option value="SNOW">Neve</option><option value="NONE">Sem partículas</option></select></label>
+          <div className="span2 roulettePrizeHint"><small>EDITOR DE ESPETÁCULO</small><p>Controle a intensidade da experiência sem alterar probabilidades ou prêmios.</p></div>
+          <label>Intensidade<select name="spectaclePreset" defaultValue={settings.spectaclePreset}><option value="SOFT">Suave</option><option value="ANIMATED">Animada</option><option value="MAX">Espalhafatosa</option><option value="INSANE">Insana</option></select></label>
+          <label>Voltas<input name="spinTurns" type="number" min="3" max="20" defaultValue={settings.spinTurns}/></label>
+          <label>Duração do giro (ms)<input name="spinDurationMs" type="number" min="2500" max="15000" step="100" defaultValue={settings.spinDurationMs}/></label>
+          <label>Texto do botão<input name="spinButtonText" maxLength={80} defaultValue={settings.spinButtonText}/></label>
+          <label className="span2">Chamada acima do botão<input name="spinCalloutText" maxLength={140} defaultValue={settings.spinCalloutText}/></label>
+          <label><span><input name="idleMotionEnabled" type="checkbox" defaultChecked={settings.idleMotionEnabled}/> Movimento em repouso</span></label>
+          <label><span><input name="chaseLightsEnabled" type="checkbox" defaultChecked={settings.chaseLightsEnabled}/> Luzes ao redor</span></label>
+          <label><span><input name="jackpotCrownEnabled" type="checkbox" defaultChecked={settings.jackpotCrownEnabled}/> Coroa ROLETA PREMIADA</span></label>
+          <label><span><input name="spinCalloutEnabled" type="checkbox" defaultChecked={settings.spinCalloutEnabled}/> Chamada para girar</span></label>
+          <label><span><input name="winConfettiEnabled" type="checkbox" defaultChecked={settings.winConfettiEnabled}/> Confete na vitória</span></label>
           <label><span><input name="showEventBanner" type="checkbox" defaultChecked={settings.showEventBanner}/> Mostrar banner do evento</span></label>
           <label>Principal<input name="themePrimaryColor" type="color" defaultValue={settings.themePrimaryColor}/></label>
           <label>Secundária<input name="themeSecondaryColor" type="color" defaultValue={settings.themeSecondaryColor}/></label>

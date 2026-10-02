@@ -8,7 +8,7 @@ import styles from "./roleta.module.css";
 type ReviewLink={key:string;label:string;url:string};
 type Settings={title:string;subtitle:string;introText:string;reviewLinks:ReviewLink[];termsText:string};
 type Prize=WheelSlice&{description:string|null};
-type Theme={preset:string;primary:string;secondary:string;accent:string;surface:string;text:string;background:string;backgroundImage:string|null;animationStyle:string;event:{title:string;badge:string|null;slug:string;startsAt:string}|null};
+type Theme={preset:string;primary:string;secondary:string;accent:string;surface:string;text:string;background:string;backgroundImage:string|null;animationStyle:string;spectaclePreset:string;spinTurns:number;spinDurationMs:number;idleMotionEnabled:boolean;chaseLightsEnabled:boolean;jackpotCrownEnabled:boolean;spinCalloutEnabled:boolean;winConfettiEnabled:boolean;spinButtonText:string;spinCalloutText:string;event:{title:string;badge:string|null;slug:string;startsAt:string}|null};
 
 const ambientClass=(animation:string)=>animation==="SNOW"?styles.ambientSnow:animation==="BUBBLES"?styles.ambientBubbles:animation==="SPARKLES"?styles.ambientSparkles:animation==="NONE"?styles.ambientNone:styles.ambientConfetti;
 
@@ -99,7 +99,7 @@ export default function RouletteGame({
         animationDuration:5+(index%5)+"s"
       }}/>)}
     </div>
-    {step==="done"&&<div className={styles.winBurst}>{Array.from({length:38},(_,index)=><i key={index} style={{left:(index*29)%98+"%",animationDelay:(index%7)*.05+"s"}}/>)}</div>}
+    {step==="done"&&theme.winConfettiEnabled&&<div className={styles.winBurst}>{Array.from({length:38},(_,index)=><i key={index} style={{left:(index*29)%98+"%",animationDelay:(index%7)*.05+"s"}}/>)}</div>}
 
     <section className={styles.card+" "+(delivery?styles.deliveryCard:"")}>
       <header className={styles.header}>
@@ -141,10 +141,16 @@ export default function RouletteGame({
 
       {(step==="wheel"||step==="done")&&<div className={styles.game}>
         <div className={styles.stepBadge}>{step==="done"?"04 • RESULTADO":"03 • ROLETA"}</div>
-        <div className={styles.wheelStage}><div className={styles.wheelHalo}/><WheelCanvas ref={ref} slices={slices} theme={wheelTheme}/></div>
+        <div className={styles.wheelStage+" "+(!theme.idleMotionEnabled?styles.noIdleMotion:"")}>
+          <div className={styles.wheelHalo}/>
+          {theme.jackpotCrownEnabled&&<div className={styles.jackpotCrown}><b>★ ROLETA PREMIADA ★</b><span>GIRE • GANHE • RESGATE</span></div>}
+          {theme.chaseLightsEnabled&&<div className={styles.chaseLights}>{Array.from({length:18},(_,index)=><i key={index} style={{"--light-index":index} as CSSProperties}/>)}</div>}
+          <WheelCanvas ref={ref} slices={slices} theme={wheelTheme} spinTurns={theme.spinTurns} spinDurationMs={theme.spinDurationMs}/>
+        </div>
         {step==="wheel"&&<>
           {error&&<p className={styles.error}>{error}</p>}
-          <button className={styles.spinButton} onClick={spin} disabled={spinning||!slices.length||preview}><span>{preview?"PREVIEW VISUAL":spinning?"Girando…":"GIRAR A ROLETA"}</span><i/></button>
+          {theme.spinCalloutEnabled&&<div className={styles.spinCallout}>{spinning?"SEGURA! A SORTE ESTÁ RODANDO…":theme.spinCalloutText}</div>}
+          <button className={styles.spinButton+" "+(spinning?styles.spinButtonActive:"")} onClick={spin} disabled={spinning||!slices.length||preview}><span>{preview?"PREVIEW VISUAL":spinning?"🎯 GIRANDO…":theme.spinButtonText}</span><i/></button>
           <small>Resultado definido no servidor e registrado para auditoria.</small>
         </>}
         {step==="done"&&result&&<div className={styles.result}>

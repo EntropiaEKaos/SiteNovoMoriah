@@ -1071,6 +1071,16 @@ model RouletteSettings {
   themeTextColor           String   @default("#16333D")
   themeBackgroundImageUrl  String?
   animationStyle           String   @default("CONFETTI")
+  spectaclePreset          String   @default("MAX")
+  spinTurns                Int      @default(9)
+  spinDurationMs           Int      @default(6200)
+  idleMotionEnabled        Boolean  @default(true)
+  chaseLightsEnabled       Boolean  @default(true)
+  jackpotCrownEnabled      Boolean  @default(true)
+  spinCalloutEnabled       Boolean  @default(true)
+  winConfettiEnabled       Boolean  @default(true)
+  spinButtonText           String   @default("🎁 GIRAR AGORA! 🎁")
+  spinCalloutText          String   @default("👇 APERTE O BOTÃO E DESCUBRA SEU PRÊMIO 👇")
   showEventBanner          Boolean  @default(true)
   updatedAt                DateTime @updatedAt
 }
