@@ -138,3 +138,5 @@
  .spinButton{max-width:100%;box-sizing:border-box}
 }
 @supports(height:100dvh){.shell{min-height:100dvh}}
+
+.redemptionCta{display:block;width:max-content;max-width:100%;box-sizing:border-box;margin:4px auto;padding:11px 16px;border-radius:999px;background:var(--roulette-accent);color:#102b34;font-size:13px;letter-spacing:.4px}
