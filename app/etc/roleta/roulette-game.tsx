@@ -64,6 +64,7 @@ export default function RouletteGame({
     setSpinning(true);
     setError("");
     try{
+      await ref.current?.startWaiting();
       const response=await fetch("/api/etc/roleta/play",{
         method:"POST",
         headers:{"content-type":"application/json"},
@@ -81,6 +82,7 @@ export default function RouletteGame({
       });
       setStep("done");
     }catch(err){
+      ref.current?.stopWaiting();
       setError(err instanceof Error?err.message:"Não foi possível girar.");
     }finally{
       setSpinning(false);
