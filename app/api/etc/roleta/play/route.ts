@@ -43,7 +43,13 @@ export async function POST(req:NextRequest){
         where:{active:true,campaignKey:settings.campaignKey},
         orderBy:[{sortOrder:"asc"},{createdAt:"asc"}]
       });
-      const eligible=prizes.filter(prize=>prize.quantityTotal===null||prize.awardedCount<prize.quantityTotal);
+      const localTime=new Intl.DateTimeFormat("pt-BR",{timeZone:"America/Sao_Paulo",hour:"2-digit",minute:"2-digit",hour12:false}).format(now);
+      const eligible=prizes.filter(prize=>{
+        if(prize.quantityTotal!==null&&prize.awardedCount>=prize.quantityTotal)return false;
+        if(prize.availableFrom&&localTime<prize.availableFrom)return false;
+        if(prize.availableUntil&&localTime>prize.availableUntil)return false;
+        return true;
+      });
       if(!eligible.length)throw new Error("NO_PRIZES");
 
       const totalWeight=eligible.reduce((sum,prize)=>sum+Math.max(1,prize.weight),0);
@@ -100,7 +106,7 @@ export async function POST(req:NextRequest){
         spinId:spin.id,
         claimCode,
         expiresAt:expiresAt?.toISOString()||null,
-        prize:{id:winner.id,name:winner.name,description:winner.description},
+        prize:{id:winner.id,name:winner.name,description:winner.description,mystery:winner.mystery,jackpot:winner.jackpot,redemptionCta:winner.redemptionCta},
         wheel
       };
     });
