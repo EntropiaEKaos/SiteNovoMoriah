@@ -141,10 +141,16 @@ export default function RouletteGame({
 
       {(step==="wheel"||step==="done")&&<div className={styles.game}>
         <div className={styles.stepBadge}>{step==="done"?"04 • RESULTADO":"03 • ROLETA"}</div>
-        <div className={styles.wheelStage}><div className={styles.wheelHalo}/><WheelCanvas ref={ref} slices={slices} theme={wheelTheme}/></div>
+        <div className={styles.wheelStage}>
+          <div className={styles.wheelHalo}/>
+          <div className={styles.jackpotCrown}><b>★ ROLETA PREMIADA ★</b><span>GIRE • GANHE • RESGATE</span></div>
+          <div className={styles.chaseLights}>{Array.from({length:18},(_,index)=><i key={index} style={{"--light-index":index} as CSSProperties}/>)}</div>
+          <WheelCanvas ref={ref} slices={slices} theme={wheelTheme}/>
+        </div>
         {step==="wheel"&&<>
           {error&&<p className={styles.error}>{error}</p>}
-          <button className={styles.spinButton} onClick={spin} disabled={spinning||!slices.length||preview}><span>{preview?"PREVIEW VISUAL":spinning?"Girando…":"GIRAR A ROLETA"}</span><i/></button>
+          <div className={styles.spinCallout}>{spinning?"SEGURA! A SORTE ESTÁ RODANDO…":"👇 APERTE O BOTÃO E DESCUBRA SEU PRÊMIO 👇"}</div>
+          <button className={styles.spinButton+" "+(spinning?styles.spinButtonActive:"")} onClick={spin} disabled={spinning||!slices.length||preview}><span>{preview?"PREVIEW VISUAL":spinning?"🎯 GIRANDO…":"🎁 GIRAR AGORA! 🎁"}</span><i/></button>
           <small>Resultado definido no servidor e registrado para auditoria.</small>
         </>}
         {step==="done"&&result&&<div className={styles.result}>
