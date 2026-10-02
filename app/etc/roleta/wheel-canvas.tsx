@@ -18,7 +18,8 @@ const WheelCanvas=forwardRef<WheelHandle,{slices:WheelSlice[];theme:WheelTheme;s
  const wheelRef=useRef<InstanceType<PixiModule["Container"]>|null>(null);
  const geometryRef=useRef<Array<{id:string;center:number}>>([]);
  const readyRef=useRef<Promise<void>|null>(null);
- const spinningRef=useRef(false);\n const waitingTickRef=useRef<(()=>void)|null>(null);
+ const spinningRef=useRef(false);
+ const waitingTickRef=useRef<(()=>void)|null>(null);
 
  function draw(input:WheelSlice[]){
   const PIXI=pixiRef.current,app=appRef.current;if(!PIXI||!app)return;
@@ -47,7 +48,10 @@ const WheelCanvas=forwardRef<WheelHandle,{slices:WheelSlice[];theme:WheelTheme;s
  useEffect(()=>{let alive=true;readyRef.current=(async()=>{const PIXI=await import("pixi.js");if(!alive||!hostRef.current)return;pixiRef.current=PIXI;const app=new PIXI.Application();await app.init({width:560,height:560,backgroundAlpha:0,antialias:true,resolution:Math.min(window.devicePixelRatio||1,2),autoDensity:true});if(!alive){app.destroy(true);return}appRef.current=app;app.canvas.setAttribute("aria-label","Roleta da Sorte Moriah");hostRef.current.appendChild(app.canvas);draw(slices)})();return()=>{alive=false;appRef.current?.destroy(true);appRef.current=null;wheelRef.current=null;pixiRef.current=null};/* eslint-disable-next-line react-hooks/exhaustive-deps */},[]);
  useEffect(()=>{readyRef.current?.then(()=>{if(!spinningRef.current)draw(slices)});/* eslint-disable-next-line react-hooks/exhaustive-deps */},[slices,theme.primary,theme.secondary,theme.accent,theme.surface]);
 
- useImperativeHandle(ref,()=>({\n  async startWaiting(){await readyRef.current;const app=appRef.current,wheel=wheelRef.current;if(!app||!wheel||waitingTickRef.current)return;spinningRef.current=true;const tick=()=>{wheel.rotation+=.035};waitingTickRef.current=tick;app.ticker.add(tick)},\n  stopWaiting(){const app=appRef.current,tick=waitingTickRef.current;if(app&&tick)app.ticker.remove(tick);waitingTickRef.current=null},\n  async spinTo(winnerId:string,nextSlices:WheelSlice[]){
+ useImperativeHandle(ref,()=>({
+  async startWaiting(){await readyRef.current;const app=appRef.current,wheel=wheelRef.current;if(!app||!wheel||waitingTickRef.current)return;spinningRef.current=true;const tick=()=>{wheel.rotation+=.035};waitingTickRef.current=tick;app.ticker.add(tick)},
+  stopWaiting(){const app=appRef.current,tick=waitingTickRef.current;if(app&&tick)app.ticker.remove(tick);waitingTickRef.current=null;spinningRef.current=false},
+  async spinTo(winnerId:string,nextSlices:WheelSlice[]){
   await readyRef.current;const app=appRef.current;if(!app)throw new Error("Roleta ainda está carregando.");
   spinningRef.current=true;
   try{
