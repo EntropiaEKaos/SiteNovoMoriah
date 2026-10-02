@@ -72,6 +72,16 @@ export default async function RoulettePage({settingsId,preview=false}:{settingsI
     background:event?.themeBackgroundColor||settings.themeSecondaryColor,
     backgroundImage:event?.rouletteBackgroundImage||event?.coverImage||settings.themeBackgroundImageUrl,
     animationStyle:settings.animationStyle,
+    spectaclePreset:settings.spectaclePreset,
+    spinTurns:settings.spinTurns,
+    spinDurationMs:settings.spinDurationMs,
+    idleMotionEnabled:settings.idleMotionEnabled,
+    chaseLightsEnabled:settings.chaseLightsEnabled,
+    jackpotCrownEnabled:settings.jackpotCrownEnabled,
+    spinCalloutEnabled:settings.spinCalloutEnabled,
+    winConfettiEnabled:settings.winConfettiEnabled,
+    spinButtonText:settings.spinButtonText,
+    spinCalloutText:settings.spinCalloutText,
     event:event&&settings.showEventBanner?{
       title:event.title,badge:event.badge,slug:event.slug,startsAt:event.startsAt.toISOString()
     }:null
