@@ -103,7 +103,7 @@ export async function POST(req:NextRequest){
         prize:{id:winner.id,name:winner.name,description:winner.description},
         wheel
       };
-    },{isolationLevel:Prisma.TransactionIsolationLevel.ReadCommitted});
+    });
 
     return NextResponse.json(result,{headers:{"Cache-Control":"no-store"}});
   }catch(error){
