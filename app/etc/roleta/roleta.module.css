@@ -118,3 +118,5 @@
 @keyframes spinWorking{to{transform:scale(1.035);filter:brightness(1.2)}}
 @media(max-width:640px){.chaseLights{display:none}.jackpotCrown{margin-bottom:-8px}.spinCallout{font-size:9px;margin-bottom:24px}}
 @media(prefers-reduced-motion:reduce){.jackpotCrown,.chaseLights,.chaseLights i,.spinCallout,.spinButtonActive{animation:none!important}}
+
+.noIdleMotion .wheelHost{animation:none!important}
