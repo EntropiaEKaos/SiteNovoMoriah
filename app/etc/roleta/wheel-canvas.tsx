@@ -35,8 +35,8 @@ const WheelCanvas=forwardRef<WheelHandle,{slices:WheelSlice[];theme:WheelTheme;s
    const center=cursor+span/2;geometryRef.current.push({id:slice.id,center});
    const label=slice.name.length>22?slice.name.slice(0,20)+"…":slice.name;
    const text=new PIXI.Text({text:label,style:new PIXI.TextStyle({fontFamily:"Arial",fontSize:Math.max(12,Math.min(19,170/input.length)),fontWeight:"800",fill:cleanHex(slice.textColor,0x1b252b),align:"center",wordWrap:true,wordWrapWidth:126})});
-   text.anchor.set(.5);text.position.set(Math.cos(center)*140,Math.sin(center)*140);text.rotation=center+Math.PI/2;
-   const normalized=((text.rotation%TAU)+TAU)%TAU;if(normalized>Math.PI/2&&normalized<Math.PI*1.5)text.rotation+=Math.PI;wheel.addChild(text);cursor=end;
+   // Radial label: reading direction follows the slice radius from hub to rim.
+   text.anchor.set(0,.5);text.position.set(Math.cos(center)*72,Math.sin(center)*72);text.rotation=center;wheel.addChild(text);cursor=end;
   });
   const rim=new PIXI.Graphics();rim.circle(0,0,radius+8).stroke({width:14,color:secondary});rim.circle(0,0,radius+1).stroke({width:3,color:accent});wheel.addChild(rim);
   for(let index=0;index<28;index++){const angle=(index/28)*TAU;const light=new PIXI.Graphics();light.circle(Math.cos(angle)*230,Math.sin(angle)*230,4).fill({color:index%2?surface:accent});wheel.addChild(light)}
