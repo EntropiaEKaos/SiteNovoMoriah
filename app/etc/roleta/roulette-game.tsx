@@ -136,7 +136,7 @@ export default function RouletteGame({
     {step==="done"&&theme.winConfettiEnabled&&<div className={styles.winBurst}>{Array.from({length:38},(_,index)=><i key={index} style={{left:(index*29)%98+"%",animationDelay:(index%7)*.05+"s"}}/>)}</div>}
 
     <section className={styles.card+" "+(delivery?styles.deliveryCard:"")}>
-      <header className={styles.header}>
+      {(step==="intro"||step==="identify")&&<header className={styles.header}>
         <div className={styles.headerGlow}/>
         <span>{delivery?"MORIAH FOOD • ROLETA ENTREGAS":"MORIAH • ROLETA 4.0"}{preview?" • PREVIEW":""}</span>
         <h1>{settings.title}</h1>
