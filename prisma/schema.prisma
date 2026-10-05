@@ -727,11 +727,34 @@ model RestaurantProduct {
  recipes RestaurantRecipeItem[]
  modifierLinks RestaurantProductModifierGroup[]
  productionBatches RestaurantProductionBatch[]
+ imageCandidates RestaurantProductImageCandidate[]
  @@index([categoryId,active,sortOrder])
  @@index([featured,active])
  @@index([stationId,active])
  @@index([pauseUntil])
 }
+model RestaurantProductImageCandidate {
+ id String @id @default(cuid())
+ productId String
+ product RestaurantProduct @relation(fields:[productId],references:[id],onDelete:Cascade)
+ prompt String
+ negativePrompt String?
+ provider String @default("PENDING")
+ providerJobId String?
+ status String @default("DRAFT")
+ imageUrl String?
+ storageKey String?
+ errorMessage String?
+ createdBy String?
+ approvedAt DateTime?
+ rejectedAt DateTime?
+ createdAt DateTime @default(now())
+ updatedAt DateTime @updatedAt
+
+ @@index([productId,status,createdAt])
+ @@index([status,createdAt])
+}
+
 model RestaurantOrder {
  id String @id @default(cuid())
  bookingId String?
