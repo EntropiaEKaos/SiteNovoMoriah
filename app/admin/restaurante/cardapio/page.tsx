@@ -66,7 +66,7 @@ export default async function MenuStudio(){
       </div>
       <div className="adminPageHeroActions">
         <Link className="adminSecondaryAction" href="/restaurante" target="_blank">Ver cardápio ↗</Link>
-        <Link className="adminPrimaryAction" href="/admin/restaurante/cardapio/novo">+ Novo produto</Link>
+        <Link className="adminSecondaryAction" href="/admin/restaurante/cardapio/importar">Importar cardápio</Link>\n        <Link className="adminPrimaryAction" href="/admin/restaurante/cardapio/novo">+ Novo produto</Link>
       </div>
     </section>
 
