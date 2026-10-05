@@ -1,9 +1,9 @@
 "use server";
 import {revalidatePath} from "next/cache";
-import {requireAdmin} from "../../../../lib/admin-auth";
-import {prisma} from "../../../../lib/prisma";
-import {createFoodImageDraft} from "../../../../lib/restaurant-ai-images";
-import {verifyMediaObject,mediaPublicUrl} from "../../../../lib/media-storage";
+import {requireAdmin} from "../../../../../lib/admin-auth";
+import {prisma} from "../../../../../lib/prisma";
+import {createFoodImageDraft} from "../../../../../lib/restaurant-ai-images";
+import {verifyMediaObject,mediaPublicUrl} from "../../../../../lib/media-storage";
 
 function idOf(formData:FormData,name:string){
   const value=String(formData.get(name)||"").trim();
