@@ -1,7 +1,8 @@
 import Link from "next/link";
 import {prisma} from "../../../../../lib/prisma";
 import {requireAdmin} from "../../../../../lib/admin-auth";
-import {createImageDraft,rejectImageCandidate,approveImageCandidate} from "./actions";
+import {createImageDraft,generateImageCandidate,rejectImageCandidate,approveImageCandidate} from "./actions";
+import {foodImageProviderStatus} from "../../../../../lib/food-image-provider";
 
 export const dynamic="force-dynamic";
 
@@ -9,6 +10,7 @@ const pilots=["Carne de panela","Isca de frango","Panqueca de frango"];
 
 export default async function FoodAiImagesPage(){
   await requireAdmin();
+  const provider=foodImageProviderStatus();
   const [products,candidates]=await Promise.all([
     prisma.restaurantProduct.findMany({
       include:{category:true},
@@ -40,7 +42,10 @@ export default async function FoodAiImagesPage(){
       <div><small>Candidatos</small><strong>{candidates.length}</strong></div>
       <div><small>Prontos</small><strong>{ready.length}</strong></div>
       <div><small>Aprovados</small><strong>{candidates.filter(c=>c.status==="APPROVED").length}</strong></div>
+      <div><small>Provedor IA</small><strong>{provider.configured?"ATIVO":"OFF"}</strong></div>
     </section>
+
+    {!provider.configured&&<p className="adminPageNote">Provedor de imagem ainda não configurado no servidor. Defina GEMINI_API_KEY para habilitar a geração; criação de prompts e aprovação continuam seguras.</p>}
 
     <section className="adminSectionCard" style={{marginBottom:22}}>
       <div className="menuStudioSectionTitle">
@@ -79,6 +84,7 @@ export default async function FoodAiImagesPage(){
           <details><summary>Ver prompt</summary><p style={{whiteSpace:"pre-wrap"}}>{candidate.prompt}</p></details>
           {candidate.errorMessage&&<p className="adminPageNote">{candidate.errorMessage}</p>}
           <div className="adminInlineActions">
+            {["DRAFT","FAILED"].includes(candidate.status)&&<form action={generateImageCandidate}><input type="hidden" name="candidateId" value={candidate.id}/><button disabled={!provider.configured}>{candidate.status==="FAILED"?"Gerar novamente":"Gerar imagem"}</button></form>}
             {candidate.status==="READY"&&<form action={approveImageCandidate}><input type="hidden" name="candidateId" value={candidate.id}/><button className="highlight">Aprovar e publicar</button></form>}
             {!["APPROVED","REJECTED"].includes(candidate.status)&&<form action={rejectImageCandidate}><input type="hidden" name="candidateId" value={candidate.id}/><button className="danger">Descartar</button></form>}
           </div>
