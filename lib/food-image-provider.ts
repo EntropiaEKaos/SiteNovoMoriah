@@ -2,14 +2,14 @@ import "server-only";
 
 export type GeneratedFoodImage={bytes:Uint8Array;mimeType:"image/png"|"image/jpeg";extension:"png"|"jpg";provider:string};
 
-function geminiKey(){return String(process.env.GEMINI_API_KEY||"").trim();}
+function providerKey(){return "";}
 export function foodImageProviderStatus(){
-  return geminiKey()?{configured:true,provider:"gemini"}:{configured:false,provider:"gemini"};
+  return {configured:false,provider:"none"};
 }
 
 export async function generateFoodImage(prompt:string,negativePrompt?:string|null):Promise<GeneratedFoodImage>{
-  const key=geminiKey();
-  if(!key)throw new Error("Geração de imagens não configurada. Defina GEMINI_API_KEY no servidor.");
+  const key=providerKey();
+  if(!key)throw new Error("Gerador de imagens não configurado.");
   const fullPrompt=[prompt,negativePrompt?"Avoid: "+negativePrompt:""].filter(Boolean).join("\n\n");
   const model=process.env.MORIAH_IMAGE_MODEL||"gemini-3.1-flash-image";
   const response=await fetch("https://generativelanguage.googleapis.com/v1/models/"+encodeURIComponent(model)+":generateContent",{
