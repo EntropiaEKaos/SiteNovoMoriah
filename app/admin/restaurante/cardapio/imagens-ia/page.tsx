@@ -12,7 +12,7 @@ export default async function FoodAiImagesPage(){
   const [products,candidates]=await Promise.all([
     prisma.restaurantProduct.findMany({
       include:{category:true},
-      orderBy:[{category:{sortOrder:"asc"}},{sortOrder:"asc"},{name:"asc"}]
+      orderBy:[{sortOrder:"asc"},{name:"asc"}]
     }),
     prisma.restaurantProductImageCandidate.findMany({
       include:{product:{include:{category:true}}},
