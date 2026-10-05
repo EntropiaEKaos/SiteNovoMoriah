@@ -3,7 +3,8 @@ import {revalidatePath} from "next/cache";
 import {requireAdmin} from "../../../../../lib/admin-auth";
 import {prisma} from "../../../../../lib/prisma";
 import {createFoodImageDraft} from "../../../../../lib/restaurant-ai-images";
-import {verifyMediaObject,mediaPublicUrl} from "../../../../../lib/media-storage";
+import {verifyMediaObject,mediaPublicUrl,uploadMediaBuffer} from "../../../../../lib/media-storage";
+import {generateFoodImage} from "../../../../../lib/food-image-provider";
 
 function idOf(formData:FormData,name:string){
   const value=String(formData.get(name)||"").trim();
@@ -15,6 +16,30 @@ export async function createImageDraft(formData:FormData){
   await requireAdmin();
   await createFoodImageDraft(idOf(formData,"productId"));
   revalidatePath("/admin/restaurante/cardapio/imagens-ia");
+}
+
+export async function generateImageCandidate(formData:FormData){
+  await requireAdmin();
+  const id=idOf(formData,"candidateId");
+  const candidate=await prisma.restaurantProductImageCandidate.findUnique({where:{id}});
+  if(!candidate||!["DRAFT","FAILED"].includes(candidate.status))throw new Error("Candidato não está disponível para geração.");
+  await prisma.restaurantProductImageCandidate.update({where:{id},data:{status:"GENERATING",errorMessage:null,provider:"gemini"}});
+  try{
+    const generated=await generateFoodImage(candidate.prompt,candidate.negativePrompt);
+    const media=await uploadMediaBuffer({bytes:generated.bytes,mimeType:generated.mimeType,size:generated.bytes.length,extension:generated.extension});
+    await prisma.restaurantProductImageCandidate.update({
+      where:{id},
+      data:{status:"READY",provider:generated.provider,storageKey:media.key,imageUrl:media.publicUrl,errorMessage:null}
+    });
+  }catch(error){
+    await prisma.restaurantProductImageCandidate.update({
+      where:{id},
+      data:{status:"FAILED",errorMessage:error instanceof Error?error.message:"Falha desconhecida na geração."}
+    });
+    throw error;
+  }finally{
+    revalidatePath("/admin/restaurante/cardapio/imagens-ia");
+  }
 }
 
 export async function rejectImageCandidate(formData:FormData){
