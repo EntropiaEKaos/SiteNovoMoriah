@@ -55,10 +55,56 @@ export async function importProductImage(formData:FormData){
   if(!extension)throw new Error("Formato não permitido. Use JPEG, PNG ou WebP.");
   const bytes=new Uint8Array(await file.arrayBuffer());
   const media=await uploadMediaBuffer({bytes,mimeType:file.type,size:bytes.length,extension});
-  await prisma.restaurantProductImageCandidate.create({
-    data:{productId,prompt:"Importação manual pelo Menu Studio",provider:"manual-import",status:"READY",storageKey:media.key,imageUrl:media.publicUrl}
-  });
+  await prisma.$transaction([
+    prisma.media.create({data:{url:media.publicUrl,alt:product.name,label:product.name,folder:"moriah-food",storageKey:media.key,mimeType:file.type,sizeBytes:bytes.length,provider:"S3"}}),
+    prisma.restaurantProductImageCandidate.create({
+      data:{productId,prompt:"Importação manual pelo Menu Studio",provider:"manual-import",status:"READY",storageKey:media.key,imageUrl:media.publicUrl}
+    })
+  ]);
   revalidatePath("/admin/restaurante/cardapio/imagens-ia");
+}
+
+export async function importProductImagesBatch(formData:FormData){
+  await requireAdmin();
+  const entries=Array.from(formData.entries()).filter(([key,value])=>key.startsWith("image:")&&value instanceof File&&value.size>0) as [string,File][];
+  if(entries.length===0)throw new Error("Selecione ao menos uma imagem.");
+  if(entries.length>20)throw new Error("Envie no máximo 20 imagens por lote.");
+  for(const [key,file] of entries){
+    const productId=key.slice("image:".length);
+    const product=await prisma.restaurantProduct.findUnique({where:{id:productId}});
+    if(!product)throw new Error("Produto do lote não encontrado.");
+    if(file.size>3_500_000)throw new Error(product.name+": imagem acima de 3,5 MB.");
+    const allowed:{[key:string]:string}={"image/jpeg":"jpg","image/png":"png","image/webp":"webp"};
+    const extension=allowed[file.type];
+    if(!extension)throw new Error(product.name+": formato inválido.");
+    const bytes=new Uint8Array(await file.arrayBuffer());
+    const media=await uploadMediaBuffer({bytes,mimeType:file.type,size:bytes.length,extension});
+    await prisma.$transaction([
+      prisma.media.create({data:{url:media.publicUrl,alt:product.name,label:product.name,folder:"moriah-food",storageKey:media.key,mimeType:file.type,sizeBytes:bytes.length,provider:"S3"}}),
+      prisma.restaurantProductImageCandidate.create({data:{productId,prompt:"Importação em lote pelo Finalizador de Cardápio",provider:"batch-import",status:"READY",storageKey:media.key,imageUrl:media.publicUrl}})
+    ]);
+  }
+  revalidatePath("/admin/restaurante/cardapio/imagens-ia");
+}
+
+export async function approveReadyImagesBatch(){
+  await requireAdmin();
+  const ready=await prisma.restaurantProductImageCandidate.findMany({where:{status:"READY",storageKey:{not:null}},orderBy:{createdAt:"desc"}});
+  const newest=new Map<string,(typeof ready)[number]>();
+  for(const candidate of ready)if(!newest.has(candidate.productId))newest.set(candidate.productId,candidate);
+  for(const candidate of newest.values()){
+    if(!candidate.storageKey)continue;
+    await verifyMediaObject(candidate.storageKey);
+    const imageUrl=mediaPublicUrl(candidate.storageKey);
+    await prisma.$transaction([
+      prisma.restaurantProduct.update({where:{id:candidate.productId},data:{imageUrl}}),
+      prisma.restaurantProductImageCandidate.update({where:{id:candidate.id},data:{status:"APPROVED",imageUrl,approvedAt:new Date()}}),
+      prisma.restaurantProductImageCandidate.updateMany({where:{productId:candidate.productId,id:{not:candidate.id},status:{in:["DRAFT","READY"]}},data:{status:"REJECTED",rejectedAt:new Date()}})
+    ]);
+  }
+  revalidatePath("/admin/restaurante/cardapio");
+  revalidatePath("/admin/restaurante/cardapio/imagens-ia");
+  revalidatePath("/restaurante");
 }
 
 export async function rejectImageCandidate(formData:FormData){

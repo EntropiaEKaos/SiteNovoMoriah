@@ -1,7 +1,7 @@
 import Link from "next/link";
 import {prisma} from "../../../../../lib/prisma";
 import {requireAdmin} from "../../../../../lib/admin-auth";
-import {createImageDraft,generateImageCandidate,rejectImageCandidate,approveImageCandidate,importProductImage} from "./actions";
+import {createImageDraft,generateImageCandidate,rejectImageCandidate,approveImageCandidate,importProductImage,importProductImagesBatch,approveReadyImagesBatch} from "./actions";
 import {foodImageProviderStatus} from "../../../../../lib/food-image-provider";
 
 export const dynamic="force-dynamic";
@@ -29,8 +29,8 @@ export default async function FoodAiImagesPage(){
     <section className="adminPageHero">
       <div>
         <small>MORIAH FOOD / MENU STUDIO / IMAGENS IA</small>
-        <h1>Fotos com aprovação humana.</h1>
-        <p>A IA prepara candidatos. A foto pública do produto só muda quando um administrador aprova explicitamente.</p>
+        <h1>Finalizador de Cardápio.</h1>
+        <p>Importe, confira e publique as fotos dos produtos com rastreabilidade. Nenhuma imagem entra no cardápio público sem aprovação.</p>
       </div>
       <div className="adminPageHeroActions">
         <Link className="adminSecondaryAction" href="/admin/restaurante/cardapio">← Cardápio Studio</Link>
@@ -46,6 +46,30 @@ export default async function FoodAiImagesPage(){
     </section>
 
     {!provider.configured&&<p className="adminPageNote">Geração automática está desligada. Você pode importar imagens prontas abaixo; elas entram na mesma fila de aprovação antes da publicação.</p>}
+
+    <section className="adminSectionCard" style={{marginBottom:22}}>
+      <div className="menuStudioSectionTitle">
+        <div><small>FINALIZAÇÃO EM LOTE</small><h2>Cobertura do cardápio</h2></div>
+        <span className="adminChip">{products.length-missing.length}/{products.length} com foto</span>
+      </div>
+      <form action={importProductImagesBatch} className="adminStack">
+        <p>Selecione somente os produtos que deseja completar neste lote. Limite de 20 imagens por envio.</p>
+        <div className="menuStudioProductGrid">
+          {products.map(product=><div className="menuStudioProductCard" key={product.id}>
+            <div className="menuStudioProductImage">{product.imageUrl?<img src={product.imageUrl} alt={product.name}/>:<div>SEM FOTO</div>}</div>
+            <div className="menuStudioProductBody">
+              <small>{product.category.name} • {product.imageUrl?"PUBLICADA":"PENDENTE"}</small>
+              <h3>{product.name}</h3>
+              <input name={"image:"+product.id} type="file" accept="image/jpeg,image/png,image/webp"/>
+            </div>
+          </div>)}
+        </div>
+        <div><button className="highlight">Enviar lote para aprovação</button></div>
+      </form>
+      {ready.length>0&&<form action={approveReadyImagesBatch} style={{marginTop:16}}>
+        <button className="highlight">Aprovar e publicar {ready.length} candidato(s) READY</button>
+      </form>}
+    </section>
 
     <section className="adminSectionCard" style={{marginBottom:22}}>
       <div className="menuStudioSectionTitle">
