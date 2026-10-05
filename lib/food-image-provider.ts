@@ -24,7 +24,18 @@ export async function generateFoodImage(prompt:string,negativePrompt?:string|nul
     }),
     signal:AbortSignal.timeout(120000)
   });
-  if(!response.ok)throw new Error("Falha no provedor de imagens ("+response.status+").");
+  if(!response.ok){
+    const raw=await response.text();
+    let detail="";
+    try{
+      const parsed=JSON.parse(raw) as {error?:{message?:string;status?:string}};
+      detail=[parsed.error?.status,parsed.error?.message].filter(Boolean).join(": ");
+    }catch{
+      detail=raw.slice(0,500);
+    }
+    detail=detail.replace(/AIza[0-9A-Za-z_-]+/g,"[redacted]").slice(0,500);
+    throw new Error("Gemini "+response.status+(detail?": "+detail:""));
+  }
   const json=await response.json() as {candidates?:Array<{content?:{parts?:Array<{inlineData?:{data?:string;mimeType?:string}}>} }>};
   const part=json.candidates?.flatMap(candidate=>candidate.content?.parts||[]).find(item=>item.inlineData?.data);
   const data=part?.inlineData?.data;
