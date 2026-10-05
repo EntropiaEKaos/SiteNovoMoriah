@@ -42,6 +42,25 @@ export async function generateImageCandidate(formData:FormData){
   }
 }
 
+export async function importProductImage(formData:FormData){
+  await requireAdmin();
+  const productId=idOf(formData,"productId");
+  const product=await prisma.restaurantProduct.findUnique({where:{id:productId}});
+  if(!product)throw new Error("Produto não encontrado.");
+  const file=formData.get("image");
+  if(!(file instanceof File)||file.size<=0)throw new Error("Selecione uma imagem.");
+  if(file.size>3_500_000)throw new Error("Imagem acima de 3,5 MB.");
+  const allowed:{[key:string]:string}={"image/jpeg":"jpg","image/png":"png","image/webp":"webp"};
+  const extension=allowed[file.type];
+  if(!extension)throw new Error("Formato não permitido. Use JPEG, PNG ou WebP.");
+  const bytes=new Uint8Array(await file.arrayBuffer());
+  const media=await uploadMediaBuffer({bytes,mimeType:file.type,size:bytes.length,extension});
+  await prisma.restaurantProductImageCandidate.create({
+    data:{productId,prompt:"Importação manual pelo Menu Studio",provider:"manual-import",status:"READY",storageKey:media.key,imageUrl:media.publicUrl}
+  });
+  revalidatePath("/admin/restaurante/cardapio/imagens-ia");
+}
+
 export async function rejectImageCandidate(formData:FormData){
   await requireAdmin();
   const id=idOf(formData,"candidateId");

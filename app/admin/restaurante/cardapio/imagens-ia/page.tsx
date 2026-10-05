@@ -1,7 +1,7 @@
 import Link from "next/link";
 import {prisma} from "../../../../../lib/prisma";
 import {requireAdmin} from "../../../../../lib/admin-auth";
-import {createImageDraft,generateImageCandidate,rejectImageCandidate,approveImageCandidate} from "./actions";
+import {createImageDraft,generateImageCandidate,rejectImageCandidate,approveImageCandidate,importProductImage} from "./actions";
 import {foodImageProviderStatus} from "../../../../../lib/food-image-provider";
 
 export const dynamic="force-dynamic";
@@ -45,7 +45,20 @@ export default async function FoodAiImagesPage(){
       <div><small>Provedor IA</small><strong>{provider.configured?"ATIVO":"OFF"}</strong></div>
     </section>
 
-    {!provider.configured&&<p className="adminPageNote">Provedor de imagem ainda não configurado no servidor. Defina GEMINI_API_KEY para habilitar a geração; criação de prompts e aprovação continuam seguras.</p>}
+    {!provider.configured&&<p className="adminPageNote">Geração automática está desligada. Você pode importar imagens prontas abaixo; elas entram na mesma fila de aprovação antes da publicação.</p>}
+
+    <section className="adminSectionCard" style={{marginBottom:22}}>
+      <div className="menuStudioSectionTitle">
+        <div><small>IMPORTAÇÃO DIRETA</small><h2>Enviar foto para um produto</h2></div>
+        <span className="adminChip">S3 + aprovação</span>
+      </div>
+      <form action={importProductImage} className="adminStack">
+        <label>Produto<select name="productId" required>{products.map(product=><option key={product.id} value={product.id}>{product.category.name} — {product.name}</option>)}</select></label>
+        <label>Imagem<input name="image" type="file" accept="image/jpeg,image/png,image/webp" required/></label>
+        <small>JPEG, PNG ou WebP • máximo 3,5 MB. O envio cria um candidato READY; a foto pública só muda após aprovação.</small>
+        <div><button className="highlight">Enviar para aprovação</button></div>
+      </form>
+    </section>
 
     <section className="adminSectionCard" style={{marginBottom:22}}>
       <div className="menuStudioSectionTitle">
