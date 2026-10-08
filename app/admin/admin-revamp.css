@@ -59,3 +59,18 @@
 @media(max-width:1250px){.adminRevamp .adminDailyActionsGrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:650px){.adminRevamp .adminDailyActionsGrid{grid-template-columns:1fr}.adminRevamp .adminDailyActionsHead>span{display:none}.adminRevamp .adminDailyAction{min-height:82px}}
 @media(prefers-reduced-motion:reduce){.adminRevamp .adminDailyAction{transition:none}}
+
+/* Live daily operations */
+.adminRevamp .adminTodayOverview{margin:0 0 28px}
+.adminRevamp .adminTodayHeading{display:flex;align-items:end;justify-content:space-between;gap:16px;margin-bottom:15px}
+.adminRevamp .adminTodayHeading small{font-size:10px;font-weight:900;letter-spacing:1.3px;color:#667483}
+.adminRevamp .adminTodayHeading h2{margin:5px 0 0;font-size:clamp(24px,2.8vw,34px);letter-spacing:-1px}
+.adminRevamp .adminTodayHeading>span{font-size:12px;color:#687585;text-transform:capitalize}
+.adminRevamp .adminTodayGrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.adminRevamp .adminTodayCard{display:grid;align-content:start;gap:10px;min-height:150px;padding:20px;border:1px solid #e2e7eb;border-radius:16px;background:#fff;box-shadow:0 6px 24px #1c29340a}
+.adminRevamp .adminTodayCard:hover{border-color:#b8a05a}
+.adminRevamp .adminTodayCard small{font-size:12px;font-weight:750;color:#536272}
+.adminRevamp .adminTodayCard strong{font-size:clamp(32px,3.2vw,46px);line-height:1;color:#172634;font-variant-numeric:tabular-nums}
+.adminRevamp .adminTodayCard span{font-size:11px;color:#74808d;line-height:1.5}
+@media(max-width:1250px){.adminRevamp .adminTodayGrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:560px){.adminRevamp .adminTodayHeading{align-items:start;flex-direction:column}.adminRevamp .adminTodayGrid{gap:8px}.adminRevamp .adminTodayCard{padding:14px;min-height:138px}}
