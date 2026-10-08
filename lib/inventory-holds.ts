@@ -19,7 +19,7 @@ export async function createInventoryHold(
   const units=Math.max(1,Math.floor(requestedUnits||1));
 
   return prisma.$transaction(async tx=>{
-    await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${accommodationId}))`;
+    await tx.$queryRaw`SELECT 1 AS locked FROM pg_advisory_xact_lock(hashtext(${accommodationId}))`;
     await tx.inventoryHold.deleteMany({where:{expiresAt:{lte:new Date()}}});
 
     const room=await tx.accommodation.findUnique({
@@ -105,7 +105,7 @@ export async function consumeInventoryHold(
   if(!token)throw new Error("Hold de disponibilidade ausente.");
 
   return prisma.$transaction(async tx=>{
-    await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${accommodationId}))`;
+    await tx.$queryRaw`SELECT 1 AS locked FROM pg_advisory_xact_lock(hashtext(${accommodationId}))`;
 
     const hold=await tx.inventoryHold.findUnique({where:{token}});
     if(
