@@ -69,6 +69,8 @@ export default function AdminCalendar({events,rooms}:{events:Event[];rooms:Room[
   const [search,setSearch]=useState("");
   const [selected,setSelected]=useState<Event|null>(null);
   const [draft,setDraft]=useState<Draft>(null);
+  const [bookingError,setBookingError]=useState("");
+  const [bookingSaving,setBookingSaving]=useState(false);
   const [draftMode,setDraftMode]=useState<"BOOKING"|"BLOCK">("BOOKING");
   const [dragging,setDragging]=useState<Event|null>(null);
   const [dropKey,setDropKey]=useState("");
@@ -140,6 +142,7 @@ export default function AdminCalendar({events,rooms}:{events:Event[];rooms:Room[
   function startDraft(roomId:string,date:Date){
     const next=new Date(date.getTime()+DAY);
     setSelected(null);
+    setBookingError("");
     setDraft({mode:draftMode,roomId,checkIn:dayKey(date),checkOut:dayKey(next)});
   }
 
@@ -178,6 +181,25 @@ export default function AdminCalendar({events,rooms}:{events:Event[];rooms:Room[
       setSelected(null);
       router.refresh();
     });
+  }
+
+  async function submitMapBooking(event:React.FormEvent<HTMLFormElement>){
+    event.preventDefault();
+    if(bookingSaving)return;
+    const form=event.currentTarget;
+    setBookingError("");
+    setBookingSaving(true);
+    try{
+      await createMapBooking(new FormData(form));
+      setDraft(null);
+      router.refresh();
+    }catch(error){
+      setBookingError(error instanceof Error&&error.message&&!/digest/i.test(error.message)
+        ?error.message
+        :"Não foi possível confirmar a reserva. Confira disponibilidade e tarifas ou tente novamente.");
+    }finally{
+      setBookingSaving(false);
+    }
   }
 
   const gridTemplate="190px repeat("+days.length+", minmax(44px,1fr))";
@@ -297,7 +319,7 @@ export default function AdminCalendar({events,rooms}:{events:Event[];rooms:Room[
         <button type="button" onClick={()=>setDraft(null)}>Fechar</button>
       </div>
 
-      {draft.mode==="BOOKING"?<form action={createMapBooking} className="adminFormGrid cols3">
+      {draft.mode==="BOOKING"?<form onSubmit={submitMapBooking} className="adminFormGrid cols3">
         <label>Hospedagem<select name="accommodationId" defaultValue={draft.roomId} required>{rooms.map(room=><option key={room.id} value={room.id}>{room.roomNumber?room.roomNumber+" • ":""}{room.name}</option>)}</select></label>
         <label>Entrada<input name="checkIn" type="date" defaultValue={draft.checkIn} required/></label>
         <label>Saída<input name="checkOut" type="date" defaultValue={draft.checkOut} required/></label>
@@ -306,7 +328,8 @@ export default function AdminCalendar({events,rooms}:{events:Event[];rooms:Room[
         <label>Telefone / WhatsApp<input name="phone" required autoComplete="tel"/></label>
         <label>E-mail<input name="email" type="email" autoComplete="email"/></label>
         <label className="span2">Observação interna<input name="internalNotes" placeholder="Opcional"/></label>
-        <button className="span2">Validar e confirmar reserva</button>
+        {bookingError&&<div className="span2 adminPageNote" role="alert">{bookingError}</div>}
+        <button className="span2" disabled={bookingSaving}>{bookingSaving?"Validando reserva…":"Validar e confirmar reserva"}</button>
       </form>:<form action={createManualBlock} className="adminFormGrid cols3">
         <label>Hospedagem<select name="accommodationId" defaultValue={draft.roomId} required>{rooms.map(room=><option key={room.id} value={room.id}>{room.roomNumber?room.roomNumber+" • ":""}{room.name}</option>)}</select></label>
         <label>Início<input name="startsAt" type="date" defaultValue={draft.checkIn} required/></label>
