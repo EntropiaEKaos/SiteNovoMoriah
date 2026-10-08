@@ -61,3 +61,18 @@
 .adminRevamp .frontDeskActionGrid article{border-radius:12px;background:#f9fafb}
 @media(max-width:760px){.adminRevamp .adminPageBreadcrumb{margin-bottom:12px}.adminRevamp .adminPageHeroActions a{flex:1 1 150px}.adminRevamp .frontDeskActionGrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:480px){.adminRevamp .frontDeskActionGrid{grid-template-columns:1fr}.adminRevamp .adminPageHeroActions a{width:100%}}
+
+/* Restaurant operations: unified controls, without touching kitchen logic */
+.adminRevamp .kdsPage .adminPageBreadcrumb,
+.adminRevamp .menuStudio .adminPageBreadcrumb,
+.adminRevamp .cmvPage .adminPageBreadcrumb{margin-bottom:18px}
+.adminRevamp .kdsPage :is(button,input,select),
+.adminRevamp .menuStudio :is(button,input,select),
+.adminRevamp .cmvPage :is(button,input,select){max-width:100%}
+.adminRevamp .kdsPage :is(button,a):focus-visible,
+.adminRevamp .menuStudio :is(button,a):focus-visible,
+.adminRevamp .cmvPage :is(button,a):focus-visible{outline:3px solid #f2b705;outline-offset:3px}
+@media(max-width:760px){
+ .adminRevamp .kdsPage,.adminRevamp .menuStudio,.adminRevamp .cmvPage{min-width:0}
+ .adminRevamp .kdsPage .adminPageBreadcrumb,.adminRevamp .menuStudio .adminPageBreadcrumb,.adminRevamp .cmvPage .adminPageBreadcrumb{flex-wrap:wrap}
+}
