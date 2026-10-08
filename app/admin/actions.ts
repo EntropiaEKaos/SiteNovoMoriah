@@ -285,7 +285,7 @@ export async function setBookingStatus(formData:FormData){
         throw new Error("A reserva precisa ter hospedagem e período antes da confirmação.");
       }
 
-      await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${booking.accommodationId}))`;
+      await tx.$queryRaw`SELECT 1 AS locked FROM pg_advisory_xact_lock(hashtext(${booking.accommodationId}))`;
 
       const [external,manual]=await Promise.all([
         tx.channelBlock.count({
@@ -654,7 +654,7 @@ export async function pmsBookingAction(formData:FormData){
     const finance=readCheckInFinance(formData);
 
     await prisma.$transaction(async tx=>{
-      await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${id}))`;
+      await tx.$queryRaw`SELECT 1 AS locked FROM pg_advisory_xact_lock(hashtext(${id}))`;
 
       const booking=await tx.bookingLead.findUnique({
         where:{id},
@@ -873,7 +873,7 @@ export async function registerPayment(formData:FormData){
   const amountCents=Math.round(amount*100);
 
   await prisma.$transaction(async tx=>{
-    await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${bookingId}))`;
+    await tx.$queryRaw`SELECT 1 AS locked FROM pg_advisory_xact_lock(hashtext(${bookingId}))`;
 
     const booking=await tx.bookingLead.findUnique({
       where:{id:bookingId},
