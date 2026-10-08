@@ -76,3 +76,10 @@
  .adminRevamp .kdsPage,.adminRevamp .menuStudio,.adminRevamp .cmvPage{min-width:0}
  .adminRevamp .kdsPage .adminPageBreadcrumb,.adminRevamp .menuStudio .adminPageBreadcrumb,.adminRevamp .cmvPage .adminPageBreadcrumb{flex-wrap:wrap}
 }
+
+/* Action feedback: avoid duplicate submits and communicate pending state */
+.adminRevamp .adminSubmitSpinner{display:inline-block;width:16px;height:16px;flex:0 0 16px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:adminSubmitSpin .8s linear infinite}
+.adminRevamp .adminFormGrid button[aria-busy="true"]{display:inline-flex;align-items:center;justify-content:center;gap:9px;cursor:wait;opacity:.75}
+.adminRevamp .adminFormGrid button:disabled{cursor:not-allowed}
+@keyframes adminSubmitSpin{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.adminRevamp .adminSubmitSpinner{animation:none;border-right-color:currentColor}}
