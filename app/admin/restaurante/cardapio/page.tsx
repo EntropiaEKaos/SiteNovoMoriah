@@ -1,3 +1,4 @@
+import {ArrowLeft} from "lucide-react";
 import Link from "next/link";
 import {prisma} from "../../../../lib/prisma";
 import {requireAdmin} from "../../../../lib/admin-auth";
@@ -58,6 +59,7 @@ export default async function MenuStudio(){
   const scheduled=products.filter(product=>product.availableDays.length||product.availableFrom||product.availableUntil).length;
 
   return <main className="adminPage menuStudio">
+    <nav className="adminPageBreadcrumb" aria-label="Caminho da página"><Link href="/admin/restaurante"><ArrowLeft size={16} aria-hidden="true"/> Voltar ao restaurante</Link><span aria-hidden="true">/</span><span>Cardápio</span></nav>
     <section className="adminPageHero menuStudioHero">
       <div>
         <small>MORIAH FOOD / CARDÁPIO STUDIO 1.0</small>
