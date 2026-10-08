@@ -1,3 +1,4 @@
+import "./admin-revamp.css";
 import type {Metadata,Viewport} from "next";
 import Link from "next/link";
 import {getAdminSession} from "../../lib/admin-auth";
@@ -8,6 +9,7 @@ import AdminPresenceControl from "./components/admin-presence-control";
 import AdminPwaRegister from "./components/admin-pwa-register";
 import AdminNotificationCenter from "./components/admin-notification-center";
 import AdminActionFeedback from "./components/admin-action-feedback";
+import AdminMobileShell from "./components/admin-mobile-shell";
 
 export const metadata:Metadata={
   title:{default:"Moriah Admin",template:"%s | Moriah Admin"},
@@ -55,7 +57,7 @@ export default async function AdminLayout({children}:{children:React.ReactNode})
   const notificationItems=notificationRows.map(row=>({...row,read:readIds.has(row.id)}));
   const unread=notificationItems.filter(row=>!row.read).length;
 
-  return <div className="adminApp"><AdminPwaRegister/><AdminActionFeedback/>
+  return <AdminMobileShell sidebar={<>
     <aside className="adminSidebar">
       <div className="adminBrand">
         <span className="adminBrandMark">M</span>
@@ -74,7 +76,8 @@ export default async function AdminLayout({children}:{children:React.ReactNode})
         <form action={logoutAdmin}><button>Sair</button></form>
       </div>
     </aside>
-
+  </>}>
+    <AdminPwaRegister/><AdminActionFeedback/>
     <div className="adminWorkspace">
       <header className="adminTopbar">
         <div className="adminTopbarStatus"><span className="adminLiveDot"/> Operação Moriah</div>
@@ -90,5 +93,5 @@ export default async function AdminLayout({children}:{children:React.ReactNode})
       </header>
       {children}
     </div>
-  </div>;
+  </AdminMobileShell>;
 }
