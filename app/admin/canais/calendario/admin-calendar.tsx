@@ -190,7 +190,11 @@ export default function AdminCalendar({events,rooms}:{events:Event[];rooms:Room[
     setBookingError("");
     setBookingSaving(true);
     try{
-      await createMapBooking(new FormData(form));
+      const result=await createMapBooking(new FormData(form));
+      if(!result.ok){
+        setBookingError(result.message||"Não foi possível confirmar a reserva.");
+        return;
+      }
       setDraft(null);
       router.refresh();
     }catch(error){
