@@ -6,6 +6,7 @@ import {requireAdmin} from "../../../../lib/admin-auth";
 import {prisma} from "../../../../lib/prisma";
 import {quoteAccommodation} from "../../../../lib/rate-engine";
 import {syncAccommodationChannels} from "../../../../lib/channel-sync";
+import {hasUnitCapacity} from "../../../../lib/shared-inventory";
 import {pmsBookingAction,setBookingStatus} from "../../actions";
 
 function parseDate(value:FormDataEntryValue|null){
@@ -25,21 +26,27 @@ async function assertInventoryFree(
   accommodationId:string,
   start:Date,
   end:Date,
-  excludeBookingId?:string
+  excludeBookingId?:string,
+  requestedGuests=1
 ){
   // The lock function returns PostgreSQL void, which Prisma cannot deserialize as a query column.
   // Select a numeric sentinel while retaining the transaction-scoped advisory lock.
   await tx.$queryRaw`SELECT 1 AS locked FROM pg_advisory_xact_lock(hashtext(${accommodationId}))`;
 
-  const [internal,external,holds,manual]=await Promise.all([
-    tx.bookingLead.count({
+  const [room,internal,external,holds,manual]=await Promise.all([
+    tx.accommodation.findUnique({
+      where:{id:accommodationId},
+      select:{sharedRoom:true,bedCount:true,capacity:true,active:true}
+    }),
+    tx.bookingLead.findMany({
       where:{
         id:excludeBookingId?{not:excludeBookingId}:undefined,
         accommodationId,
         status:{in:["CONFIRMED","CHECKED_IN"]},
         checkIn:{lt:end},
         checkOut:{gt:start}
-      }
+      },
+      select:{checkIn:true,checkOut:true,guests:true}
     }),
     tx.channelBlock.count({
       where:{
@@ -48,13 +55,14 @@ async function assertInventoryFree(
         integration:{accommodationId,active:true}
       }
     }),
-    tx.inventoryHold.count({
+    tx.inventoryHold.findMany({
       where:{
         accommodationId,
         expiresAt:{gt:new Date()},
         checkIn:{lt:end},
         checkOut:{gt:start}
-      }
+      },
+      select:{checkIn:true,checkOut:true,units:true}
     }),
     tx.manualInventoryBlock.count({
       where:{
@@ -65,8 +73,26 @@ async function assertInventoryFree(
     })
   ]);
 
-  if(internal||external||holds||manual){
-    throw new Error("O período conflita com reserva, canal, hold ou bloqueio manual.");
+  if(!room?.active)throw new Error("Hospedagem inativa ou inexistente.");
+  if(external||manual)throw new Error("O período conflita com reserva, canal, hold ou bloqueio manual.");
+
+  if(!room.sharedRoom){
+    if(requestedGuests>room.capacity||internal.length||holds.length){
+      throw new Error("O período conflita com reserva, canal, hold ou bloqueio manual.");
+    }
+    return;
+  }
+
+  const intervals=[
+    ...internal.filter(row=>row.checkIn&&row.checkOut).map(row=>({
+      start:row.checkIn!,end:row.checkOut!,units:Math.max(1,row.guests)
+    })),
+    ...holds.map(row=>({
+      start:row.checkIn,end:row.checkOut,units:Math.max(1,row.units)
+    }))
+  ];
+  if(!hasUnitCapacity(room.bedCount,requestedGuests,intervals,start,end)){
+    throw new Error("Não há camas suficientes disponíveis para este período.");
   }
 }
 
@@ -142,7 +168,7 @@ async function createMapBookingInternal(formData:FormData){
   if(!quote)throw new Error("Não há tarifa vendável para o período.");
 
   await prisma.$transaction(async tx=>{
-    await assertInventoryFree(tx,accommodationId,checkIn,checkOut);
+    await assertInventoryFree(tx,accommodationId,checkIn,checkOut,undefined,guests);
 
     let guest=await tx.guest.findFirst({
       where:{name,phone},
@@ -212,7 +238,8 @@ export async function createMapBooking(formData:FormData):Promise<{ok:boolean;me
       "Hospedagem inativa ou inexistente.","Quantidade de hóspedes acima da capacidade.",
       "Não foi possível atualizar todos os canais antes da reserva.",
       "Não há tarifa vendável para o período.",
-      "O período conflita com reserva, canal, hold ou bloqueio manual."
+      "O período conflita com reserva, canal, hold ou bloqueio manual.",
+      "Não há camas suficientes disponíveis para este período."
     ];
     return {ok:false,message:known.includes(message)?message:"Erro interno ao salvar a reserva. Consulte os logs do servidor."};
   }
@@ -252,7 +279,7 @@ export async function updateConfirmedBookingPlacement(formData:FormData){
   if(!quote)throw new Error("Não há tarifa vendável para o novo período.");
 
   await prisma.$transaction(async tx=>{
-    await assertInventoryFree(tx,accommodationId,checkIn,checkOut,id);
+    await assertInventoryFree(tx,accommodationId,checkIn,checkOut,id,booking.guests);
 
     await tx.bookingLead.update({
       where:{id},
