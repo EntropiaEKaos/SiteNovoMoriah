@@ -1,4 +1,5 @@
 import Link from "next/link";
+import {ArrowLeft} from "lucide-react";
 import {prisma} from "../../../lib/prisma";
 import {requireAdmin} from "../../../lib/admin-auth";
 import {
@@ -83,6 +84,7 @@ export default async function PMS(){
   },0);
 
   return <main className="adminPage">
+    <nav className="adminPageBreadcrumb" aria-label="Caminho da página"><Link href="/admin"><ArrowLeft size={16} aria-hidden="true"/> Voltar ao painel</Link><span aria-hidden="true">/</span><span>Front Desk</span></nav>
     <section className="adminPageHero">
       <div>
         <small>MORIAH PMS / OPERAÇÃO</small>

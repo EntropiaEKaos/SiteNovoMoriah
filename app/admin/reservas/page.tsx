@@ -1,4 +1,5 @@
 import Link from "next/link";
+import {ArrowLeft} from "lucide-react";
 import {prisma} from "../../../lib/prisma";
 import {requireAdmin} from "../../../lib/admin-auth";
 import {setBookingStatus} from "../actions";
@@ -72,6 +73,7 @@ export default async function Page({
   const sources=Array.from(new Set(leads.map(item=>item.source))).sort();
 
   return <main className="adminPage">
+    <nav className="adminPageBreadcrumb" aria-label="Caminho da página"><Link href="/admin"><ArrowLeft size={16} aria-hidden="true"/> Voltar ao painel</Link><span aria-hidden="true">/</span><span>Reservas</span></nav>
     <section className="adminPageHero">
       <div>
         <small>MORIAH CMS / COMERCIAL</small>
