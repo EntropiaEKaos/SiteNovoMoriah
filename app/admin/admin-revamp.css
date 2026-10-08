@@ -1,0 +1,43 @@
+/* Admin visual revamp — scoped to authenticated workspace */
+.adminRevamp{--admin-surface:#fff;--admin-border:#e8e3d9;--admin-ink:#19232b;--admin-accent:#f2b705;background:#f5f6f8;color:var(--admin-ink)}
+.adminRevamp .adminSidebar{background:#111c27;border-right:1px solid #293846;box-shadow:8px 0 28px #111c2710}
+.adminRevamp .adminBrandMark{border-radius:12px;background:var(--admin-accent)}
+.adminRevamp .adminBrand{border-bottom-color:#31404d}
+.adminRevamp .adminNavLink{border-radius:10px;min-height:37px;transition:background .16s,color .16s}
+.adminRevamp .adminNavLink:hover{background:#273747;color:#fff}
+.adminRevamp .adminNavLink.isActive{background:#324354;border-left-color:var(--admin-accent);color:#fff}
+.adminRevamp .adminNavLink.isActive>span{color:#fff}
+.adminRevamp .adminNavLabel{color:#b3c1cd;font-size:9px}
+.adminRevamp .adminTopbar{background:#fffffff0;border-bottom:1px solid var(--admin-border);box-shadow:0 4px 20px #17233408}
+.adminRevamp .adminSectionCard,.adminRevamp .adminListCard,.adminRevamp .adminStats article,.adminRevamp .adminModuleCard{border-radius:16px;border-color:var(--admin-border);box-shadow:0 6px 24px #1c29340a}
+.adminRevamp .adminModuleCard:hover{transform:translateY(-3px);box-shadow:0 14px 30px #1c293417}
+.adminRevamp .adminWorkspace :is(input,select,textarea,button,a):focus-visible,.adminRevamp .adminSidebar a:focus-visible{outline:3px solid #db9e00;outline-offset:3px}
+.adminRevamp .adminWorkspace :is(button,input,select,textarea){font-family:inherit}
+.adminRevamp .adminWorkspace :is(button,a){-webkit-tap-highlight-color:transparent}
+.adminMobileMenuButton,.adminMobileBackdrop{display:none}
+@media(max-width:760px){
+ .adminRevamp .adminWorkspace{margin-left:0;min-width:0}
+ .adminRevamp .adminSidebar{position:relative;inset:auto;width:100%;height:100%;max-height:none;overflow:hidden;padding:22px 18px;border:0}
+ .adminRevamp .adminNav{display:block;overflow-y:auto;overflow-x:hidden;flex:1;min-height:0;padding:8px 0 20px}
+ .adminRevamp .adminNavSection{min-width:0;display:grid;gap:5px}
+ .adminRevamp .adminNavSection+.adminNavSection{margin-top:18px}
+ .adminRevamp .adminNavItems{display:grid;gap:4px}
+ .adminRevamp .adminNavLink{min-height:42px;padding:9px 12px}
+ .adminRevampSidebarSlot{position:fixed;inset:0 auto 0 0;width:min(86vw,330px);z-index:202;transform:translateX(-105%);transition:transform .22s ease;box-shadow:12px 0 32px #0002;visibility:hidden}
+ .adminRevamp.adminMenuOpen .adminRevampSidebarSlot{transform:translateX(0);visibility:visible}
+ .adminMobileBackdrop{display:block;position:fixed;inset:0;z-index:200;border:0;background:#07111ac2;cursor:pointer}
+ .adminMobileMenuButton{display:flex;align-items:center;justify-content:center;gap:8px;position:fixed;left:12px;top:9px;z-index:205;min-height:42px;padding:0 12px;border:1px solid #d6dce2;border-radius:10px;background:#fff;color:#14212e;font-weight:800;box-shadow:0 4px 16px #0001}
+ .adminRevamp .adminTopbar{min-height:62px;height:auto;padding:9px 12px 9px 90px;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+ .adminRevamp .adminTopbarTools{gap:8px;flex-wrap:wrap}
+ .adminRevamp .adminTopbarMeta{display:none}
+ .adminRevamp .adminDashboard,.adminRevamp .adminPage{padding-left:16px;padding-right:16px}
+ .adminRevamp .adminStats,.adminRevamp .adminModuleGrid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .adminRevamp .adminWorkspace :is(button,input,select){min-height:40px}
+}
+@media(max-width:480px){
+ .adminRevamp .adminStats,.adminRevamp .adminModuleGrid{grid-template-columns:1fr}
+ .adminRevamp .adminWelcome h1{font-size:clamp(34px,10vw,54px)}
+}
+@media(prefers-reduced-motion:reduce){
+ .adminRevampSidebarSlot,.adminRevamp .adminModuleCard,.adminRevamp .adminNavLink{transition:none}
+}
