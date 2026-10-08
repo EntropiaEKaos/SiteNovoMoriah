@@ -1,4 +1,5 @@
 import Link from "next/link";
+import {ArrowRight,CalendarCheck2,CalendarDays,ClipboardList,UtensilsCrossed} from "lucide-react";
 import {prisma} from "../../lib/prisma";
 import {requireAdmin} from "../../lib/admin-auth";
 
@@ -148,6 +149,25 @@ export default async function Admin(){
         <p>Hospedagem, receita, ocupação, restaurante, atendimento e saúde operacional em uma visão executiva.</p>
       </div>
       <div className="adminHeroStamp"><span>{occupancy}</span><small>%<br/>OCUPAÇÃO</small></div>
+    </section>
+
+    <section className="adminDailyActions" aria-label="Ações rápidas da operação">
+      <div className="adminDailyActionsHead">
+        <div><small>ACESSO RÁPIDO</small><h2>O que você precisa fazer agora?</h2></div>
+        <span>Central de operação</span>
+      </div>
+      <div className="adminDailyActionsGrid">
+        {[
+          {href:"/admin/reservas",label:"Gerenciar reservas",detail:"Consultar e atualizar hospedagens",Icon:CalendarCheck2},
+          {href:"/admin/pms",label:"Front Desk",detail:"Check-in, check-out e governança",Icon:ClipboardList},
+          {href:"/admin/canais/calendario",label:"Mapa de ocupação",detail:"Disponibilidade e movimentações",Icon:CalendarDays},
+          {href:"/admin/restaurante/pedidos",label:"Pedidos do restaurante",detail:"Cozinha e atendimento",Icon:UtensilsCrossed}
+        ].map(({href,label,detail,Icon})=><Link key={href} href={href} className="adminDailyAction">
+          <span className="adminDailyActionIcon"><Icon size={21} aria-hidden="true"/></span>
+          <span><strong>{label}</strong><small>{detail}</small></span>
+          <ArrowRight size={17} aria-hidden="true"/>
+        </Link>)}
+      </div>
     </section>
 
     <section className="adminStats">
