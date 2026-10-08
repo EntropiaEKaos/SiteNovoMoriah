@@ -1,3 +1,5 @@
+import Link from "next/link";
+import {ArrowLeft} from "lucide-react";
 import {prisma} from "../../../../lib/prisma";
 import {requireAdmin} from "../../../../lib/admin-auth";
 import AdminCalendar from "./admin-calendar";
@@ -127,6 +129,7 @@ export default async function Page(){
   ];
 
   return <main className="adminPage reservationMapPage">
+    <nav className="adminPageBreadcrumb" aria-label="Caminho da página"><Link href="/admin"><ArrowLeft size={16} aria-hidden="true"/> Voltar ao painel</Link><span aria-hidden="true">/</span><span>Calendário</span></nav>
     <section className="adminPageHero">
       <div>
         <small>MORIAH PMS / INVENTÁRIO</small>
