@@ -45,7 +45,10 @@ export default async function Admin(){
     soldStays,
     leads30Rows,
     payments30,
-    notificationReady
+    notificationReady,
+    arrivalsToday,
+    departuresToday,
+    inHouseNow
   ]=await Promise.all([
     prisma.accommodation.count({where:{active:true}}),
     prisma.accommodation.count(),
@@ -94,7 +97,10 @@ export default async function Admin(){
       where:{status:"PAID",paidAt:{gte:since}},
       select:{amountCents:true}
     }),
-    prisma.notificationMessage.count({where:{status:{in:["READY","FAILED","BLOCKED"]}}})
+    prisma.notificationMessage.count({where:{status:{in:["READY","FAILED","BLOCKED"]}}}),
+    prisma.bookingLead.count({where:{status:"CONFIRMED",checkIn:{gte:new Date(now.getFullYear(),now.getMonth(),now.getDate()),lt:new Date(now.getFullYear(),now.getMonth(),now.getDate()+1)}}}),
+    prisma.bookingLead.count({where:{status:"CHECKED_IN",checkOut:{gte:new Date(now.getFullYear(),now.getMonth(),now.getDate()),lt:new Date(now.getFullYear(),now.getMonth(),now.getDate()+1)}}}),
+    prisma.bookingLead.count({where:{status:"CHECKED_IN",checkedOutAt:null}})
   ]);
 
   const occupiedNights=soldStays.reduce(
@@ -149,6 +155,23 @@ export default async function Admin(){
         <p>Hospedagem, receita, ocupação, restaurante, atendimento e saúde operacional em uma visão executiva.</p>
       </div>
       <div className="adminHeroStamp"><span>{occupancy}</span><small>%<br/>OCUPAÇÃO</small></div>
+    </section>
+
+    <section className="adminTodayOverview" aria-label="Resumo da operação de hoje">
+      <div className="adminTodayHeading">
+        <div><small>OPERAÇÃO DE HOJE</small><h2>Seu dia em um olhar.</h2></div>
+        <span>{new Intl.DateTimeFormat("pt-BR",{dateStyle:"full",timeZone:"America/Sao_Paulo"}).format(now)}</span>
+      </div>
+      <div className="adminTodayGrid">
+        {[
+          {label:"Entradas previstas",value:arrivalsToday,href:"/admin/reservas",hint:"Reservas confirmadas com entrada hoje"},
+          {label:"Saídas previstas",value:departuresToday,href:"/admin/pms",hint:"Hóspedes em casa com saída hoje"},
+          {label:"Hospedagens em andamento",value:inHouseNow,href:"/admin/pms",hint:"Check-ins ativos no PMS"},
+          {label:"Limpezas pendentes",value:housekeepingPending,href:"/admin/pms",hint:"Tarefas ainda não concluídas"}
+        ].map(item=><Link href={item.href} key={item.label} className="adminTodayCard">
+          <small>{item.label}</small><strong>{item.value}</strong><span>{item.hint}</span>
+        </Link>)}
+      </div>
     </section>
 
     <section className="adminDailyActions" aria-label="Ações rápidas da operação">
