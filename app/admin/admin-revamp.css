@@ -83,3 +83,6 @@
 .adminRevamp .adminFormGrid button:disabled{cursor:not-allowed}
 @keyframes adminSubmitSpin{to{transform:rotate(360deg)}}
 @media(prefers-reduced-motion:reduce){.adminRevamp .adminSubmitSpinner{animation:none;border-right-color:currentColor}}
+
+.adminRevamp button[aria-busy="true"]{display:inline-flex;align-items:center;justify-content:center;gap:9px;cursor:wait;opacity:.72}
+.adminRevamp button[aria-busy="true"]:disabled{pointer-events:none}
