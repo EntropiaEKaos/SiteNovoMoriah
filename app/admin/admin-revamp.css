@@ -41,3 +41,23 @@
 @media(prefers-reduced-motion:reduce){
  .adminRevampSidebarSlot,.adminRevamp .adminModuleCard,.adminRevamp .adminNavLink{transition:none}
 }
+
+/* Reservations & Front Desk visual consistency */
+.adminRevamp .adminPageBreadcrumb{display:flex;align-items:center;gap:10px;margin-bottom:20px;color:#677483;font-size:12px;font-weight:700}
+.adminRevamp .adminPageBreadcrumb a{display:inline-flex;align-items:center;gap:7px;padding:9px 12px;border:1px solid #e0e5e9;border-radius:10px;background:#fff;color:#243746}
+.adminRevamp .adminPageBreadcrumb a:hover{border-color:#c49c21;background:#fff9e8}
+.adminRevamp .adminPageHero{border-radius:18px}
+.adminRevamp .adminPageHeroActions{display:flex;flex-wrap:wrap;gap:9px}
+.adminRevamp .adminPageHeroActions a{min-height:42px;display:inline-flex;align-items:center;justify-content:center;border-radius:10px}
+.adminRevamp .adminMetricStrip>div{border-radius:13px}
+.adminRevamp .adminListCard{overflow-wrap:anywhere}
+.adminRevamp .adminListCardHead{gap:12px}
+.adminRevamp .adminInlineActions{flex-wrap:wrap}
+.adminRevamp .adminInlineActions a{min-height:38px;display:inline-flex;align-items:center;justify-content:center;border-radius:9px}
+.adminRevamp .adminFormGrid :is(input,select,textarea){width:100%;min-width:0;min-height:44px;border-radius:10px;border:1px solid #cdd6de;background:#fff;padding:10px 12px}
+.adminRevamp .adminFormGrid :is(input,select,textarea):focus{border-color:#b68b0c;outline:3px solid #f2b70540;outline-offset:0}
+.adminRevamp .adminFormGrid button{min-height:44px;border-radius:10px}
+.adminRevamp .frontDeskActionCenter{border-radius:17px;background:#fff;border-color:#e1e6ea;box-shadow:0 5px 24px #1828380a}
+.adminRevamp .frontDeskActionGrid article{border-radius:12px;background:#f9fafb}
+@media(max-width:760px){.adminRevamp .adminPageBreadcrumb{margin-bottom:12px}.adminRevamp .adminPageHeroActions a{flex:1 1 150px}.adminRevamp .frontDeskActionGrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:480px){.adminRevamp .frontDeskActionGrid{grid-template-columns:1fr}.adminRevamp .adminPageHeroActions a{width:100%}}
