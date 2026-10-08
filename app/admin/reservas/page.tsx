@@ -111,7 +111,7 @@ export default async function Page({
             {sources.map(value=><option key={value} value={value}>{value}</option>)}
           </select>
         </label>
-        <button>Aplicar filtros</button>
+        <button type="submit">Aplicar filtros</button>
         {(q||status||source)&&<Link className="adminSecondaryAction" href="/admin/reservas">Limpar</Link>}
       </form>
     </section>
