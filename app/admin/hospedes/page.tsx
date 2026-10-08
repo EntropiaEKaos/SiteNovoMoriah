@@ -1,3 +1,4 @@
+import AdminSubmitButton from "../components/admin-submit-button";
 import {ArrowLeft} from "lucide-react";
 import Link from "next/link";
 import {prisma} from "../../../lib/prisma";
@@ -164,7 +165,7 @@ export default async function GuestsPage({
           <label className="span2">Observações internas
             <textarea name="notes" maxLength={4000} rows={3}/>
           </label>
-          <button className="span2">Cadastrar hóspede</button>
+          <AdminSubmitButton className="span2" label="Cadastrar hóspede" pendingLabel="Cadastrando hóspede..."/>
         </form>
       </article>
 
