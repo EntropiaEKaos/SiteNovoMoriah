@@ -27,7 +27,9 @@ async function assertInventoryFree(
   end:Date,
   excludeBookingId?:string
 ){
-  await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${accommodationId}))`;
+  // The lock function returns PostgreSQL void, which Prisma cannot deserialize as a query column.
+  // Select a numeric sentinel while retaining the transaction-scoped advisory lock.
+  await tx.$queryRaw`SELECT 1 AS locked FROM pg_advisory_xact_lock(hashtext(${accommodationId}))`;
 
   const [internal,external,holds,manual]=await Promise.all([
     tx.bookingLead.count({
