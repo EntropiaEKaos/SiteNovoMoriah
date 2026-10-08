@@ -1,3 +1,4 @@
+import {ArrowLeft} from "lucide-react";
 import Link from "next/link";
 import {prisma} from "../../../../lib/prisma";
 import {requireAdmin} from "../../../../lib/admin-auth";
@@ -86,6 +87,7 @@ export default async function Page({
   }).length;
 
   return <main className="adminPage kdsPage kitchen40">
+    <nav className="adminPageBreadcrumb" aria-label="Caminho da página"><Link href="/admin/restaurante"><ArrowLeft size={16} aria-hidden="true"/> Voltar ao restaurante</Link><span aria-hidden="true">/</span><span>Pedidos</span></nav>
     <section className="kitchenHero">
       <div>
         <small>MORIAH KITCHEN 4.0 • OPERADOR {session.username}</small>
