@@ -1,3 +1,4 @@
+import AdminSubmitButton from "../components/admin-submit-button";
 import Link from "next/link";
 import {ArrowLeft} from "lucide-react";
 import {prisma} from "../../../lib/prisma";
@@ -189,12 +190,12 @@ export default async function PMS(){
                   {booking.status==="CHECKED_IN"&&<form action={pmsBookingAction} data-feedback-success="Status da hospedagem atualizado com sucesso.">
                     <input type="hidden" name="id" value={booking.id}/>
                     <input type="hidden" name="action" value="CHECK_OUT"/>
-                    <button className="highlight">Fazer check-out</button>
+                    <AdminSubmitButton className="highlight" label="Fazer check-out" pendingLabel="Finalizando check-out..."/>
                   </form>}
                   {booking.status==="CONFIRMED"&&<form action={pmsBookingAction} data-feedback-success="Status da hospedagem atualizado com sucesso.">
                     <input type="hidden" name="id" value={booking.id}/>
                     <input type="hidden" name="action" value="NO_SHOW"/>
-                    <button>No-show</button>
+                    <AdminSubmitButton label="No-show" pendingLabel="Atualizando reserva..."/>
                   </form>}
                   {booking.status==="CHECKED_IN"&&booking.restaurantAccessToken&&<a
                     href={"/restaurante?booking="+booking.restaurantAccessToken}
@@ -221,13 +222,13 @@ export default async function PMS(){
                       <option value="EXTERNAL">Pagamento externo</option>
                     </select>
                   </label>
-                  <button className="span2">Registrar pagamento</button>
+                  <AdminSubmitButton className="span2" label="Registrar pagamento" pendingLabel="Registrando pagamento..."/>
                 </form>}
 
                 {booking.status==="CHECKED_IN"&&<form action={settleRestaurantFolio} style={{marginTop:10}} data-feedback-success="Consumo do restaurante liquidado com sucesso.">
                   <input type="hidden" name="bookingId" value={booking.id}/>
                   <input type="hidden" name="method" value="ROOM_SETTLEMENT"/>
-                  <button>Fechar consumo restaurante</button>
+                  <AdminSubmitButton label="Fechar consumo restaurante" pendingLabel="Fechando consumo..."/>
                 </form>}
               </div>
             </div>
@@ -256,7 +257,7 @@ export default async function PMS(){
                 <option value="IN_PROGRESS">Em andamento</option>
                 <option value="DONE">Concluída</option>
               </select>
-              <button>Salvar</button>
+              <AdminSubmitButton label="Salvar" pendingLabel="Salvando tarefa..."/>
             </form>
           </div>)}
         </div>}
