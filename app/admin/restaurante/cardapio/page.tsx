@@ -1,3 +1,4 @@
+import AdminSubmitButton from "../../components/admin-submit-button";
 import {ArrowLeft} from "lucide-react";
 import Link from "next/link";
 import {prisma} from "../../../../lib/prisma";
@@ -100,7 +101,7 @@ export default async function MenuStudio(){
             <input name="showSoldOut" type="checkbox" defaultChecked={settings?.showSoldOut!==false}/>
             Mostrar itens esgotados no cardápio em vez de escondê-los
           </label>
-          <button className="span2">Salvar apresentação</button>
+          <AdminSubmitButton className="span2" label="Salvar apresentação" pendingLabel="Salvando apresentação..."/>
         </form>
       </article>
 
@@ -155,7 +156,7 @@ export default async function MenuStudio(){
             <input name="availableDays" type="checkbox" value={day}/><span>{dayLabels[day]}</span>
           </label>)}
         </div>
-        <button>Criar categoria</button>
+        <AdminSubmitButton label="Criar categoria" pendingLabel="Criando categoria..."/>
       </form>
     </section>
 
@@ -205,7 +206,7 @@ export default async function MenuStudio(){
                   <input name="availableDays" type="checkbox" value={day} defaultChecked={category.availableDays.includes(day)}/><span>{dayLabels[day]}</span>
                 </label>)}
               </div>
-              <button>Salvar categoria</button>
+              <AdminSubmitButton label="Salvar categoria" pendingLabel="Salvando categoria..."/>
             </form>
             <div className="adminInlineActions" style={{marginTop:10}}>
               <form action={moveMenuCategory}><input type="hidden" name="id" value={category.id}/><input type="hidden" name="direction" value="UP"/><button>↑ Subir</button></form>
