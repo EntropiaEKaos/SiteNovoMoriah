@@ -1,3 +1,4 @@
+import AdminSubmitButton from "../../components/admin-submit-button";
 import {ArrowLeft} from "lucide-react";
 import Link from "next/link";
 import {prisma} from "../../../../lib/prisma";
@@ -219,13 +220,13 @@ export default async function Page({
                       {item.kitchenStatus==="PENDING"&&<form action={setKitchenItemStatus}>
                         <input type="hidden" name="itemId" value={item.id}/>
                         <input type="hidden" name="status" value="PREPARING"/>
-                        <button className="start">Iniciar</button>
+                        <AdminSubmitButton className="start" label="Iniciar" pendingLabel="Iniciando..."/>
                       </form>}
                       {item.kitchenStatus==="PREPARING"&&<>
                         <form action={setKitchenItemStatus}>
                           <input type="hidden" name="itemId" value={item.id}/>
                           <input type="hidden" name="status" value="READY"/>
-                          <button className="ready">Pronto</button>
+                          <AdminSubmitButton className="ready" label="Pronto" pendingLabel="Atualizando..."/>
                         </form>
                         <form action={setKitchenItemStatus}>
                           <input type="hidden" name="itemId" value={item.id}/>
@@ -237,7 +238,7 @@ export default async function Page({
                         <input type="hidden" name="itemId" value={item.id}/>
                         <input type="hidden" name="status" value="PREPARING"/>
                         <input type="hidden" name="note" value="Refação solicitada pela cozinha"/>
-                        <button className="rework">Refazer</button>
+                        <AdminSubmitButton className="rework" label="Refazer" pendingLabel="Reabrindo item..."/>
                       </form>}
                     </div>
                   </div>)}
@@ -259,7 +260,7 @@ export default async function Page({
                         <input type="hidden" name="id" value={order.id}/>
                         <input type="hidden" name="status" value="CANCELLED"/>
                         {order.status!=="NEW"&&<input name="cancelReason" required placeholder="Motivo do cancelamento"/>}
-                        <button className="danger">Cancelar</button>
+                        <AdminSubmitButton className="danger" label="Cancelar" pendingLabel="Cancelando..."/>
                       </form>
                     </div>
                   </div>
