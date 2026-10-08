@@ -108,7 +108,7 @@ export async function deleteManualBlock(formData:FormData){
   revalidatePath("/reservar");
 }
 
-export async function createMapBooking(formData:FormData){
+async function createMapBookingInternal(formData:FormData){
   await requireAdmin();
 
   const accommodationId=String(formData.get("accommodationId")||"");
@@ -189,6 +189,31 @@ export async function createMapBooking(formData:FormData){
   revalidatePath("/admin/pms");
   revalidatePath("/admin/hospedes");
   revalidatePath("/reservar");
+}
+
+export async function createMapBooking(formData:FormData):Promise<{ok:boolean;message?:string}>{
+  try{
+    await createMapBookingInternal(formData);
+    return {ok:true};
+  }catch(error){
+    const message=error instanceof Error?error.message:"Erro desconhecido";
+    console.error("[calendar:createMapBooking] failed",{
+      errorName:error instanceof Error?error.name:"Unknown",
+      message,
+      accommodationId:String(formData.get("accommodationId")||"").slice(0,80),
+      checkIn:String(formData.get("checkIn")||"").slice(0,10),
+      checkOut:String(formData.get("checkOut")||"").slice(0,10)
+    });
+    const known=[
+      "Data inválida.","A saída/fim deve ser posterior à entrada/início.",
+      "Dados da reserva inválidos.","E-mail inválido.",
+      "Hospedagem inativa ou inexistente.","Quantidade de hóspedes acima da capacidade.",
+      "Não foi possível atualizar todos os canais antes da reserva.",
+      "Não há tarifa vendável para o período.",
+      "O período conflita com reserva, canal, hold ou bloqueio manual."
+    ];
+    return {ok:false,message:known.includes(message)?message:"Erro interno ao salvar a reserva. Consulte os logs do servidor."};
+  }
 }
 
 export async function updateConfirmedBookingPlacement(formData:FormData){
