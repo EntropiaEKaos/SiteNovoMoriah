@@ -1,3 +1,4 @@
+import {ArrowLeft} from "lucide-react";
 import Link from "next/link";
 import {prisma} from "../../../../lib/prisma";
 import {requireAdmin} from "../../../../lib/admin-auth";
@@ -67,6 +68,7 @@ export default async function Page(){
   let accumulated=0;
 
   return <main className="cmvPage">
+    <nav className="adminPageBreadcrumb" aria-label="Caminho da página"><Link href="/admin/restaurante"><ArrowLeft size={16} aria-hidden="true"/> Voltar ao restaurante</Link><span aria-hidden="true">/</span><span>Inteligência financeira</span></nav>
     <section className="cmvHero">
       <div>
         <small>MORIAH FOOD / BI FINANCEIRO</small>
