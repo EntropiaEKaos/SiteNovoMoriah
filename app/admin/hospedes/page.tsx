@@ -1,3 +1,4 @@
+import {ArrowLeft} from "lucide-react";
 import Link from "next/link";
 import {prisma} from "../../../lib/prisma";
 import {requireAdmin} from "../../../lib/admin-auth";
@@ -66,6 +67,7 @@ export default async function GuestsPage({
   const positionByGuest=new Map(staffAssignments.map(item=>[item.guestId,item.position.name]));
 
   return <main className="adminPage">
+    <nav className="adminPageBreadcrumb" aria-label="Caminho da página"><Link href="/admin"><ArrowLeft size={16} aria-hidden="true"/> Voltar ao painel</Link><span aria-hidden="true">/</span><span>Hóspedes</span></nav>
     <section className="adminPageHero">
       <div>
         <small>MORIAH PMS / CRM 2.0</small>
