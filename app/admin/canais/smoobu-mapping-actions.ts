@@ -4,6 +4,7 @@ import {requireAdmin} from "../../../lib/admin-auth";
 import {getSmoobuApartments} from "../../../lib/smoobu-client";
 import {validateSmoobuMappings} from "../../../lib/smoobu-mapping";
 import {revalidatePath} from "next/cache";
+import {randomUUID} from "node:crypto";
 
 export async function saveSmoobuMapping(formData:FormData){
  await requireAdmin();
@@ -22,6 +23,7 @@ export async function saveSmoobuMapping(formData:FormData){
   const latest=await tx.smoobuAccommodationMapping.findMany({select:{smoobuApartmentId:true,accommodationId:true}});
   validateSmoobuMappings([...latest.filter(x=>x.smoobuApartmentId!==externalId),{smoobuApartmentId:externalId,accommodationId}],apartments.map(x=>x.id),rooms.map(x=>x.id));
   await tx.smoobuAccommodationMapping.upsert({where:{smoobuApartmentId:externalId},create:{smoobuApartmentId:externalId,accommodationId},update:{accommodationId}});
+  await tx.adminAuditLog.create({data:{action:"SMOOBU_MAPPING_SAVED",targetType:"SmoobuAccommodationMapping",targetId:String(externalId),details:{smoobuApartmentId:externalId,accommodationId,previousAccommodationId:latest.find(x=>x.smoobuApartmentId===externalId)?.accommodationId||null,operationId:randomUUID()}}});
  });
  revalidatePath("/admin/canais");
 }
