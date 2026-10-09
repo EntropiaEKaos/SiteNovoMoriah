@@ -12,7 +12,7 @@ export function parseSmoobuRates(payload:unknown,apartments:number[]):SmoobuDail
   const apartmentId=Number(id);
   if(!apartments.includes(apartmentId)||!dates||typeof dates!=="object"||Array.isArray(dates))throw new Error("Unidade de tarifa desconhecida.");
   for(const [date,raw] of Object.entries(dates)){
-   if(!datePattern.test(date)||Number.isNaN(Date.parse(date+"T00:00:00Z"))||!raw||typeof raw!=="object"||Array.isArray(raw))throw new Error("Data ou tarifa inválida.");
+   if(!datePattern.test(date)||Number.isNaN(Date.parse(date+"T00:00:00Z"))||new Date(date+"T00:00:00Z").toISOString().slice(0,10)!==date||!raw||typeof raw!=="object"||Array.isArray(raw))throw new Error("Data ou tarifa inválida.");
    const item=raw as Record<string,unknown>;
    const price=item.price;
    const priceCents=price===null?null:typeof price==="number"&&Number.isFinite(price)&&price>=0&&price<=1000000?Math.round(price*100):NaN;
