@@ -8207,3 +8207,23 @@ body:has(.externalCalendarWidget) .whatsappFloat{display:none!important}
 @media(max-width:650px){
   .onboardingGrid{grid-template-columns:1fr}
 }
+
+
+/* PMS Front Desk: independent responsive workspace and readable finance panels */
+.pmsWorkspaceGrid{display:grid;grid-template-columns:minmax(0,1fr);gap:22px;align-items:start}
+.pmsBookingList,.pmsBookingList>.adminListCard,.pmsBookingDetails,.pmsBookingDetails>*,.pmsWorkspaceGrid>aside{min-width:0}
+.pmsBookingDetails{display:grid;grid-template-columns:minmax(260px,.75fr) minmax(0,1.25fr);gap:20px;align-items:start}
+.pmsBookingDetails .adminStatusLine{gap:12px}
+.pmsBookingDetails .adminStatusLine span{font-size:12px;overflow-wrap:normal;word-break:normal;min-width:0}
+.pmsBookingDetails .adminStatusLine b{font-size:12px;letter-spacing:0;white-space:nowrap;text-align:right}
+.pmsBookingDetails .adminInlineActions{flex-wrap:wrap}
+.pmsBookingDetails .checkInFinanceForm{min-width:0;max-width:100%}
+.pmsBookingDetails .checkInFinanceHead{flex-wrap:wrap;gap:12px}
+.pmsBookingDetails .checkInFinanceHead>div:first-child{flex:1 1 230px;min-width:0}
+.pmsBookingDetails .checkInFinanceTotal{flex:0 1 auto;min-width:170px;max-width:100%}
+.pmsBookingDetails .checkInSummary{grid-template-columns:repeat(2,minmax(0,1fr))}
+.pmsBookingDetails .checkInSummary>div{min-width:0}
+.pmsBookingDetails .checkInSummary b{overflow-wrap:anywhere}
+.pmsWorkspaceGrid>aside{width:100%}
+@media(max-width:1100px){.pmsBookingDetails{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:640px){.pmsBookingDetails{gap:14px}.pmsBookingDetails .checkInFinanceForm{padding:12px}.pmsBookingDetails .checkInFinanceTotal{width:100%;text-align:left}.pmsBookingDetails .checkInSummary{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.pmsBookingDetails .adminStatusLine{flex-wrap:wrap}.pmsBookingDetails .adminStatusLine b{margin-left:auto}}
