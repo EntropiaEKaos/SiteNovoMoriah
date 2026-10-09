@@ -69,6 +69,8 @@ export default function AdminCalendar({events,rooms}:{events:Event[];rooms:Room[
   const [search,setSearch]=useState("");
   const [compact,setCompact]=useState(false);
   const [selected,setSelected]=useState<Event|null>(null);
+  const [quickError,setQuickError]=useState("");
+  const [quickBusy,setQuickBusy]=useState(false);
   const [draft,setDraft]=useState<Draft>(null);
   const [bookingError,setBookingError]=useState("");
   const [bookingSaving,setBookingSaving]=useState(false);
@@ -125,6 +127,20 @@ export default function AdminCalendar({events,rooms}:{events:Event[];rooms:Room[
       manual:visibleEvents.filter(event=>event.kind==="MANUAL").length
     };
   },[visibleEvents,visibleRooms.length,days,rangeStart,rangeEnd]);
+
+  async function quickAction(action:"CHECK_OUT"|"NO_SHOW"|"CANCELLED"){
+    if(!selected||selected.kind!=="BOOKING"||quickBusy)return;
+    const label=action==="CHECK_OUT"?"realizar o check-out":action==="NO_SHOW"?"registrar no-show":"cancelar a reserva";
+    if(!window.confirm("Deseja "+label+" de "+(selected.guest||selected.title)+"?"))return;
+    setQuickError("");setQuickBusy(true);
+    const form=new FormData();form.set("id",selected.entityId);
+    try{
+      if(action==="CANCELLED"){form.set("status","CANCELLED");await calendarBookingStatus(form);}
+      else{form.set("action",action);await calendarPmsAction(form);}
+      setSelected(null);router.refresh();
+    }catch(error){setQuickError(error instanceof Error?error.message:"Não foi possível concluir a ação.");}
+    finally{setQuickBusy(false);}
+  }
 
   function move(direction:number){
     setSelected(null);setDraft(null);
@@ -316,9 +332,11 @@ export default function AdminCalendar({events,rooms}:{events:Event[];rooms:Room[
       {selected.kind==="BOOKING"&&<div className="calendarQuickCommands">
         <Link className="highlight" href={"/admin/reservas/"+selected.entityId}>Abrir ficha completa →</Link>
         {selected.status==="CONFIRMED"&&<Link href={"/admin/reservas/"+selected.entityId}>Preparar check-in</Link>}
-        {selected.status==="CONFIRMED"&&<form action={calendarPmsAction}><input type="hidden" name="id" value={selected.entityId}/><input type="hidden" name="action" value="NO_SHOW"/><button>No-show</button></form>}
-        {selected.status==="CHECKED_IN"&&<form action={calendarPmsAction}><input type="hidden" name="id" value={selected.entityId}/><input type="hidden" name="action" value="CHECK_OUT"/><button className="highlight">Check-out</button></form>}
-        {selected.status==="CONFIRMED"&&<form action={calendarBookingStatus}><input type="hidden" name="id" value={selected.entityId}/><input type="hidden" name="status" value="CANCELLED"/><button className="danger">Cancelar reserva</button></form>}
+        {selected.status==="CONFIRMED"&&<button type="button" disabled={quickBusy} onClick={()=>void quickAction("NO_SHOW")}>No-show</button>}
+        {selected.status==="CHECKED_IN"&&<button type="button" className="highlight" disabled={quickBusy} onClick={()=>void quickAction("CHECK_OUT")}>Check-out</button>}
+        {selected.status==="CONFIRMED"&&<button type="button" className="danger" disabled={quickBusy} onClick={()=>void quickAction("CANCELLED")}>Cancelar reserva</button>}
+        {quickBusy&&<span role="status">Salvando alteração…</span>}
+        {quickError&&<div className="adminPageNote" role="alert">{quickError}</div>}
       </div>}
 
       {selected.kind==="BOOKING"&&selected.status==="CONFIRMED"&&<form action={updateConfirmedBookingPlacement} className="adminFormGrid cols3 calendarMoveForm">
@@ -379,7 +397,7 @@ export default function AdminCalendar({events,rooms}:{events:Event[];rooms:Room[
               title={draggable?"Arraste para mover • clique para comandos":event.title}
               onDragStart={()=>{if(draggable){setDragging(event);setSelected(null);setDraft(null);}}}
               onDragEnd={()=>{setDragging(null);setDropKey("");}}
-              onClick={()=>{setDraft(null);setSelected(event);}}
+              onClick={()=>{setDraft(null);setQuickError("");setSelected(event);}}
             >
               <b>{event.guest||event.title}</b><small>{event.kind==="BOOKING"?event.status:event.source}</small>
             </button>;
