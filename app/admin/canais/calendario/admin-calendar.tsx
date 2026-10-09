@@ -68,6 +68,7 @@ export default function AdminCalendar({events,rooms}:{events:Event[];rooms:Room[
   const [roomFilter,setRoomFilter]=useState("");
   const [search,setSearch]=useState("");
   const [compact,setCompact]=useState(false);
+  const [onlyFree,setOnlyFree]=useState(false);
   const [selected,setSelected]=useState<Event|null>(null);
   const [quickError,setQuickError]=useState("");
   const [quickBusy,setQuickBusy]=useState(false);
@@ -94,8 +95,8 @@ export default function AdminCalendar({events,rooms}:{events:Event[];rooms:Room[
   const q=search.trim().toLowerCase();
 
   const visibleRooms=useMemo(
-    ()=>rooms.filter(room=>!roomFilter||room.id===roomFilter),
-    [rooms,roomFilter]
+    ()=>rooms.filter(room=>(!roomFilter||room.id===roomFilter)&&(!onlyFree||!events.some(event=>event.roomId===room.id&&new Date(event.start)<rangeEnd&&new Date(event.end)>rangeStart))),
+    [rooms,roomFilter,onlyFree,events,rangeStart,rangeEnd]
   );
 
   const visibleEvents=useMemo(
@@ -258,6 +259,7 @@ export default function AdminCalendar({events,rooms}:{events:Event[];rooms:Room[
         <option value="">Todas as hospedagens</option>
         {rooms.map(room=><option key={room.id} value={room.id}>{room.roomNumber?room.roomNumber+" • ":""}{room.name}</option>)}
       </select>
+      <button type="button" aria-pressed={onlyFree} onClick={()=>{setOnlyFree(value=>!value);setSelected(null);setDraft(null);}}>{onlyFree?"Mostrar ocupados":"Somente quartos livres"}</button>
       <button type="button" aria-pressed={compact} onClick={()=>setCompact(value=>!value)} title="Alternar densidade do calendário">{compact?"Espaçamento normal":"Visão compacta"}</button>
       <input className="reservationMapSearch" value={search} onChange={event=>setSearch(event.target.value)} placeholder="Buscar hóspede..."/>
     </div>
