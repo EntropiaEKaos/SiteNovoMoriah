@@ -10,8 +10,9 @@ import WidgetEmbedCode from "./widget-embed-code";
 
 export const dynamic="force-dynamic";
 
-export default async function Page(){
+export default async function Page({searchParams}:{searchParams:Promise<{focus?:string}>}){
   await requireAdmin();
+  const focused=(await searchParams).focus==="1";
 
   const now=new Date();
   const from=new Date(now);
@@ -126,8 +127,8 @@ export default async function Page(){
     }))
   ];
 
-  return <main className="adminPage reservationMapPage">
-    <section className="adminPageHero">
+  return <main className={"adminPage reservationMapPage"+(focused?" calendarFocusPage":"")}>
+    {!focused&&<section className="adminPageHero">
       <div>
         <small>MORIAH PMS / INVENTÁRIO</small>
         <h1>Mapa de Reservas</h1>
@@ -137,9 +138,18 @@ export default async function Page(){
         <a className="adminSecondaryAction" href="/admin/reservas">Reservas →</a>
         <a className="adminSecondaryAction" href="/admin/pms">PMS →</a>
       </div>
-    </section>
+    </section>}
 
-    <section className="calendarWidgetAdmin">
+    <div className="calendarFocusToolbar">
+      <div><small>MORIAH • CENTRAL DE RESERVAS</small><h2>{focused?"Calendário em tela cheia":"Calendário de ocupação"}</h2></div>
+      <div className="adminInlineActions">
+        <a className="adminSecondaryAction" href={focused?"/admin/canais/calendario":"/admin/canais/calendario?focus=1"}>{focused?"← Voltar ao painel":"⛶ Abrir somente calendário"}</a>
+        {!focused&&<a className="adminSecondaryAction" href="#calendar-widget-settings">Personalizar widget ↓</a>}
+      </div>
+    </div>
+
+    {!focused&&<details className="calendarWidgetAdmin" id="calendar-widget-settings"> 
+      <summary className="calendarSettingsSummary">⚙ Personalizar calendário público e widget incorporável</summary>
       <article className="adminSectionCard">
         <div className="adminListCardHead">
           <div><small>CALENDÁRIO EXTERNO</small><h2>Widget incorporável</h2><p>Leve a disponibilidade para outro site com iframe, sem expor o painel administrativo.</p></div>
@@ -159,7 +169,7 @@ export default async function Page(){
         {widget?<WidgetEmbedCode token={widget.publicToken}/>:<div className="adminPageNote">Salve as configurações uma vez para gerar o token e o código do widget.</div>}
         {widget&&<form action={rotateCalendarWidgetToken} style={{marginTop:10}}><button className="danger">Trocar token do widget</button></form>}
       </article>
-    </section>
+    </details>}
 
     <AdminCalendar
       events={events}
