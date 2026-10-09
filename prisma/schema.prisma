@@ -1237,3 +1237,20 @@ model SmoobuReservationInbox {
   @@index([reviewStatus, lastSeenAt])
   @@index([apartmentId])
 }
+
+/** Verified manual OTA room identifiers; no automatic OTA rate API access implied. */
+model OtaRoomLink {
+  id String @id @default(cuid())
+  provider String
+  externalRoomId String
+  externalRoomName String?
+  accommodationId String
+  proposedPriceCents Int?
+  currency String @default("BRL")
+  priceSource String @default("MANUAL")
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+  @@unique([provider, externalRoomId])
+  @@unique([provider, accommodationId])
+  @@index([accommodationId])
+}
