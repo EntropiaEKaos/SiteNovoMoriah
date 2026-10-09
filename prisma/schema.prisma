@@ -179,6 +179,7 @@ model Accommodation {
   createdAt           DateTime             @default(now())
   updatedAt           DateTime             @updatedAt
   bookingLeads        BookingLead[]
+  smoobuMapping SmoobuAccommodationMapping?
   channelIntegrations ChannelIntegration[]
   ratePlans           RatePlan[]
   rateRules           RateRule[]
@@ -1209,4 +1210,13 @@ model RouletteSpin {
 
   @@index([prizeId, createdAt])
   @@index([redeemedAt, createdAt])
+}
+
+model SmoobuAccommodationMapping {
+  id String @id @default(cuid())
+  smoobuApartmentId Int @unique
+  accommodationId String @unique
+  accommodation Accommodation @relation(fields: [accommodationId], references: [id], onDelete: Restrict)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
