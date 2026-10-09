@@ -2,6 +2,7 @@ import {prisma} from "./prisma";
 import {isAccommodationAvailable} from "./inventory-engine";
 import {getChannelAdapter,resolveAdapterKind} from "./channel-adapter-registry";
 import {queueSystemNotification} from "./system-notifications";
+import {validateChannelSnapshot} from "./channel-sync-safety";
 
 export async function syncChannelIntegration(id:string){
  const row=await prisma.channelIntegration.findUnique({where:{id}});
@@ -12,10 +13,12 @@ export async function syncChannelIntegration(id:string){
   const adapter=getChannelAdapter(kind);
   const result=await adapter.sync({integrationId:id,accommodationId:row.accommodationId,provider:row.provider});
   if(result.notModified){await prisma.channelIntegration.update({where:{id},data:{lastSyncAt:result.syncedAt,lastSuccessAt:result.syncedAt,syncStatus:"HEALTHY",lastError:null,etag:result.etag,lastModified:result.lastModified,consecutiveFailures:0,nextSyncAt:new Date(Date.now()+10*60_000),syncDurationMs:Date.now()-started}});return 0;}
-  const seen=result.blocks.map(block=>block.externalUid);
+  validateChannelSnapshot(result.blocks);
+  // Deletion is deliberately disabled until cancellation and snapshot-order certification.
+  // Missing feed events must not silently release externally blocked inventory.
   await prisma.$transaction(async tx=>{
    for(const block of result.blocks)await tx.channelBlock.upsert({where:{integrationId_externalUid:{integrationId:id,externalUid:block.externalUid}},create:{integrationId:id,...block},update:{summary:block.summary||null,startsAt:block.startsAt,endsAt:block.endsAt}});
-   if(seen.length)await tx.channelBlock.deleteMany({where:{integrationId:id,externalUid:{notIn:seen}}});else await tx.channelBlock.deleteMany({where:{integrationId:id}});
+   // No deleteMany here: missing UIDs are retained for manual reconciliation.
    await tx.channelIntegration.update({where:{id},data:{lastSyncAt:result.syncedAt,lastSuccessAt:result.syncedAt,syncStatus:"HEALTHY",lastError:null,etag:result.etag,lastModified:result.lastModified,consecutiveFailures:0,nextSyncAt:new Date(Date.now()+10*60_000),syncDurationMs:Date.now()-started}});
   });
   return result.blocks.length;
