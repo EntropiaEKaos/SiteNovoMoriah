@@ -4,7 +4,7 @@ import {validateChannelSnapshot} from "../lib/channel-sync-safety.ts";
 
 const start=new Date("2026-10-31T12:00:00.000Z");
 const end=new Date("2026-11-02T12:00:00.000Z");
-const block=(externalUid:string)=>({externalUid,startsAt:start,endsAt:end});
+const block=(externalUid)=>({externalUid,startsAt:start,endsAt:end});
 
 test("one external UID is accepted exactly once",()=>{
  assert.deepEqual(validateChannelSnapshot([block("booking-123")]),["booking-123"]);
