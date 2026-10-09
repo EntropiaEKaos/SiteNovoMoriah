@@ -74,6 +74,7 @@ export default function AdminCalendar({events,rooms}:{events:Event[];rooms:Room[
   const [draftMode,setDraftMode]=useState<"BOOKING"|"BLOCK">("BOOKING");
   const [dragging,setDragging]=useState<Event|null>(null);
   const [dropKey,setDropKey]=useState("");
+  const [moveError,setMoveError]=useState("");
 
   const days=useMemo(()=>{
     if(view==="MONTH"){
@@ -174,12 +175,19 @@ export default function AdminCalendar({events,rooms}:{events:Event[];rooms:Room[
     form.set("accommodationId",roomId);
     form.set("checkIn",checkIn);
     form.set("checkOut",checkOut);
+    setMoveError("");
     startTransition(async()=>{
-      await updateConfirmedBookingPlacement(form);
-      setDragging(null);
-      setDropKey("");
-      setSelected(null);
-      router.refresh();
+      try{
+        await updateConfirmedBookingPlacement(form);
+        setSelected(null);
+        router.refresh();
+      }catch(error){
+        setMoveError(error instanceof Error&&error.message&&!/digest/i.test(error.message)
+          ?error.message:"Não foi possível mover a reserva. Confira a disponibilidade e tente novamente.");
+      }finally{
+        setDragging(null);
+        setDropKey("");
+      }
     });
   }
 
@@ -207,13 +215,14 @@ export default function AdminCalendar({events,rooms}:{events:Event[];rooms:Room[
   }
 
   const gridTemplate="190px repeat("+days.length+", minmax(44px,1fr))";
+  const dateLabel=(date:Date)=>date.toLocaleDateString("pt-BR",{weekday:"long",day:"2-digit",month:"long",year:"numeric",timeZone:"UTC"});
 
   return <section className={"reservationMap reservationMap50"+(isPending?" isSaving":"")}>
     <div className="reservationMapToolbar">
-      <div className="reservationMapNav">
-        <button type="button" onClick={()=>move(-1)}>←</button>
+      <div className="reservationMapNav" aria-label="Navegação do calendário">
+        <button type="button" onClick={()=>move(-1)} aria-label="Período anterior" title="Período anterior">←</button>
         <button type="button" onClick={()=>setCursor(view==="MONTH"?new Date(Date.UTC(today.getUTCFullYear(),today.getUTCMonth(),1)):today)}>Hoje</button>
-        <button type="button" onClick={()=>move(1)}>→</button>
+        <button type="button" onClick={()=>move(1)} aria-label="Próximo período" title="Próximo período">→</button>
       </div>
 
       <div className="reservationMapRange">
@@ -226,11 +235,11 @@ export default function AdminCalendar({events,rooms}:{events:Event[];rooms:Room[
         {(["7","15","30","MONTH"] as ViewMode[]).map(mode=><button type="button" key={mode} className={view===mode?"isActive":""} onClick={()=>setMode(mode)}>{mode==="MONTH"?"Mês":mode+"d"}</button>)}
       </div>
 
-      <select value={roomFilter} onChange={event=>setRoomFilter(event.target.value)}>
+      <select aria-label="Filtrar hospedagem" value={roomFilter} onChange={event=>setRoomFilter(event.target.value)}>
         <option value="">Todas as hospedagens</option>
         {rooms.map(room=><option key={room.id} value={room.id}>{room.roomNumber?room.roomNumber+" • ":""}{room.name}</option>)}
       </select>
-      <input className="reservationMapSearch" value={search} onChange={event=>setSearch(event.target.value)} placeholder="Buscar hóspede..."/>
+      <input aria-label="Buscar reserva ou hóspede" className="reservationMapSearch" value={search} onChange={event=>setSearch(event.target.value)} placeholder="Buscar hóspede..."/>
     </div>
 
     <div className="calendarDirectCommandBar">
@@ -258,7 +267,8 @@ export default function AdminCalendar({events,rooms}:{events:Event[];rooms:Room[
       <span className="reservationMapHint">Clique para criar • arraste reserva confirmada para mover.</span>
     </div>
 
-    <div className="reservationMapScroll">
+    {moveError&&<div className="adminPageNote" role="alert" aria-live="assertive">{moveError} <button type="button" onClick={()=>setMoveError("")}>Dispensar</button></div>}
+    <div className="reservationMapScroll" role="region" aria-label="Mapa de reservas por hospedagem e data" tabIndex={0}>
       <div className="reservationMapHeader" style={{gridTemplateColumns:gridTemplate}}>
         <div className="reservationMapRoomHeader">HOSPEDAGEM</div>
         {days.map(day=><div className={"reservationMapDayHead"+(dayKey(day)===dayKey(today)?" isToday":"")} key={dayKey(day)}>
@@ -285,6 +295,8 @@ export default function AdminCalendar({events,rooms}:{events:Event[];rooms:Room[
                 (dropKey===keyValue?" isDropHover":"")
               }
               aria-disabled={isOccupied}
+              aria-label={`${room.name}, ${dateLabel(day)}: ${isOccupied?"ocupado":"livre; criar "+(draftMode==="BOOKING"?"reserva":"bloqueio")}`}
+              title={`${room.name} • ${dateLabel(day)} • ${isOccupied?"Ocupado":"Disponível"}`}
               onClick={()=>{if(!isOccupied)startDraft(room.id,day);}}
               onDragOver={event=>{if(dropAllowed){event.preventDefault();setDropKey(keyValue);}}}
               onDragLeave={()=>{if(dropKey===keyValue)setDropKey("");}}
@@ -303,7 +315,9 @@ export default function AdminCalendar({events,rooms}:{events:Event[];rooms:Room[
               key={event.id}
               className={"reservationMapEvent "+eventClass(event)+(draggable?" isDraggable":"")}
               style={{gridColumn:(start+2)+" / "+(end+2),gridRow:String(index%2+1)}}
-              title={draggable?"Arraste para mover • clique para comandos":event.title}
+              title={`${event.guest||event.title} • ${event.room} • ${new Date(event.start).toLocaleDateString("pt-BR",{timeZone:"UTC"})} a ${new Date(event.end).toLocaleDateString("pt-BR",{timeZone:"UTC"})}`}
+              aria-label={`Abrir ${event.guest||event.title}, ${event.room}, ${event.status}`}
+              aria-haspopup="dialog"
               onDragStart={()=>{if(draggable){setDragging(event);setSelected(null);setDraft(null);}}}
               onDragEnd={()=>{setDragging(null);setDropKey("");}}
               onClick={()=>{setDraft(null);setSelected(event);}}
