@@ -44,6 +44,26 @@ export default async function Page(){
       </div>
     </section>
 
+    <section className="adminSectionCard" style={{marginBottom:20}}>
+      <h2>SiteMinder — escolha como conectar</h2>
+      <p>A Booking.com da Moriah (ID 15089254) informa uma conexão SiteMinder — RDX ativa. Nenhuma das opções abaixo modifica essa conexão automaticamente.</p>
+      <div className="adminTwoCol" style={{marginTop:16}}>
+        <article className="adminPageNote">
+          <h3>1. Recuperar conexão existente</h3>
+          <p>Para propriedades que já usam SiteMinder, mas perderam o acesso. Solicite recuperação ou transferência da administração da conta e preserve o vínculo atual da Booking.</p>
+          <p><strong>Estado: aguardando recuperação de acesso.</strong></p>
+          <a className="adminSecondaryAction" href="https://www.siteminder.com/pt/contacto/" target="_blank" rel="noopener noreferrer">Recuperar acesso / suporte ↗</a>
+        </article>
+        <article className="adminPageNote">
+          <h3>2. Configurar uma conta nova</h3>
+          <p>Para quem contratar uma nova conta SiteMinder. Antes de trocar o provedor da Booking, valide titularidade, autorização técnica e migração de reservas, quartos e tarifas.</p>
+          <p><strong>Estado: aguardando conta e credenciais autorizadas.</strong></p>
+          <a className="adminSecondaryAction" href="https://www.siteminder.com/" target="_blank" rel="noopener noreferrer">Conhecer SiteMinder ↗</a>
+        </article>
+      </div>
+      <p style={{marginTop:16}}>Integração API ainda não habilitada: ambos os caminhos exigem documentação oficial, mapeamento de quartos/camas e testes de sincronização antes de qualquer ativação. O iCal existente continua independente.</p>
+    </section>
+
     <section className="adminMetricStrip">
       <div><small>Conexões</small><strong>{rows.length}</strong></div>
       <div><small>Ativas</small><strong>{active}</strong></div>
