@@ -131,8 +131,8 @@ export default async function PMS(){
       </div>
     </section>
 
-    <section className="adminTwoCol">
-      <div className="adminStack">
+    <section className="pmsWorkspaceGrid">
+      <div className="adminStack pmsBookingList">
         {bookings.length===0?<div className="adminEmptyState">
           <strong>Nenhuma movimentação nas próximas duas semanas.</strong>
           <p>Reservas confirmadas e hóspedes na casa aparecerão aqui.</p>
@@ -167,7 +167,7 @@ export default async function PMS(){
               {openRestaurant&&<span className="adminChip warn">Consumo em aberto</span>}
             </div>
 
-            <div className="adminTwoCol" style={{marginTop:16}}>
+            <div className="pmsBookingDetails" style={{marginTop:16}}>
               <div className="adminSectionCard" style={{padding:16}}>
                 <div className="adminStatusLine"><span>Hospedagem</span><b>{money(lodgingTotal)}</b></div>
                 <div className="adminStatusLine"><span>Adicionais</span><b>{money(extras)}</b></div>
