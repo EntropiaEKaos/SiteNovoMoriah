@@ -74,3 +74,30 @@
 .adminRevamp .adminTodayCard span{font-size:11px;color:#74808d;line-height:1.5}
 @media(max-width:1250px){.adminRevamp .adminTodayGrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:560px){.adminRevamp .adminTodayHeading{align-items:start;flex-direction:column}.adminRevamp .adminTodayGrid{gap:8px}.adminRevamp .adminTodayCard{padding:14px;min-height:138px}}
+
+/* Calendar 6.0: compact, accessible PMS workspace; no modal needed for direct actions */
+.adminRevamp .reservationMapPage{--calendar-line:#dfe6eb;--calendar-highlight:#f2b705}
+.adminRevamp .reservationMapToolbar{gap:10px;align-items:center;padding:14px;border:1px solid var(--calendar-line);border-radius:16px;background:#fff;box-shadow:0 8px 24px #1525360b}
+.adminRevamp .reservationMapToolbar button,.adminRevamp .reservationMapToolbar select,.adminRevamp .reservationMapToolbar input{border-radius:10px}
+.adminRevamp .calendarJumpToDate{white-space:nowrap;color:#475569;font-weight:700}
+.adminRevamp .calendarJumpToDate input{max-width:165px}
+.adminRevamp .reservationMapViews .isActive,.adminRevamp .calendarDirectCommandBar .isActive{background:#182838;color:#fff;border-color:#182838}
+.adminRevamp .calendarInlineEditor{margin:14px 0;border:1px solid #d5dee6;border-left:4px solid #dca900;border-radius:16px;padding:18px;background:linear-gradient(125deg,#fff,#f8fafc);box-shadow:0 12px 28px #15253610}
+.adminRevamp .calendarInlineEditor .reservationDetailHead{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.adminRevamp .calendarInlineEditor .calendarQuickCommands{display:flex;gap:9px;flex-wrap:wrap;align-items:center}
+.adminRevamp .calendarInlineEditor .calendarQuickCommands button:disabled{opacity:.55;cursor:wait}
+.adminRevamp .reservationMapScroll{border:1px solid var(--calendar-line);border-radius:14px;box-shadow:0 8px 26px #1525360a}
+.adminRevamp .reservationMapEvent{border-radius:9px;box-shadow:0 3px 8px #0d263a22;transition:filter .15s,box-shadow .15s}
+.adminRevamp .reservationMapEvent:hover{filter:brightness(1.04);box-shadow:0 5px 14px #0d263a30}
+.adminRevamp .reservationMapCellButton:focus-visible,.adminRevamp .reservationMapEvent:focus-visible{outline:3px solid #dca900;outline-offset:-2px}
+.adminRevamp .reservationMap.isCompact .reservationMapRoom{padding:6px 8px}
+.adminRevamp .reservationMap.isCompact .reservationMapDayHead{padding:6px 2px}
+.adminRevamp .reservationMap.isCompact .reservationMapEvent{font-size:11px;padding:4px}
+@media(max-width:760px){
+ .adminRevamp .reservationMapToolbar{padding:10px;gap:8px}
+ .adminRevamp .calendarJumpToDate{width:100%;justify-content:space-between}
+ .adminRevamp .calendarInlineEditor{padding:12px}
+ .adminRevamp .calendarInlineEditor .reservationDetailHead{flex-wrap:wrap}
+ .adminRevamp .calendarInlineEditor .calendarQuickCommands button,.adminRevamp .calendarInlineEditor .calendarQuickCommands a{min-height:42px}
+}
+@media(prefers-reduced-motion:reduce){.adminRevamp .reservationMapEvent{transition:none}}
