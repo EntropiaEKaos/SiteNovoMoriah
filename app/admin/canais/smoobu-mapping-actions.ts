@@ -13,9 +13,12 @@ export async function saveSmoobuMapping(formData:FormData){
  if(!Number.isSafeInteger(externalId)||externalId<=0||!accommodationId)throw new Error("Selecione uma unidade Smoobu e uma acomodação PMS.");
  const [apartments,rooms,current]=await Promise.all([
   getSmoobuApartments(),
-  prisma.accommodation.findMany({where:{active:true},select:{id:true}}),
+  prisma.accommodation.findMany({where:{active:true},select:{id:true,sharedRoom:true,bedCount:true,capacity:true}}),
   prisma.smoobuAccommodationMapping.findMany({select:{smoobuApartmentId:true,accommodationId:true}})
  ]);
+ const selectedRoom=rooms.find(x=>x.id===accommodationId);
+ if(!selectedRoom)throw new Error("Quarto PMS não encontrado ou inativo.");
+ if(selectedRoom.sharedRoom&&formData.get("confirmSharedRoom")!=="yes")throw new Error("Confirme explicitamente o vínculo de quarto compartilhado. Uma unidade Smoobu pode representar o quarto inteiro, não cada cama.");
  const desired=[...current.filter(x=>x.smoobuApartmentId!==externalId),{smoobuApartmentId:externalId,accommodationId}];
  validateSmoobuMappings(desired,apartments.map(x=>x.id),rooms.map(x=>x.id));
  await prisma.$transaction(async tx=>{
