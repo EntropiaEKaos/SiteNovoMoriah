@@ -3,7 +3,7 @@ import {requireAdmin} from "../../../lib/admin-auth";
 import {createChannelIntegration,toggleChannelIntegration,deleteChannelIntegration,syncChannelNow} from "../actions";
 import {listChannelAdapterCapabilities} from "../../../lib/channel-adapter-registry";
 import CalendarExportActions from "./calendar-export-actions";
-import {smoobuConfigured,getSmoobuApartments} from "../../../lib/smoobu-client";
+import {smoobuConfigured,getSmoobuApartments,getSmoobuReservationOverview} from "../../../lib/smoobu-client";
 
 export const dynamic="force-dynamic";
 
@@ -34,6 +34,8 @@ export default async function Page(){
   const adapters=listChannelAdapterCapabilities();
   const smoobuReady=smoobuConfigured();
   const smoobuResult=smoobuReady?await getSmoobuApartments().then(apartments=>({apartments,error:null as string|null})).catch(()=>({apartments:[] as {id:number;name:string}[],error:"Não foi possível validar a conexão. Confira as credenciais HMAC e a autorização da API."})):null;
+
+  const smoobuReservations=smoobuReady?await getSmoobuReservationOverview().then(data=>({data,error:null as string|null})).catch(()=>({data:null,error:"Consulta de reservas indisponível. Confira autenticação e permissões da Smoobu."})):null;
 
   return <main className="adminPage">
     <section className="adminPageHero">
@@ -93,6 +95,9 @@ export default async function Page(){
         <summary style={{cursor:"pointer",fontWeight:700}}>Acomodações retornadas ({smoobuResult.apartments.length})</summary>
         <div className="adminStack">{smoobuResult.apartments.map(item=><div className="adminStatusLine" key={item.id}><span>{item.name}</span><b className="adminChip">ID {item.id}</b></div>)}</div>
       </details>}
+      <div className="adminStatusLine"><span>Reservas Smoobu (somente leitura)</span><b className={"adminChip "+(smoobuReservations?.data?"ok":"warn")}>{smoobuReservations?.data?"API RESPONDEU":"PENDENTE"}</b></div>
+      {smoobuReservations?.data&&<p>Reservas informadas pela Smoobu: <strong>{smoobuReservations.data.total}</strong>. Página {smoobuReservations.data.page} de {smoobuReservations.data.pageCount}. Prévia de {smoobuReservations.data.byApartment.length} unidade(s) nesta página, sem dados pessoais dos hóspedes.</p>}
+      {smoobuReservations?.error&&<p>{smoobuReservations.error}</p>}
       <p style={{marginTop:12}}>Configuração: SMOOBU_API_KEY e SMOOBU_API_SECRET no ambiente da Vercel. Nenhum segredo é exibido no painel. Esta fase não importa reservas nem altera tarifas ou disponibilidade.</p>
       <a className="adminSecondaryAction" href="https://support.smoobu.com/hc/en-us/articles/360003170740-Use-the-Smoobu-API-get-an-API-key-set-up-webhooks-and-sign-your-requests" target="_blank" rel="noopener noreferrer">Como obter as credenciais ↗</a>
     </section>
