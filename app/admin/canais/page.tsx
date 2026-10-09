@@ -80,8 +80,9 @@ export default async function Page(){
     </section>
 
     <section className="adminSectionCard" style={{marginBottom:20}}>
-      <h2>Smoobu — integração por API</h2>
-      <p>Conexão de leitura com autenticação HMAC-SHA256. O acesso exige uma conta Smoobu com API habilitada e duas variáveis de ambiente configuradas no servidor.</p>
+      <div className="adminListCardHead"><div><small>CHANNEL MANAGER · API OFICIAL</small><h2>Smoobu — central de integração</h2><p>Diagnóstico de conexão, acomodações e pré-mapeamento do inventário.</p></div><span className={"adminChip "+(smoobuResult&&!smoobuResult.error?"ok":"warn")}>{smoobuResult&&!smoobuResult.error?"API ONLINE":"CONFIGURAÇÃO PENDENTE"}</span></div>
+      <p>Conexão autenticada HMAC-SHA256, exclusivamente de leitura nesta fase. As sugestões de correspondência não são vínculos confirmados e não modificam inventário.</p>
+      <div className="adminMetricStrip" style={{marginTop:16,marginBottom:18}}><div><small>Unidades Smoobu</small><strong>{smoobuResult?.apartments.length??"—"}</strong></div><div><small>Reservas externas</small><strong>{smoobuReservations?.data?.total??"—"}</strong></div><div><small>Quartos PMS</small><strong>{rooms.length}</strong></div><div><small>Vínculos confirmados</small><strong>0</strong></div></div>
       <div className="adminStatusLine">
         <span>Credenciais de API</span>
         <b className={"adminChip "+(smoobuReady?"ok":"warn")}>{smoobuReady?"CONFIGURADAS":"PENDENTES"}</b>
