@@ -3,6 +3,7 @@ import {requireAdmin} from "../../../lib/admin-auth";
 import {createChannelIntegration,toggleChannelIntegration,deleteChannelIntegration,syncChannelNow} from "../actions";
 import {listChannelAdapterCapabilities} from "../../../lib/channel-adapter-registry";
 import CalendarExportActions from "./calendar-export-actions";
+import {saveSmoobuMapping} from "./smoobu-mapping-actions";
 import {smoobuConfigured,getSmoobuApartments,getSmoobuReservationOverview} from "../../../lib/smoobu-client";
 
 export const dynamic="force-dynamic";
@@ -29,6 +30,7 @@ export default async function Page(){
     prisma.channelBlock.count()
   ]);
 
+  const smoobuMappings=await prisma.smoobuAccommodationMapping.findMany({select:{smoobuApartmentId:true,accommodationId:true}});
   const active=rows.filter(x=>x.active).length;
   const errors=rows.filter(x=>x.lastError).length;
   const adapters=listChannelAdapterCapabilities();
@@ -82,7 +84,7 @@ export default async function Page(){
     <section className="adminSectionCard" style={{marginBottom:20}}>
       <div className="adminListCardHead"><div><small>CHANNEL MANAGER · API OFICIAL</small><h2>Smoobu — central de integração</h2><p>Diagnóstico de conexão, acomodações e pré-mapeamento do inventário.</p></div><span className={"adminChip "+(smoobuResult&&!smoobuResult.error?"ok":"warn")}>{smoobuResult&&!smoobuResult.error?"API ONLINE":"CONFIGURAÇÃO PENDENTE"}</span></div>
       <p>Conexão autenticada HMAC-SHA256, exclusivamente de leitura nesta fase. As sugestões de correspondência não são vínculos confirmados e não modificam inventário.</p>
-      <div className="adminMetricStrip" style={{marginTop:16,marginBottom:18}}><div><small>Unidades Smoobu</small><strong>{smoobuResult?.apartments.length??"—"}</strong></div><div><small>Reservas externas</small><strong>{smoobuReservations?.data?.total??"—"}</strong></div><div><small>Quartos PMS</small><strong>{rooms.length}</strong></div><div><small>Vínculos confirmados</small><strong>0</strong></div></div>
+      <div className="adminMetricStrip" style={{marginTop:16,marginBottom:18}}><div><small>Unidades Smoobu</small><strong>{smoobuResult?.apartments.length??"—"}</strong></div><div><small>Reservas externas</small><strong>{smoobuReservations?.data?.total??"—"}</strong></div><div><small>Quartos PMS</small><strong>{rooms.length}</strong></div><div><small>Vínculos confirmados</small><strong>{smoobuMappings.length}</strong></div></div>
       <div className="adminStatusLine">
         <span>Credenciais de API</span>
         <b className={"adminChip "+(smoobuReady?"ok":"warn")}>{smoobuReady?"CONFIGURADAS":"PENDENTES"}</b>
@@ -100,6 +102,7 @@ export default async function Page(){
       {smoobuReservations?.data&&<p>Reservas informadas pela Smoobu: <strong>{smoobuReservations.data.total}</strong>. Página {smoobuReservations.data.page} de {smoobuReservations.data.pageCount}. Prévia de {smoobuReservations.data.byApartment.length} unidade(s) nesta página, sem dados pessoais dos hóspedes.</p>}
       {smoobuReservations?.error&&<p>{smoobuReservations.error}</p>}
       {smoobuResult&&!smoobuResult.error&&<div className="adminPageNote" style={{marginTop:16}}><h3>Pré-mapeamento Smoobu ↔ PMS Moriah</h3><p>Confira os nomes antes de associar unidades. Este quadro é apenas uma sugestão visual: nenhuma associação ou reserva é gravada automaticamente.</p><div className="adminStack">{smoobuResult.apartments.map(item=>{const matches=rooms.filter(room=>room.name.trim().toLocaleLowerCase("pt-BR")===item.name.trim().toLocaleLowerCase("pt-BR"));return <div className="adminStatusLine" key={item.id}><span><strong>{item.name}</strong> (Smoobu #{item.id}) → {matches.length===1?matches[0].name:matches.length>1?"Múltiplas unidades com mesmo nome":"Sem correspondência exata"}</span><b className={"adminChip "+(matches.length===1?"ok":"warn")}>{matches.length===1?"SUGESTÃO":"REVISAR"}</b></div>})}</div><p>Antes de habilitar sincronização de inventário, valide manualmente quartos privativos, compartilhados e respectivas capacidades.</p></div>}
+      {smoobuResult&&!smoobuResult.error&&<div className="adminSectionCard" style={{marginTop:18}}><h3>Vincular unidades Smoobu ao PMS</h3><p>Confirme manualmente cada vínculo. Não importa reservas nem altera disponibilidade.</p><div className="adminStack">{smoobuResult.apartments.map(item=>{const mapping=smoobuMappings.find(x=>x.smoobuApartmentId===item.id);return <form action={saveSmoobuMapping} key={item.id} className="adminFormGrid"><input type="hidden" name="smoobuApartmentId" value={item.id}/><label><strong>{item.name}</strong> · ID {item.id}</label><label>Quarto correspondente<select name="accommodationId" required defaultValue={mapping?.accommodationId||""}><option value="">Selecione o quarto</option>{rooms.map(room=><option key={room.id} value={room.id}>{room.name}{room.sharedRoom?" · compartilhado ("+room.bedCount+" camas)":""}</option>)}</select></label><button type="submit">{mapping?"Atualizar vínculo":"Confirmar vínculo"}</button></form>})}</div></div>}
       <p style={{marginTop:12}}>Configuração: SMOOBU_API_KEY e SMOOBU_API_SECRET no ambiente da Vercel. Nenhum segredo é exibido no painel. Esta fase não importa reservas nem altera tarifas ou disponibilidade.</p>
       <a className="adminSecondaryAction" href="https://support.smoobu.com/hc/en-us/articles/360003170740-Use-the-Smoobu-API-get-an-API-key-set-up-webhooks-and-sign-your-requests" target="_blank" rel="noopener noreferrer">Como obter as credenciais ↗</a>
     </section>
