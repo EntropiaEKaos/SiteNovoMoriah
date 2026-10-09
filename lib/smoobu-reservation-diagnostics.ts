@@ -11,7 +11,7 @@ export function diagnoseSmoobuReservations(rows:ReadonlyArray<SmoobuReservationP
   seen.add(reservation.externalId);
   const accommodationId=reservation.apartmentId===null?null:ids.get(reservation.apartmentId)||null;
   if(!accommodationId)issues.push("Unidade ainda não vinculada ao PMS");
-  if(!reservation.arrival||!reservation.departure||!/^\\d{4}-\\d{2}-\\d{2}$/.test(reservation.arrival)||!/^\\d{4}-\\d{2}-\\d{2}$/.test(reservation.departure)||!Number.isFinite(Date.parse(reservation.arrival+"T00:00:00Z"))||!Number.isFinite(Date.parse(reservation.departure+"T00:00:00Z"))||reservation.arrival>=reservation.departure)issues.push("Datas de hospedagem inválidas");
+  if(!reservation.arrival||!reservation.departure||!/^\d{4}-\d{2}-\d{2}$/.test(reservation.arrival)||!/^\d{4}-\d{2}-\d{2}$/.test(reservation.departure)||!Number.isFinite(Date.parse(reservation.arrival+"T00:00:00Z"))||!Number.isFinite(Date.parse(reservation.departure+"T00:00:00Z"))||reservation.arrival>=reservation.departure)issues.push("Datas de hospedagem inválidas");
   return {reservation,issues,mappedAccommodationId:accommodationId};
  });
 }
