@@ -1,0 +1,10 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+import {validateSmoobuMappings} from "../lib/smoobu-mapping.ts";
+const validApartments=[3547586,3547921];
+const validRooms=["room-a","room-b"];
+test("accepts one-to-one explicit mappings",()=>assert.equal(validateSmoobuMappings([{smoobuApartmentId:3547586,accommodationId:"room-a"},{smoobuApartmentId:3547921,accommodationId:"room-b"}],validApartments,validRooms),2));
+test("rejects unknown Smoobu unit",()=>assert.throws(()=>validateSmoobuMappings([{smoobuApartmentId:1,accommodationId:"room-a"}],validApartments,validRooms),/inexistente/));
+test("rejects unknown PMS room",()=>assert.throws(()=>validateSmoobuMappings([{smoobuApartmentId:3547586,accommodationId:"missing"}],validApartments,validRooms),/inexistente/));
+test("rejects duplicate Smoobu unit",()=>assert.throws(()=>validateSmoobuMappings([{smoobuApartmentId:3547586,accommodationId:"room-a"},{smoobuApartmentId:3547586,accommodationId:"room-b"}],validApartments,validRooms),/mais de uma vez/));
+test("rejects two Smoobu units mapped to the same PMS room",()=>assert.throws(()=>validateSmoobuMappings([{smoobuApartmentId:3547586,accommodationId:"room-a"},{smoobuApartmentId:3547921,accommodationId:"room-a"}],validApartments,validRooms),/múltiplas/));

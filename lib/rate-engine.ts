@@ -1,5 +1,6 @@
 import {prisma} from "./prisma";
 import {getOccupancyMetrics} from "./occupancy-engine";
+import {resolveSmoobuApprovedPrice} from "./smoobu-rate-policy";
 
 function nightsBetween(start:Date,end:Date){
   return Math.ceil((end.getTime()-start.getTime())/86400000);
@@ -80,6 +81,13 @@ export async function quoteAccommodation(
   if(nights<1||nights>365)throw new Error("Período fora do limite.");
 
   const units=Math.max(1,Math.floor(requestedUnits||1));
+  // Require an explicit deployment-level kill switch; never enabled by default.
+  const smoobuPricingEnabled=process.env.SMOOBU_APPROVED_RATES_IN_QUOTES==="true";
+  const approvedDailyRates=smoobuPricingEnabled?await prisma.smoobuDailyRateSnapshot.findMany({where:{accommodationId,reviewStatus:"APPROVED",date:{gte:checkIn.toISOString().slice(0,10),lt:checkOut.toISOString().slice(0,10)}}}):[];
+  // All-or-nothing coverage: do not mix external and internal daily rates for one stay.
+  const freshnessCutoff=Date.now()-24*60*60*1000;
+  const completeCoverage=approvedDailyRates.length===nights&&Array.from({length:nights},(_,i)=>{const day=new Date(checkIn);day.setUTCDate(day.getUTCDate()+i);return day.toISOString().slice(0,10);}).every(date=>approvedDailyRates.some(rate=>rate.date===date&&rate.currency==="BRL"&&rate.fetchedAt.getTime()>=freshnessCutoff&&rate.priceCents>=100&&(rate.minNights===null||rate.minNights<=nights)&&(rate.available===null||rate.available>=units)));
+  const approvedByDate=new Map((completeCoverage?approvedDailyRates:[]).map(rate=>[rate.date,rate]));
 
   const [room,plan,rules]=await Promise.all([
     prisma.accommodation.findFirst({
@@ -115,8 +123,8 @@ export async function quoteAccommodation(
 
   if(!plan){
     if(room.priceCents==null)return null;
-    const nightly=room.priceCents*multiplier;
-    const subtotal=nightly*nights;
+    const daily=Array.from({length:nights},(_,i)=>{const d=new Date(checkIn);d.setUTCDate(d.getUTCDate()+i);const date=d.toISOString().slice(0,10);return {date,priceCents:resolveSmoobuApprovedPrice(room.priceCents!,approvedByDate.get(date),nights,units)*multiplier};});
+    const subtotal=daily.reduce((sum,day)=>sum+day.priceCents,0);
     const promo=await promotions(accommodationId,checkIn,checkOut,nights,subtotal,coupon);
 
     return {
@@ -125,13 +133,11 @@ export async function quoteAccommodation(
       ...promo,
       averageNightCents:Math.round(promo.totalCents/nights),
       ratePlan:"Tarifa padrão",
-      breakdown:Array.from({length:nights},(_,i)=>{
-        const d=new Date(checkIn);
-        d.setUTCDate(d.getUTCDate()+i);
+      breakdown:daily.map(day=>{
         return {
-          date:d.toISOString().slice(0,10),
-          priceCents:nightly,
-          override:false
+          date:day.date,
+          priceCents:day.priceCents,
+          override:Boolean(approvedByDate.get(day.date)&&resolveSmoobuApprovedPrice(room.priceCents!,approvedByDate.get(day.date),nights,units)!==room.priceCents)
         };
       }),
       occupancyPct:null,
@@ -167,7 +173,7 @@ export async function quoteAccommodation(
     const override=plan.overrides.find(o=>o.startsAt<=day&&o.endsAt>day);
     if(override?.minNights&&nights<override.minNights)return null;
 
-    let unitPriceCents=override?.priceCents??plan.basePriceCents;
+    let unitPriceCents=override?.priceCents??resolveSmoobuApprovedPrice(plan.basePriceCents,approvedByDate.get(day.toISOString().slice(0,10)),nights,units);
     for(const rule of applicable){
       if(rule.adjustmentType==="PERCENT"){
         unitPriceCents=Math.max(0,Math.round(unitPriceCents*(100+rule.adjustmentValue)/100));

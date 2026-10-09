@@ -1,0 +1,4 @@
+CREATE TABLE "OtaRoomLink" ("id" TEXT NOT NULL, "provider" TEXT NOT NULL, "externalRoomId" TEXT NOT NULL, "externalRoomName" TEXT, "accommodationId" TEXT NOT NULL, "proposedPriceCents" INTEGER, "currency" TEXT NOT NULL DEFAULT 'BRL', "priceSource" TEXT NOT NULL DEFAULT 'MANUAL', "updatedAt" TIMESTAMP(3) NOT NULL, "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, CONSTRAINT "OtaRoomLink_pkey" PRIMARY KEY ("id"));
+CREATE UNIQUE INDEX "OtaRoomLink_provider_externalRoomId_key" ON "OtaRoomLink"("provider","externalRoomId");
+CREATE UNIQUE INDEX "OtaRoomLink_provider_accommodationId_key" ON "OtaRoomLink"("provider","accommodationId");
+CREATE INDEX "OtaRoomLink_accommodationId_idx" ON "OtaRoomLink"("accommodationId");

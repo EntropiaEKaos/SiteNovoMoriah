@@ -179,6 +179,7 @@ model Accommodation {
   createdAt           DateTime             @default(now())
   updatedAt           DateTime             @updatedAt
   bookingLeads        BookingLead[]
+  smoobuMapping SmoobuAccommodationMapping?
   channelIntegrations ChannelIntegration[]
   ratePlans           RatePlan[]
   rateRules           RateRule[]
@@ -1209,4 +1210,65 @@ model RouletteSpin {
 
   @@index([prizeId, createdAt])
   @@index([redeemedAt, createdAt])
+}
+
+model SmoobuAccommodationMapping {
+  id String @id @default(cuid())
+  smoobuApartmentId Int @unique
+  accommodationId String @unique
+  accommodation Accommodation @relation(fields: [accommodationId], references: [id], onDelete: Restrict)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+/** Read-only external reservation inbox. Not part of PMS occupancy calculations. */
+model SmoobuReservationInbox {
+  id String @id @default(cuid())
+  externalId Int @unique
+  apartmentId Int?
+  accommodationId String?
+  arrival String?
+  departure String?
+  externalStatus String
+  reviewStatus String @default("PENDING")
+  validationIssues Json?
+  firstSeenAt DateTime @default(now())
+  lastSeenAt DateTime @updatedAt
+  @@index([reviewStatus, lastSeenAt])
+  @@index([apartmentId])
+}
+
+/** Verified manual OTA room identifiers; no automatic OTA rate API access implied. */
+model OtaRoomLink {
+  id String @id @default(cuid())
+  provider String
+  externalRoomId String
+  externalRoomName String?
+  accommodationId String
+  proposedPriceCents Int?
+  currency String @default("BRL")
+  priceSource String @default("MANUAL")
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+  @@unique([provider, externalRoomId])
+  @@unique([provider, accommodationId])
+  @@index([accommodationId])
+}
+
+/** Staged Smoobu daily rates; never applied to live inventory or site pricing implicitly. */
+model SmoobuDailyRateSnapshot {
+  id String @id @default(cuid())
+  smoobuApartmentId Int
+  accommodationId String
+  date String
+  priceCents Int
+  currency String @default("BRL")
+  minNights Int?
+  available Int?
+  reviewStatus String @default("PENDING")
+  fetchedAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@unique([smoobuApartmentId,date])
+  @@index([accommodationId,date])
+  @@index([reviewStatus,date])
 }

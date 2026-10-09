@@ -1,0 +1,10 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+import {diagnoseSmoobuReservations} from "../lib/smoobu-reservation-diagnostics.ts";
+const reservation={externalId:10,apartmentId:3547586,arrival:"2026-10-31",departure:"2026-11-02",status:"confirmed"};
+const mapping=[{smoobuApartmentId:3547586,accommodationId:"room-a"}];
+test("valid mapped reservation has no warnings",()=>{const [r]=diagnoseSmoobuReservations([reservation],mapping);assert.deepEqual(r.issues,[]);assert.equal(r.mappedAccommodationId,"room-a");});
+test("unmapped unit remains blocked from import",()=>assert.match(diagnoseSmoobuReservations([reservation],[])[0].issues.join(","),/não vinculada/));
+test("duplicate external ID is flagged",()=>assert.match(diagnoseSmoobuReservations([reservation,reservation],mapping)[1].issues.join(","),/duplicado/));
+test("invalid date order is flagged",()=>assert.match(diagnoseSmoobuReservations([{...reservation,departure:"2026-10-30"}],mapping)[0].issues.join(","),/Datas/));
+test("missing dates are flagged",()=>assert.match(diagnoseSmoobuReservations([{...reservation,arrival:null}],mapping)[0].issues.join(","),/Datas/));

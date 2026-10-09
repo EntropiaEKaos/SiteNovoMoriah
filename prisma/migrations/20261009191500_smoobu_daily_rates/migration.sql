@@ -1,0 +1,4 @@
+CREATE TABLE "SmoobuDailyRateSnapshot" ("id" TEXT NOT NULL,"smoobuApartmentId" INTEGER NOT NULL,"accommodationId" TEXT NOT NULL,"date" TEXT NOT NULL,"priceCents" INTEGER NOT NULL,"currency" TEXT NOT NULL DEFAULT 'BRL',"minNights" INTEGER,"available" INTEGER,"reviewStatus" TEXT NOT NULL DEFAULT 'PENDING',"fetchedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,"updatedAt" TIMESTAMP(3) NOT NULL,CONSTRAINT "SmoobuDailyRateSnapshot_pkey" PRIMARY KEY ("id"));
+CREATE UNIQUE INDEX "SmoobuDailyRateSnapshot_smoobuApartmentId_date_key" ON "SmoobuDailyRateSnapshot"("smoobuApartmentId","date");
+CREATE INDEX "SmoobuDailyRateSnapshot_accommodationId_date_idx" ON "SmoobuDailyRateSnapshot"("accommodationId","date");
+CREATE INDEX "SmoobuDailyRateSnapshot_reviewStatus_date_idx" ON "SmoobuDailyRateSnapshot"("reviewStatus","date");
