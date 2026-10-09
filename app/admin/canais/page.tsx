@@ -40,7 +40,8 @@ export default async function Page(){
   // Never let an unapplied integration migration break the existing channels dashboard.
   let rateSnapshotReady=true;
   let stagedRateCount=0;
-  try{stagedRateCount=await prisma.smoobuDailyRateSnapshot.count();}catch(error){if(error instanceof Prisma.PrismaClientKnownRequestError&&["P2021","P2022"].includes(error.code))rateSnapshotReady=false;else throw error;}
+  let stagedRates:Awaited<ReturnType<typeof prisma.smoobuDailyRateSnapshot.findMany>>=[];
+  try{[stagedRateCount,stagedRates]=await Promise.all([prisma.smoobuDailyRateSnapshot.count(),prisma.smoobuDailyRateSnapshot.findMany({orderBy:[{date:"asc"},{smoobuApartmentId:"asc"}],take:60})]);}catch(error){if(error instanceof Prisma.PrismaClientKnownRequestError&&["P2021","P2022"].includes(error.code))rateSnapshotReady=false;else throw error;}
   let otaSchemaReady=true;
   let otaLinks:Awaited<ReturnType<typeof prisma.otaRoomLink.findMany>>=[];
   try{otaLinks=await prisma.otaRoomLink.findMany({orderBy:[{provider:"asc"},{externalRoomId:"asc"}]});}catch(error){if(error instanceof Prisma.PrismaClientKnownRequestError&&["P2021","P2022"].includes(error.code))otaSchemaReady=false;else throw error;}
@@ -166,6 +167,7 @@ export default async function Page(){
       <div className="adminPageNote" style={{marginTop:16}}>
         <h3>Importar tarifas para conferência</h3>
         <p><strong>{stagedRateCount} tarifas diárias</strong> armazenadas. A importação é manual e não altera o preço publicado no site.</p>
+        {rateSnapshotReady&&stagedRates.length>0&&<div className="adminStack" style={{marginTop:12}}>{stagedRates.map(rate=><div className="adminStatusLine" key={rate.id}><span><strong>{rooms.find(room=>room.id===rate.accommodationId)?.name||"Quarto não encontrado"}</strong> · {rate.date} · {(rate.priceCents/100).toLocaleString("pt-BR",{style:"currency",currency:"BRL"})}<small style={{display:"block"}}>Smoobu #{rate.smoobuApartmentId} · Estadia mínima {rate.minNights??"—"} · Disponibilidade {rate.available??"—"}</small></span><b className="adminChip">{rate.reviewStatus==="PENDING"?"Aguardando revisão":rate.reviewStatus}</b></div>)}</div>}
         {!rateSnapshotReady?<p role="alert">Migração da tabela de tarifas pendente.</p>:!smoobuSchemaReady?<p role="alert">Migração dos vínculos Smoobu pendente.</p>:smoobuMappings.length===0?<p>Vincule pelo menos um quarto da Smoobu antes de importar tarifas.</p>:<form action={stageSmoobuDailyRates}><button type="submit" className="adminPrimaryAction">Importar 90 dias para conferência</button></form>}
       </div>
       <details style={{marginTop:16}}>
