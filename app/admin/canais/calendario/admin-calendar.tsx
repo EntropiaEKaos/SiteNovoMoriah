@@ -255,9 +255,69 @@ export default function AdminCalendar({events,rooms}:{events:Event[];rooms:Room[
       <span><i className="isChannel"/>Canal externo</span>
       <span><i className="isHold"/>Hold</span>
       <span><i className="isManual"/>Bloqueio manual</span>
-      <span className="reservationMapHint">Clique para criar • arraste reserva confirmada para mover.</span>
+      <span className="reservationMapHint">Clique na reserva para agir aqui mesmo • arraste para mover.</span>
     </div>
 
+    {draft&&<div className="reservationDetail reservationDraft calendarInlineEditor" role="region" aria-label="Edição direta no calendário">
+      <div className="reservationDetailHead">
+        <div><small>{draft.mode==="BOOKING"?"NOVA RESERVA":"NOVO BLOQUEIO"} / CALENDÁRIO 5.0</small><h2>{draft.mode==="BOOKING"?"Reserva direta":"Bloqueio operacional"}</h2><p>{rooms.find(room=>room.id===draft.roomId)?.name}</p></div>
+        <button type="button" onClick={()=>setDraft(null)}>Fechar</button>
+      </div>
+
+      {draft.mode==="BOOKING"?<form onSubmit={submitMapBooking} className="adminFormGrid cols3">
+        <label>Hospedagem<select name="accommodationId" defaultValue={draft.roomId} required>{rooms.map(room=><option key={room.id} value={room.id}>{room.roomNumber?room.roomNumber+" • ":""}{room.name}</option>)}</select></label>
+        <label>Entrada<input name="checkIn" type="date" defaultValue={draft.checkIn} required/></label>
+        <label>Saída<input name="checkOut" type="date" defaultValue={draft.checkOut} required/></label>
+        <label className="span2">Nome do hóspede<input name="name" required autoComplete="name"/></label>
+        <label>Hóspedes<input name="guests" type="number" min="1" max="50" defaultValue="1" required/></label>
+        <label>Telefone / WhatsApp<input name="phone" required autoComplete="tel"/></label>
+        <label>E-mail<input name="email" type="email" autoComplete="email"/></label>
+        <label className="span2">Observação interna<input name="internalNotes" placeholder="Opcional"/></label>
+        {bookingError&&<div className="span2 adminPageNote" role="alert">{bookingError}</div>}
+        <button className="span2" disabled={bookingSaving}>{bookingSaving?"Validando reserva…":"Validar e confirmar reserva"}</button>
+      </form>:<form action={createManualBlock} className="adminFormGrid cols3">
+        <label>Hospedagem<select name="accommodationId" defaultValue={draft.roomId} required>{rooms.map(room=><option key={room.id} value={room.id}>{room.roomNumber?room.roomNumber+" • ":""}{room.name}</option>)}</select></label>
+        <label>Início<input name="startsAt" type="date" defaultValue={draft.checkIn} required/></label>
+        <label>Fim<input name="endsAt" type="date" defaultValue={draft.checkOut} required/></label>
+        <label className="span2">Motivo<input name="reason" required maxLength={160} placeholder="Manutenção, uso interno, interdição..."/></label>
+        <label className="span2">Observações<input name="notes" maxLength={1500}/></label>
+        <button className="span2">Criar bloqueio</button>
+      </form>}
+    </div>}
+
+    {selected&&<div className="reservationDetail reservationDetail50 calendarInlineEditor" role="region" aria-label="Ações da reserva selecionada">
+      <div className="reservationDetailHead">
+        <div><small>{selected.kind} • {selected.status}</small><h2>{selected.guest||selected.title}</h2><p>{selected.room} • {selected.source}</p></div>
+        <button type="button" onClick={()=>setSelected(null)}>Fechar</button>
+      </div>
+
+      <div className="reservationDetailGrid">
+        <div><small>Entrada / início</small><b>{new Date(selected.start).toLocaleDateString("pt-BR",{timeZone:"UTC"})}</b></div>
+        <div><small>Saída / fim</small><b>{new Date(selected.end).toLocaleDateString("pt-BR",{timeZone:"UTC"})}</b></div>
+        <div><small>Hóspedes</small><b>{selected.guests??"—"}</b></div>
+        <div><small>Valor</small><b>{money(selected.valueCents,selected.currency)||"—"}</b></div>
+      </div>
+
+      {selected.notes&&<div className="adminPageNote">{selected.notes}</div>}
+
+      {selected.kind==="BOOKING"&&<div className="calendarQuickCommands">
+        <Link className="highlight" href={"/admin/reservas/"+selected.entityId}>Abrir ficha completa →</Link>
+        {selected.status==="CONFIRMED"&&<Link href={"/admin/reservas/"+selected.entityId}>Preparar check-in</Link>}
+        {selected.status==="CONFIRMED"&&<form action={calendarPmsAction}><input type="hidden" name="id" value={selected.entityId}/><input type="hidden" name="action" value="NO_SHOW"/><button>No-show</button></form>}
+        {selected.status==="CHECKED_IN"&&<form action={calendarPmsAction}><input type="hidden" name="id" value={selected.entityId}/><input type="hidden" name="action" value="CHECK_OUT"/><button className="highlight">Check-out</button></form>}
+        {selected.status==="CONFIRMED"&&<form action={calendarBookingStatus}><input type="hidden" name="id" value={selected.entityId}/><input type="hidden" name="status" value="CANCELLED"/><button className="danger">Cancelar reserva</button></form>}
+      </div>}
+
+      {selected.kind==="BOOKING"&&selected.status==="CONFIRMED"&&<form action={updateConfirmedBookingPlacement} className="adminFormGrid cols3 calendarMoveForm">
+        <label>Hospedagem<select name="accommodationId" defaultValue={selected.roomId} required>{rooms.map(room=><option key={room.id} value={room.id}>{room.roomNumber?room.roomNumber+" • ":""}{room.name}</option>)}</select></label>
+        <label>Nova entrada<input name="checkIn" type="date" required defaultValue={selected.start.slice(0,10)}/></label>
+        <label>Nova saída<input name="checkOut" type="date" required defaultValue={selected.end.slice(0,10)}/></label>
+        <input type="hidden" name="id" value={selected.entityId}/>
+        <button className="span2">Validar e mover reserva</button>
+      </form>}
+
+      {selected.kind==="MANUAL"&&<form action={deleteManualBlock} style={{marginTop:18}}><input type="hidden" name="id" value={selected.entityId}/><button className="danger">Remover bloqueio manual</button></form>}
+    </div>}
     <div className="reservationMapScroll">
       <div className="reservationMapHeader" style={{gridTemplateColumns:gridTemplate}}>
         <div className="reservationMapRoomHeader">HOSPEDAGEM</div>
@@ -317,65 +377,5 @@ export default function AdminCalendar({events,rooms}:{events:Event[];rooms:Room[
 
     {dragging&&<div className="calendarDragBanner"><b>Movendo {dragging.guest||dragging.title}</b><span>Solte em uma célula verde livre.</span></div>}
 
-    {draft&&<aside className="reservationDetail reservationDraft">
-      <div className="reservationDetailHead">
-        <div><small>{draft.mode==="BOOKING"?"NOVA RESERVA":"NOVO BLOQUEIO"} / CALENDÁRIO 5.0</small><h2>{draft.mode==="BOOKING"?"Reserva direta":"Bloqueio operacional"}</h2><p>{rooms.find(room=>room.id===draft.roomId)?.name}</p></div>
-        <button type="button" onClick={()=>setDraft(null)}>Fechar</button>
-      </div>
-
-      {draft.mode==="BOOKING"?<form onSubmit={submitMapBooking} className="adminFormGrid cols3">
-        <label>Hospedagem<select name="accommodationId" defaultValue={draft.roomId} required>{rooms.map(room=><option key={room.id} value={room.id}>{room.roomNumber?room.roomNumber+" • ":""}{room.name}</option>)}</select></label>
-        <label>Entrada<input name="checkIn" type="date" defaultValue={draft.checkIn} required/></label>
-        <label>Saída<input name="checkOut" type="date" defaultValue={draft.checkOut} required/></label>
-        <label className="span2">Nome do hóspede<input name="name" required autoComplete="name"/></label>
-        <label>Hóspedes<input name="guests" type="number" min="1" max="50" defaultValue="1" required/></label>
-        <label>Telefone / WhatsApp<input name="phone" required autoComplete="tel"/></label>
-        <label>E-mail<input name="email" type="email" autoComplete="email"/></label>
-        <label className="span2">Observação interna<input name="internalNotes" placeholder="Opcional"/></label>
-        {bookingError&&<div className="span2 adminPageNote" role="alert">{bookingError}</div>}
-        <button className="span2" disabled={bookingSaving}>{bookingSaving?"Validando reserva…":"Validar e confirmar reserva"}</button>
-      </form>:<form action={createManualBlock} className="adminFormGrid cols3">
-        <label>Hospedagem<select name="accommodationId" defaultValue={draft.roomId} required>{rooms.map(room=><option key={room.id} value={room.id}>{room.roomNumber?room.roomNumber+" • ":""}{room.name}</option>)}</select></label>
-        <label>Início<input name="startsAt" type="date" defaultValue={draft.checkIn} required/></label>
-        <label>Fim<input name="endsAt" type="date" defaultValue={draft.checkOut} required/></label>
-        <label className="span2">Motivo<input name="reason" required maxLength={160} placeholder="Manutenção, uso interno, interdição..."/></label>
-        <label className="span2">Observações<input name="notes" maxLength={1500}/></label>
-        <button className="span2">Criar bloqueio</button>
-      </form>}
-    </aside>}
-
-    {selected&&<aside className="reservationDetail reservationDetail50">
-      <div className="reservationDetailHead">
-        <div><small>{selected.kind} • {selected.status}</small><h2>{selected.guest||selected.title}</h2><p>{selected.room} • {selected.source}</p></div>
-        <button type="button" onClick={()=>setSelected(null)}>Fechar</button>
-      </div>
-
-      <div className="reservationDetailGrid">
-        <div><small>Entrada / início</small><b>{new Date(selected.start).toLocaleDateString("pt-BR",{timeZone:"UTC"})}</b></div>
-        <div><small>Saída / fim</small><b>{new Date(selected.end).toLocaleDateString("pt-BR",{timeZone:"UTC"})}</b></div>
-        <div><small>Hóspedes</small><b>{selected.guests??"—"}</b></div>
-        <div><small>Valor</small><b>{money(selected.valueCents,selected.currency)||"—"}</b></div>
-      </div>
-
-      {selected.notes&&<div className="adminPageNote">{selected.notes}</div>}
-
-      {selected.kind==="BOOKING"&&<div className="calendarQuickCommands">
-        <Link className="highlight" href={"/admin/reservas/"+selected.entityId}>Abrir ficha completa →</Link>
-        {selected.status==="CONFIRMED"&&<Link href={"/admin/reservas/"+selected.entityId}>Preparar check-in</Link>}
-        {selected.status==="CONFIRMED"&&<form action={calendarPmsAction}><input type="hidden" name="id" value={selected.entityId}/><input type="hidden" name="action" value="NO_SHOW"/><button>No-show</button></form>}
-        {selected.status==="CHECKED_IN"&&<form action={calendarPmsAction}><input type="hidden" name="id" value={selected.entityId}/><input type="hidden" name="action" value="CHECK_OUT"/><button className="highlight">Check-out</button></form>}
-        {selected.status==="CONFIRMED"&&<form action={calendarBookingStatus}><input type="hidden" name="id" value={selected.entityId}/><input type="hidden" name="status" value="CANCELLED"/><button className="danger">Cancelar reserva</button></form>}
-      </div>}
-
-      {selected.kind==="BOOKING"&&selected.status==="CONFIRMED"&&<form action={updateConfirmedBookingPlacement} className="adminFormGrid cols3 calendarMoveForm">
-        <label>Hospedagem<select name="accommodationId" defaultValue={selected.roomId} required>{rooms.map(room=><option key={room.id} value={room.id}>{room.roomNumber?room.roomNumber+" • ":""}{room.name}</option>)}</select></label>
-        <label>Nova entrada<input name="checkIn" type="date" required defaultValue={selected.start.slice(0,10)}/></label>
-        <label>Nova saída<input name="checkOut" type="date" required defaultValue={selected.end.slice(0,10)}/></label>
-        <input type="hidden" name="id" value={selected.entityId}/>
-        <button className="span2">Validar e mover reserva</button>
-      </form>}
-
-      {selected.kind==="MANUAL"&&<form action={deleteManualBlock} style={{marginTop:18}}><input type="hidden" name="id" value={selected.entityId}/><button className="danger">Remover bloqueio manual</button></form>}
-    </aside>}
   </section>;
 }
