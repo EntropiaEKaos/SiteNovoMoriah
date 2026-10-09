@@ -1,3 +1,4 @@
+import {stageSmoobuDailyRates} from "./smoobu-rate-actions";
 import {getSmoobuDailyRates} from "../../../lib/smoobu-rates";
 import {saveOtaRoomLink,stageOtaPrice,applyOtaPriceToSite} from "./ota-room-actions";
 import {Prisma} from "@prisma/client";
@@ -37,6 +38,9 @@ export default async function Page(){
 
   // A preview deployment may share a database where migrations have not run yet.
   // Never let an unapplied integration migration break the existing channels dashboard.
+  let rateSnapshotReady=true;
+  let stagedRateCount=0;
+  try{stagedRateCount=await prisma.smoobuDailyRateSnapshot.count();}catch(error){if(error instanceof Prisma.PrismaClientKnownRequestError&&["P2021","P2022"].includes(error.code))rateSnapshotReady=false;else throw error;}
   let otaSchemaReady=true;
   let otaLinks:Awaited<ReturnType<typeof prisma.otaRoomLink.findMany>>=[];
   try{otaLinks=await prisma.otaRoomLink.findMany({orderBy:[{provider:"asc"},{externalRoomId:"asc"}]});}catch(error){if(error instanceof Prisma.PrismaClientKnownRequestError&&["P2021","P2022"].includes(error.code))otaSchemaReady=false;else throw error;}
@@ -159,6 +163,11 @@ export default async function Page(){
         <summary style={{cursor:"pointer",fontWeight:700}}>Acomodações retornadas ({smoobuResult.apartments.length})</summary>
         <div className="adminStack">{smoobuResult.apartments.map(item=><div className="adminStatusLine" key={item.id}><span>{item.name}</span><b className="adminChip">ID {item.id}</b></div>)}</div>
       </details>}
+      <div className="adminPageNote" style={{marginTop:16}}>
+        <h3>Importar tarifas para conferência</h3>
+        <p><strong>{stagedRateCount} tarifas diárias</strong> armazenadas. A importação é manual e não altera o preço publicado no site.</p>
+        {!rateSnapshotReady?<p role="alert">Migração da tabela de tarifas pendente.</p>:!smoobuSchemaReady?<p role="alert">Migração dos vínculos Smoobu pendente.</p>:smoobuMappings.length===0?<p>Vincule pelo menos um quarto da Smoobu antes de importar tarifas.</p>:<form action={stageSmoobuDailyRates}><button type="submit" className="adminPrimaryAction">Importar 90 dias para conferência</button></form>}
+      </div>
       <details style={{marginTop:16}}>
         <summary style={{cursor:"pointer",fontWeight:700}}>Tarifas Smoobu por data — prévia de até 90 dias</summary>
         <p>Valores consultados diretamente na API Smoobu, sem alterar preços do site, tarifas do Booking/Airbnb ou disponibilidade. A moeda deve ser conferida na configuração da propriedade antes de qualquer publicação.</p>
