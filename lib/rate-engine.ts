@@ -130,12 +130,10 @@ export async function quoteAccommodation(
       averageNightCents:Math.round(promo.totalCents/nights),
       ratePlan:"Tarifa padrão",
       breakdown:daily.map(day=>{
-        const d=new Date(checkIn);
-        d.setUTCDate(d.getUTCDate()+i);
         return {
-          date:d.toISOString().slice(0,10),
+          date:day.date,
           priceCents:day.priceCents,
-          override:approvedByDate.has(day.date)
+          override:Boolean(approvedByDate.get(day.date)&&resolveSmoobuApprovedPrice(room.priceCents!,approvedByDate.get(day.date),nights,units)!==room.priceCents)
         };
       }),
       occupancyPct:null,
