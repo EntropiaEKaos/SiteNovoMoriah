@@ -67,6 +67,7 @@ export default function AdminCalendar({events,rooms}:{events:Event[];rooms:Room[
   const [view,setView]=useState<ViewMode>("15");
   const [roomFilter,setRoomFilter]=useState("");
   const [search,setSearch]=useState("");
+  const [compact,setCompact]=useState(false);
   const [selected,setSelected]=useState<Event|null>(null);
   const [draft,setDraft]=useState<Draft>(null);
   const [bookingError,setBookingError]=useState("");
@@ -206,9 +207,9 @@ export default function AdminCalendar({events,rooms}:{events:Event[];rooms:Room[
     }
   }
 
-  const gridTemplate="190px repeat("+days.length+", minmax(44px,1fr))";
+  const gridTemplate=(compact?"150px":"190px")+" repeat("+days.length+", minmax("+(compact?"34px":"44px")+",1fr))";
 
-  return <section className={"reservationMap reservationMap50"+(isPending?" isSaving":"")}>
+  return <section className={"reservationMap reservationMap50"+(isPending?" isSaving":"")+(compact?" isCompact":"")}>
     <div className="reservationMapToolbar">
       <div className="reservationMapNav">
         <button type="button" onClick={()=>move(-1)}>←</button>
@@ -216,6 +217,17 @@ export default function AdminCalendar({events,rooms}:{events:Event[];rooms:Room[
         <button type="button" onClick={()=>move(1)}>→</button>
       </div>
 
+      <label className="calendarJumpToDate" style={{display:"flex",alignItems:"center",gap:8,fontSize:13}}>
+        Ir para data
+        <input type="date" aria-label="Ir para data no calendário" value={dayKey(cursor)}
+          onChange={event=>{
+            if(!event.target.value)return;
+            const chosen=new Date(event.target.value+"T00:00:00Z");
+            if(Number.isNaN(chosen.getTime()))return;
+            setSelected(null);setDraft(null);
+            setCursor(view==="MONTH"?new Date(Date.UTC(chosen.getUTCFullYear(),chosen.getUTCMonth(),1)):chosen);
+          }}/>
+      </label>
       <div className="reservationMapRange">
         <strong>{rangeStart.toLocaleDateString("pt-BR",{day:"2-digit",month:"short",year:"numeric",timeZone:"UTC"})}</strong>
         <span>até</span>
@@ -230,6 +242,7 @@ export default function AdminCalendar({events,rooms}:{events:Event[];rooms:Room[
         <option value="">Todas as hospedagens</option>
         {rooms.map(room=><option key={room.id} value={room.id}>{room.roomNumber?room.roomNumber+" • ":""}{room.name}</option>)}
       </select>
+      <button type="button" aria-pressed={compact} onClick={()=>setCompact(value=>!value)} title="Alternar densidade do calendário">{compact?"Espaçamento normal":"Visão compacta"}</button>
       <input className="reservationMapSearch" value={search} onChange={event=>setSearch(event.target.value)} placeholder="Buscar hóspede..."/>
     </div>
 
