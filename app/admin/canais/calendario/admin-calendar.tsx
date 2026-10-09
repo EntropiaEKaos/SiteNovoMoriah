@@ -35,6 +35,8 @@ type Room={
   name:string;
   roomNumber:string|null;
   capacity:number;
+  sharedRoom:boolean;
+  bedCount:number;
 };
 
 type ViewMode="7"|"15"|"30"|"MONTH";
@@ -67,7 +69,11 @@ export default function AdminCalendar({events,rooms}:{events:Event[];rooms:Room[
   const [view,setView]=useState<ViewMode>("15");
   const [roomFilter,setRoomFilter]=useState("");
   const [search,setSearch]=useState("");
+  const [compact,setCompact]=useState(false);
+  const [onlyFree,setOnlyFree]=useState(false);
   const [selected,setSelected]=useState<Event|null>(null);
+  const [quickError,setQuickError]=useState("");
+  const [quickBusy,setQuickBusy]=useState(false);
   const [draft,setDraft]=useState<Draft>(null);
   const [bookingError,setBookingError]=useState("");
   const [bookingSaving,setBookingSaving]=useState(false);
@@ -90,9 +96,18 @@ export default function AdminCalendar({events,rooms}:{events:Event[];rooms:Room[
   const rangeEnd=new Date((days.at(-1)||today).getTime()+DAY);
   const q=search.trim().toLowerCase();
 
+  function capacityAt(room:Room,date:Date){
+    const key=dayKey(date);
+    const overlapping=events.filter(event=>event.roomId===room.id&&dayKey(new Date(event.start))<=key&&dayKey(new Date(event.end))>key);
+    const blocked=overlapping.some(event=>event.kind!=="BOOKING");
+    const used=overlapping.filter(event=>event.kind==="BOOKING").reduce((sum,event)=>sum+Math.max(1,event.guests||1),0);
+    const total=room.sharedRoom?Math.max(1,room.bedCount):1;
+    return {total,used,blocked,free:blocked?0:Math.max(0,total-(room.sharedRoom?used:overlapping.length))};
+  }
+
   const visibleRooms=useMemo(
-    ()=>rooms.filter(room=>!roomFilter||room.id===roomFilter),
-    [rooms,roomFilter]
+    ()=>rooms.filter(room=>(!roomFilter||room.id===roomFilter)&&(!onlyFree||days.some(day=>capacityAt(room,day).free>0))),
+    [rooms,roomFilter,onlyFree,events,days]
   );
 
   const visibleEvents=useMemo(
@@ -124,6 +139,20 @@ export default function AdminCalendar({events,rooms}:{events:Event[];rooms:Room[
       manual:visibleEvents.filter(event=>event.kind==="MANUAL").length
     };
   },[visibleEvents,visibleRooms.length,days,rangeStart,rangeEnd]);
+
+  async function quickAction(action:"CHECK_OUT"|"NO_SHOW"|"CANCELLED"){
+    if(!selected||selected.kind!=="BOOKING"||quickBusy)return;
+    const label=action==="CHECK_OUT"?"realizar o check-out":action==="NO_SHOW"?"registrar no-show":"cancelar a reserva";
+    if(!window.confirm("Deseja "+label+" de "+(selected.guest||selected.title)+"?"))return;
+    setQuickError("");setQuickBusy(true);
+    const form=new FormData();form.set("id",selected.entityId);
+    try{
+      if(action==="CANCELLED"){form.set("status","CANCELLED");await calendarBookingStatus(form);}
+      else{form.set("action",action);await calendarPmsAction(form);}
+      setSelected(null);router.refresh();
+    }catch(error){setQuickError(error instanceof Error?error.message:"Não foi possível concluir a ação.");}
+    finally{setQuickBusy(false);}
+  }
 
   function move(direction:number){
     setSelected(null);setDraft(null);
@@ -206,9 +235,9 @@ export default function AdminCalendar({events,rooms}:{events:Event[];rooms:Room[
     }
   }
 
-  const gridTemplate="190px repeat("+days.length+", minmax(44px,1fr))";
+  const gridTemplate=(compact?"150px":"190px")+" repeat("+days.length+", minmax("+(compact?"34px":"44px")+",1fr))";
 
-  return <section className={"reservationMap reservationMap50"+(isPending?" isSaving":"")}>
+  return <section className={"reservationMap reservationMap50"+(isPending?" isSaving":"")+(compact?" isCompact":"")}>
     <div className="reservationMapToolbar">
       <div className="reservationMapNav">
         <button type="button" onClick={()=>move(-1)}>←</button>
@@ -216,6 +245,17 @@ export default function AdminCalendar({events,rooms}:{events:Event[];rooms:Room[
         <button type="button" onClick={()=>move(1)}>→</button>
       </div>
 
+      <label className="calendarJumpToDate" style={{display:"flex",alignItems:"center",gap:8,fontSize:13}}>
+        Ir para data
+        <input type="date" aria-label="Ir para data no calendário" value={dayKey(cursor)}
+          onChange={event=>{
+            if(!event.target.value)return;
+            const chosen=new Date(event.target.value+"T00:00:00Z");
+            if(Number.isNaN(chosen.getTime()))return;
+            setSelected(null);setDraft(null);
+            setCursor(view==="MONTH"?new Date(Date.UTC(chosen.getUTCFullYear(),chosen.getUTCMonth(),1)):chosen);
+          }}/>
+      </label>
       <div className="reservationMapRange">
         <strong>{rangeStart.toLocaleDateString("pt-BR",{day:"2-digit",month:"short",year:"numeric",timeZone:"UTC"})}</strong>
         <span>até</span>
@@ -230,6 +270,8 @@ export default function AdminCalendar({events,rooms}:{events:Event[];rooms:Room[
         <option value="">Todas as hospedagens</option>
         {rooms.map(room=><option key={room.id} value={room.id}>{room.roomNumber?room.roomNumber+" • ":""}{room.name}</option>)}
       </select>
+      <button type="button" aria-pressed={onlyFree} onClick={()=>{setOnlyFree(value=>!value);setSelected(null);setDraft(null);}}>{onlyFree?"Mostrar ocupados":"Somente quartos livres"}</button>
+      <button type="button" aria-pressed={compact} onClick={()=>setCompact(value=>!value)} title="Alternar densidade do calendário">{compact?"Espaçamento normal":"Visão compacta"}</button>
       <input className="reservationMapSearch" value={search} onChange={event=>setSearch(event.target.value)} placeholder="Buscar hóspede..."/>
     </div>
 
@@ -255,69 +297,10 @@ export default function AdminCalendar({events,rooms}:{events:Event[];rooms:Room[
       <span><i className="isChannel"/>Canal externo</span>
       <span><i className="isHold"/>Hold</span>
       <span><i className="isManual"/>Bloqueio manual</span>
-      <span className="reservationMapHint">Clique para criar • arraste reserva confirmada para mover.</span>
+      <span className="reservationMapHint">Clique na reserva para agir aqui mesmo • arraste para mover.</span>
     </div>
 
-    <div className="reservationMapScroll">
-      <div className="reservationMapHeader" style={{gridTemplateColumns:gridTemplate}}>
-        <div className="reservationMapRoomHeader">HOSPEDAGEM</div>
-        {days.map(day=><div className={"reservationMapDayHead"+(dayKey(day)===dayKey(today)?" isToday":"")} key={dayKey(day)}>
-          <small>{day.toLocaleDateString("pt-BR",{weekday:"short",timeZone:"UTC"}).replace(".","")}</small><b>{day.getUTCDate()}</b>
-        </div>)}
-      </div>
-
-      {visibleRooms.map(room=>{
-        const roomEvents=visibleEvents.filter(event=>event.roomId===room.id).sort((a,b)=>a.start.localeCompare(b.start));
-        return <div className="reservationMapRow" style={{gridTemplateColumns:gridTemplate}} key={room.id}>
-          <div className="reservationMapRoom"><small>{room.roomNumber||"UNIDADE"}</small><strong>{room.name}</strong><span>até {room.capacity} hóspede(s)</span></div>
-
-          {days.map(day=>{
-            const isOccupied=occupied(room.id,day);
-            const dropAllowed=canDrop(room.id,day,dragging);
-            const keyValue=room.id+"|"+dayKey(day);
-            return <button
-              type="button"
-              key={dayKey(day)}
-              className={"reservationMapCell reservationMapCellButton"+
-                (dayKey(day)===dayKey(today)?" isToday":"")+
-                (isOccupied?" isOccupied":"")+
-                (dropAllowed?" isDropAllowed":"")+
-                (dropKey===keyValue?" isDropHover":"")
-              }
-              aria-disabled={isOccupied}
-              onClick={()=>{if(!isOccupied)startDraft(room.id,day);}}
-              onDragOver={event=>{if(dropAllowed){event.preventDefault();setDropKey(keyValue);}}}
-              onDragLeave={()=>{if(dropKey===keyValue)setDropKey("");}}
-              onDrop={event=>{event.preventDefault();dropBooking(room.id,day);}}
-            />;
-          })}
-
-          {roomEvents.map((event,index)=>{
-            const start=Math.max(0,diffDays(new Date(event.start),rangeStart));
-            const end=Math.min(days.length,diffDays(new Date(event.end),rangeStart));
-            if(end<=start)return null;
-            const draggable=event.kind==="BOOKING"&&event.status==="CONFIRMED";
-            return <button
-              type="button"
-              draggable={draggable}
-              key={event.id}
-              className={"reservationMapEvent "+eventClass(event)+(draggable?" isDraggable":"")}
-              style={{gridColumn:(start+2)+" / "+(end+2),gridRow:String(index%2+1)}}
-              title={draggable?"Arraste para mover • clique para comandos":event.title}
-              onDragStart={()=>{if(draggable){setDragging(event);setSelected(null);setDraft(null);}}}
-              onDragEnd={()=>{setDragging(null);setDropKey("");}}
-              onClick={()=>{setDraft(null);setSelected(event);}}
-            >
-              <b>{event.guest||event.title}</b><small>{event.kind==="BOOKING"?event.status:event.source}</small>
-            </button>;
-          })}
-        </div>;
-      })}
-    </div>
-
-    {dragging&&<div className="calendarDragBanner"><b>Movendo {dragging.guest||dragging.title}</b><span>Solte em uma célula verde livre.</span></div>}
-
-    {draft&&<aside className="reservationDetail reservationDraft">
+    {draft&&<div className="reservationDetail reservationDraft calendarInlineEditor" role="region" aria-label="Edição direta no calendário">
       <div className="reservationDetailHead">
         <div><small>{draft.mode==="BOOKING"?"NOVA RESERVA":"NOVO BLOQUEIO"} / CALENDÁRIO 5.0</small><h2>{draft.mode==="BOOKING"?"Reserva direta":"Bloqueio operacional"}</h2><p>{rooms.find(room=>room.id===draft.roomId)?.name}</p></div>
         <button type="button" onClick={()=>setDraft(null)}>Fechar</button>
@@ -342,9 +325,9 @@ export default function AdminCalendar({events,rooms}:{events:Event[];rooms:Room[
         <label className="span2">Observações<input name="notes" maxLength={1500}/></label>
         <button className="span2">Criar bloqueio</button>
       </form>}
-    </aside>}
+    </div>}
 
-    {selected&&<aside className="reservationDetail reservationDetail50">
+    {selected&&<div className="reservationDetail reservationDetail50 calendarInlineEditor" role="region" aria-label="Ações da reserva selecionada">
       <div className="reservationDetailHead">
         <div><small>{selected.kind} • {selected.status}</small><h2>{selected.guest||selected.title}</h2><p>{selected.room} • {selected.source}</p></div>
         <button type="button" onClick={()=>setSelected(null)}>Fechar</button>
@@ -362,9 +345,11 @@ export default function AdminCalendar({events,rooms}:{events:Event[];rooms:Room[
       {selected.kind==="BOOKING"&&<div className="calendarQuickCommands">
         <Link className="highlight" href={"/admin/reservas/"+selected.entityId}>Abrir ficha completa →</Link>
         {selected.status==="CONFIRMED"&&<Link href={"/admin/reservas/"+selected.entityId}>Preparar check-in</Link>}
-        {selected.status==="CONFIRMED"&&<form action={calendarPmsAction}><input type="hidden" name="id" value={selected.entityId}/><input type="hidden" name="action" value="NO_SHOW"/><button>No-show</button></form>}
-        {selected.status==="CHECKED_IN"&&<form action={calendarPmsAction}><input type="hidden" name="id" value={selected.entityId}/><input type="hidden" name="action" value="CHECK_OUT"/><button className="highlight">Check-out</button></form>}
-        {selected.status==="CONFIRMED"&&<form action={calendarBookingStatus}><input type="hidden" name="id" value={selected.entityId}/><input type="hidden" name="status" value="CANCELLED"/><button className="danger">Cancelar reserva</button></form>}
+        {selected.status==="CONFIRMED"&&<button type="button" disabled={quickBusy} onClick={()=>void quickAction("NO_SHOW")}>No-show</button>}
+        {selected.status==="CHECKED_IN"&&<button type="button" className="highlight" disabled={quickBusy} onClick={()=>void quickAction("CHECK_OUT")}>Check-out</button>}
+        {selected.status==="CONFIRMED"&&<button type="button" className="danger" disabled={quickBusy} onClick={()=>void quickAction("CANCELLED")}>Cancelar reserva</button>}
+        {quickBusy&&<span role="status">Salvando alteração…</span>}
+        {quickError&&<div className="adminPageNote" role="alert">{quickError}</div>}
       </div>}
 
       {selected.kind==="BOOKING"&&selected.status==="CONFIRMED"&&<form action={updateConfirmedBookingPlacement} className="adminFormGrid cols3 calendarMoveForm">
@@ -376,6 +361,68 @@ export default function AdminCalendar({events,rooms}:{events:Event[];rooms:Room[
       </form>}
 
       {selected.kind==="MANUAL"&&<form action={deleteManualBlock} style={{marginTop:18}}><input type="hidden" name="id" value={selected.entityId}/><button className="danger">Remover bloqueio manual</button></form>}
-    </aside>}
+    </div>}
+    <div className="reservationMapScroll">
+      <div className="reservationMapHeader" style={{gridTemplateColumns:gridTemplate}}>
+        <div className="reservationMapRoomHeader">HOSPEDAGEM</div>
+        {days.map(day=><div className={"reservationMapDayHead"+(dayKey(day)===dayKey(today)?" isToday":"")} key={dayKey(day)}>
+          <small>{day.toLocaleDateString("pt-BR",{weekday:"short",timeZone:"UTC"}).replace(".","")}</small><b>{day.getUTCDate()}</b>
+        </div>)}
+      </div>
+
+      {visibleRooms.map(room=>{
+        const roomEvents=visibleEvents.filter(event=>event.roomId===room.id).sort((a,b)=>a.start.localeCompare(b.start));
+        return <div className="reservationMapRow" style={{gridTemplateColumns:gridTemplate}} key={room.id}>
+          <div className="reservationMapRoom"><small>{room.roomNumber||"UNIDADE"}</small><strong>{room.name}</strong><span>{room.sharedRoom?`Compartilhado • ${room.bedCount} camas (ocupação parcial exige conferência)`:`até ${room.capacity} hóspede(s)`}</span></div>
+
+          {days.map(day=>{
+            const availability=capacityAt(room,day);
+            const isOccupied=availability.free===0;
+            const dropAllowed=canDrop(room.id,day,dragging);
+            const keyValue=room.id+"|"+dayKey(day);
+            return <button
+              type="button"
+              key={dayKey(day)}
+              className={"reservationMapCell reservationMapCellButton"+
+                (dayKey(day)===dayKey(today)?" isToday":"")+
+                (isOccupied?" isOccupied":"")+
+                (dropAllowed?" isDropAllowed":"")+
+                (dropKey===keyValue?" isDropHover":"")
+              }
+              aria-disabled={isOccupied}
+              title={room.sharedRoom?(availability.blocked?"Bloqueado por canal ou operação":availability.free+" de "+availability.total+" camas disponíveis"):(isOccupied?"Indisponível":"Disponível")}
+              aria-label={room.name+" "+dayKey(day)+": "+(room.sharedRoom?availability.free+" camas disponíveis":isOccupied?"ocupado":"livre")}
+              onClick={()=>{if(!isOccupied)startDraft(room.id,day);}}
+              onDragOver={event=>{if(dropAllowed){event.preventDefault();setDropKey(keyValue);}}}
+              onDragLeave={()=>{if(dropKey===keyValue)setDropKey("");}}
+              onDrop={event=>{event.preventDefault();dropBooking(room.id,day);}}
+            />;
+          })}
+
+          {roomEvents.map((event,index)=>{
+            const start=Math.max(0,diffDays(new Date(event.start),rangeStart));
+            const end=Math.min(days.length,diffDays(new Date(event.end),rangeStart));
+            if(end<=start)return null;
+            const draggable=event.kind==="BOOKING"&&event.status==="CONFIRMED";
+            return <button
+              type="button"
+              draggable={draggable}
+              key={event.id}
+              className={"reservationMapEvent "+eventClass(event)+(draggable?" isDraggable":"")}
+              style={{gridColumn:(start+2)+" / "+(end+2),gridRow:String(index%2+1)}}
+              title={draggable?"Arraste para mover • clique para comandos":event.title}
+              onDragStart={()=>{if(draggable){setDragging(event);setSelected(null);setDraft(null);}}}
+              onDragEnd={()=>{setDragging(null);setDropKey("");}}
+              onClick={()=>{setDraft(null);setQuickError("");setSelected(event);}}
+            >
+              <b>{event.guest||event.title}</b><small>{event.kind==="BOOKING"?event.status:event.source}</small>
+            </button>;
+          })}
+        </div>;
+      })}
+    </div>
+
+    {dragging&&<div className="calendarDragBanner"><b>Movendo {dragging.guest||dragging.title}</b><span>Solte em uma célula verde livre.</span></div>}
+
   </section>;
 }

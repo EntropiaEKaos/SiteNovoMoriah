@@ -35,7 +35,7 @@ function resolveFailedRouletteMigration(env){
 const npx=process.platform==="win32"?"npx.cmd":"npx";
 const vercelEnv=process.env.VERCEL_ENV||"local";
 const previewMigrations=vercelEnv==="preview"&&process.env.RUN_PREVIEW_MIGRATIONS==="1";
-const productionMigrations=vercelEnv==="production";
+const productionMigrations=vercelEnv==="production"&&process.env.RUN_PRODUCTION_MIGRATIONS==="1";
 const shouldMigrate=productionMigrations||previewMigrations;
 
 console.log(`Moriah Vercel build environment: ${vercelEnv}`);
