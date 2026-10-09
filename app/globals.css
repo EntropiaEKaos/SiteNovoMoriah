@@ -8207,3 +8207,23 @@ body:has(.externalCalendarWidget) .whatsappFloat{display:none!important}
 @media(max-width:650px){
   .onboardingGrid{grid-template-columns:1fr}
 }
+
+
+/* Calendar workspace: clean focus mode, independently of the regular admin navigation */
+.calendarFocusToolbar{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:18px;padding:20px 24px;background:linear-gradient(120deg,#123b49,#175e6d);border-radius:20px;color:#fff;box-shadow:0 12px 32px rgba(10,41,54,.13)}
+.calendarFocusToolbar small{font-size:11px;font-weight:800;letter-spacing:.12em;opacity:.76}
+.calendarFocusToolbar h2{margin:5px 0 0;font-size:clamp(20px,2vw,30px);color:#fff}
+.calendarFocusToolbar .adminSecondaryAction{background:#fff;color:#124454;border-color:transparent}
+.calendarSettingsSummary{padding:18px 22px;cursor:pointer;font-weight:800;border:1px solid #d8e6e8;border-radius:16px;background:#fff;margin-bottom:14px}
+.calendarWidgetAdmin[open] .calendarSettingsSummary{border-radius:16px 16px 8px 8px}
+.calendarFocusPage{width:100%;max-width:none!important;margin:0!important;padding:14px!important}
+.adminWorkspace:has(.calendarFocusPage){width:100%!important;max-width:none!important;padding:0!important;margin:0!important}
+.adminWorkspace:has(.calendarFocusPage)>.adminTopbar{display:none!important}
+.adminSidebar:has(~ .calendarFocusPage){display:none}
+.adminMobileShell:has(.calendarFocusPage) .adminSidebar{display:none!important}
+body:has(.calendarFocusPage) .adminSidebar{display:none!important}
+body:has(.calendarFocusPage) .adminWorkspace{margin-left:0!important}
+.calendarFocusPage .reservationMap{width:100%;max-width:none;min-height:calc(100dvh - 115px);border-radius:18px}
+.calendarFocusPage .reservationMapScroll{max-height:calc(100dvh - 340px);overflow:auto}
+.calendarFocusPage .reservationMapToolbar{position:sticky;top:0;z-index:5}
+@media(max-width:700px){.calendarFocusToolbar{padding:15px;border-radius:14px}.calendarFocusPage{padding:8px!important}.calendarFocusPage .reservationMapScroll{max-height:calc(100dvh - 390px)}}
