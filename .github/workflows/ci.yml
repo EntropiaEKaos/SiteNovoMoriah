@@ -19,7 +19,7 @@ jobs:
           DATABASE_URL: postgresql://placeholder:placeholder@localhost:5432/moriah
       - run: npx prisma generate
       - name: Channel snapshot safety tests
-        run: node --experimental-strip-types --test tests/channel-sync-safety.test.mjs tests/smoobu-mapping.test.mjs
+        run: node --experimental-strip-types --test tests/channel-sync-safety.test.mjs tests/smoobu-mapping.test.mjs tests/smoobu-reservation-diagnostics.test.mjs
       - run: npm run typecheck
       - run: npm run build
         env:
