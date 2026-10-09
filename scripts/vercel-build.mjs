@@ -35,7 +35,8 @@ function resolveFailedRouletteMigration(env){
 const npx=process.platform==="win32"?"npx.cmd":"npx";
 const vercelEnv=process.env.VERCEL_ENV||"local";
 const previewMigrations=vercelEnv==="preview"&&process.env.RUN_PREVIEW_MIGRATIONS==="1";
-const shouldMigrate=vercelEnv==="production"||previewMigrations;
+const productionMigrations=vercelEnv==="production"&&process.env.RUN_PRODUCTION_MIGRATIONS==="1";
+const shouldMigrate=productionMigrations||previewMigrations;
 
 console.log(`Moriah Vercel build environment: ${vercelEnv}`);
 
@@ -75,7 +76,9 @@ if(shouldMigrate){
   console.log(
     vercelEnv==="preview"
       ?"Skipping Preview migrations. Set RUN_PREVIEW_MIGRATIONS=1 and provide Preview DIRECT_URL to enable them."
-      :"Skipping prisma migrate deploy outside Vercel production."
+      :vercelEnv==="production"
+        ?"Skipping production migrations: RUN_PRODUCTION_MIGRATIONS=1 is required after database backup and migration review."
+        :"Skipping prisma migrate deploy outside Vercel production."
   );
 }
 
