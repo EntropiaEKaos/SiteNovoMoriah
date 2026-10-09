@@ -1,4 +1,4 @@
-import {stageSmoobuDailyRates} from "./smoobu-rate-actions";
+import {stageSmoobuDailyRates,reviewSmoobuDailyRate} from "./smoobu-rate-actions";
 import {getSmoobuDailyRates} from "../../../lib/smoobu-rates";
 import {saveOtaRoomLink,stageOtaPrice,applyOtaPriceToSite} from "./ota-room-actions";
 import {Prisma} from "@prisma/client";
@@ -167,7 +167,7 @@ export default async function Page(){
       <div className="adminPageNote" style={{marginTop:16}}>
         <h3>Importar tarifas para conferência</h3>
         <p><strong>{stagedRateCount} tarifas diárias</strong> armazenadas. A importação é manual e não altera o preço publicado no site.</p>
-        {rateSnapshotReady&&stagedRates.length>0&&<div className="adminStack" style={{marginTop:12}}>{stagedRates.map(rate=><div className="adminStatusLine" key={rate.id}><span><strong>{rooms.find(room=>room.id===rate.accommodationId)?.name||"Quarto não encontrado"}</strong> · {rate.date} · {(rate.priceCents/100).toLocaleString("pt-BR",{style:"currency",currency:"BRL"})}<small style={{display:"block"}}>Smoobu #{rate.smoobuApartmentId} · Estadia mínima {rate.minNights??"—"} · Disponibilidade {rate.available??"—"}</small></span><b className="adminChip">{rate.reviewStatus==="PENDING"?"Aguardando revisão":rate.reviewStatus}</b></div>)}</div>}
+        {rateSnapshotReady&&stagedRates.length>0&&<div className="adminStack" style={{marginTop:12}}>{stagedRates.map(rate=><div className="adminStatusLine" key={rate.id}><span><strong>{rooms.find(room=>room.id===rate.accommodationId)?.name||"Quarto não encontrado"}</strong> · {rate.date} · {(rate.priceCents/100).toLocaleString("pt-BR",{style:"currency",currency:"BRL"})}<small style={{display:"block"}}>Smoobu #{rate.smoobuApartmentId} · Estadia mínima {rate.minNights??"—"} · Disponibilidade {rate.available??"—"}</small></span><div><b className="adminChip">{rate.reviewStatus==="PENDING"?"Aguardando revisão":rate.reviewStatus==="APPROVED"?"Aprovada (não publicada)":"Rejeitada"}</b><form action={reviewSmoobuDailyRate} style={{display:"flex",gap:6,marginTop:6,flexWrap:"wrap"}}><input type="hidden" name="id" value={rate.id}/><input type="hidden" name="expectedUpdatedAt" value={rate.updatedAt.toISOString()}/><button type="submit" name="status" value="APPROVED" disabled={rate.reviewStatus==="APPROVED"}>Aprovar</button><button type="submit" name="status" value="REJECTED" disabled={rate.reviewStatus==="REJECTED"}>Rejeitar</button></form></div></div>)}</div>}
         {!rateSnapshotReady?<p role="alert">Migração da tabela de tarifas pendente.</p>:!smoobuSchemaReady?<p role="alert">Migração dos vínculos Smoobu pendente.</p>:smoobuMappings.length===0?<p>Vincule pelo menos um quarto da Smoobu antes de importar tarifas.</p>:<form action={stageSmoobuDailyRates}><button type="submit" className="adminPrimaryAction">Importar 90 dias para conferência</button></form>}
       </div>
       <details style={{marginTop:16}}>
