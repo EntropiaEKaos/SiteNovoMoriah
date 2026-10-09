@@ -12,16 +12,16 @@ export function parseSmoobuRates(payload:unknown,apartments:number[]):SmoobuDail
   const apartmentId=Number(id);
   if(!apartments.includes(apartmentId)||!dates||typeof dates!=="object"||Array.isArray(dates))throw new Error("Unidade de tarifa desconhecida.");
   for(const [date,raw] of Object.entries(dates)){
-   if(!datePattern.test(date)||!raw||typeof raw!=="object"||Array.isArray(raw))throw new Error("Data ou tarifa inválida.");
+   if(!datePattern.test(date)||Number.isNaN(Date.parse(date+"T00:00:00Z"))||!raw||typeof raw!=="object"||Array.isArray(raw))throw new Error("Data ou tarifa inválida.");
    const item=raw as Record<string,unknown>;
    const price=item.price;
    const priceCents=price===null?null:typeof price==="number"&&Number.isFinite(price)&&price>=0&&price<=1000000?Math.round(price*100):NaN;
    if(Number.isNaN(priceCents))throw new Error("Preço externo inválido.");
    const min=item.min_length_of_stay;
    const available=item.available;
-   if(min!==null&&(!Number.isInteger(min)||Number(min)<0))throw new Error("Estadia mínima inválida.");
-   if(available!==null&&(!Number.isInteger(available)||Number(available)<0))throw new Error("Disponibilidade inválida.");
-   results.push({apartmentId,date,priceCents,minNights:min as number|null,available:available as number|null});
+   if(min!==null&&min!==undefined&&(!Number.isInteger(min)||Number(min)<0))throw new Error("Estadia mínima inválida.");
+   if(available!==null&&available!==undefined&&(!Number.isInteger(available)||Number(available)<0))throw new Error("Disponibilidade inválida.");
+   results.push({apartmentId,date,priceCents,minNights:typeof min==="number"?min:null,available:typeof available==="number"?available:null});
   }
  }
  return results.sort((a,b)=>a.date.localeCompare(b.date)||a.apartmentId-b.apartmentId);
