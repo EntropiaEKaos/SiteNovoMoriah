@@ -1,3 +1,4 @@
+import {saveOtaRoomLink,stageOtaPrice,applyOtaPriceToSite} from "./ota-room-actions";
 import {Prisma} from "@prisma/client";
 import {prisma} from "../../../lib/prisma";
 import {requireAdmin} from "../../../lib/admin-auth";
@@ -35,6 +36,9 @@ export default async function Page(){
 
   // A preview deployment may share a database where migrations have not run yet.
   // Never let an unapplied integration migration break the existing channels dashboard.
+  let otaSchemaReady=true;
+  let otaLinks:Awaited<ReturnType<typeof prisma.otaRoomLink.findMany>>=[];
+  try{otaLinks=await prisma.otaRoomLink.findMany({orderBy:[{provider:"asc"},{externalRoomId:"asc"}]});}catch(error){if(error instanceof Prisma.PrismaClientKnownRequestError&&["P2021","P2022"].includes(error.code))otaSchemaReady=false;else throw error;}
   let smoobuSchemaReady=true;
   let smoobuMappings:Array<{smoobuApartmentId:number;accommodationId:string}>=[];
   let inbox:Awaited<ReturnType<typeof prisma.smoobuReservationInbox.findMany>>=[];
@@ -71,6 +75,38 @@ export default async function Page(){
       <div className="adminPageHeroActions">
         <a className="adminSecondaryAction" href="/admin/canais/calendario">Calendário unificado →</a>
       </div>
+    </section>
+
+    <section className="adminSectionCard" style={{marginBottom:20}}>
+      <h2>Booking.com e Airbnb — quartos e preços do site</h2>
+      <p>Vincule IDs de quartos recebidos dos canais às acomodações existentes no Moriah. O cadastro é expansível: novos quartos ativos aparecem automaticamente. IDs e preços são preenchidos manualmente até existir uma API de tarifas autorizada.</p>
+      {!otaSchemaReady?<p role="alert">Migração de vínculos Booking/Airbnb pendente. Os demais recursos do painel continuam disponíveis.</p>:<>
+        <div className="adminMetricStrip"><div><small>Quartos do site</small><strong>{rooms.length}</strong></div><div><small>Booking vinculados</small><strong>{otaLinks.filter(x=>x.provider==="BOOKING").length}</strong></div><div><small>Airbnb vinculados</small><strong>{otaLinks.filter(x=>x.provider==="AIRBNB").length}</strong></div></div>
+        <form action={saveOtaRoomLink} className="adminFormGrid" style={{marginTop:16}}>
+          <label>Canal<select name="provider" required><option value="BOOKING">Booking.com</option><option value="AIRBNB">Airbnb</option></select></label>
+          <label>ID do quarto no canal<input name="externalRoomId" maxLength={120} required placeholder="ID exato do anúncio/quarto"/></label>
+          <label>Nome no canal<input name="externalRoomName" maxLength={160} placeholder="Ex.: Suíte 01"/></label>
+          <label>Quarto correspondente no site<select name="accommodationId" required defaultValue=""><option value="">Selecione</option>{rooms.map(room=><option key={room.id} value={room.id}>{room.name}{room.roomNumber?" · nº "+room.roomNumber:""}{room.sharedRoom?" · compartilhado":""}</option>)}</select></label>
+          <button type="submit" className="adminPrimaryAction">Salvar vínculo</button>
+        </form>
+        <h3 style={{marginTop:20}}>Vínculos cadastrados e conferência de tarifas</h3>
+        <p>Preço de referência digitado manualmente. Só altera o preço base do quarto no site após confirmação explícita. Tarifas por data e planos tarifários podem seguir regras próprias.</p>
+        <div className="adminStack">{otaLinks.length===0?<p>Nenhum quarto externo vinculado.</p>:otaLinks.map(link=>{const room=rooms.find(x=>x.id===link.accommodationId);return <article className="adminPageNote" key={link.id}>
+          <strong>{link.provider==="BOOKING"?"Booking.com":"Airbnb"} · {link.externalRoomName||link.externalRoomId}</strong>
+          <p>ID {link.externalRoomId} → {room?.name||"Quarto não encontrado"} · Preço base atual: {room?.priceCents==null?"Não definido":(room.priceCents/100).toLocaleString("pt-BR",{style:"currency",currency:"BRL"})}</p>
+          <form action={stageOtaPrice} style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"end"}}>
+            <input type="hidden" name="provider" value={link.provider}/><input type="hidden" name="externalRoomId" value={link.externalRoomId}/>
+            <label>Preço de referência (R$)<input name="priceBRL" inputMode="decimal" placeholder="199,90" required/></label>
+            <button type="submit">Guardar preço para revisão</button>
+          </form>
+          {link.proposedPriceCents!==null&&<form action={applyOtaPriceToSite} style={{marginTop:12}}>
+            <input type="hidden" name="provider" value={link.provider}/><input type="hidden" name="externalRoomId" value={link.externalRoomId}/>
+            <p>Preço proposto: <strong>{(link.proposedPriceCents/100).toLocaleString("pt-BR",{style:"currency",currency:"BRL"})}</strong> · Origem: manual</p>
+            <label><input type="checkbox" name="confirm" value="yes" required/> Confirmo que desejo alterar o preço base deste quarto no site.</label>
+            <button type="submit">Aplicar preço ao site</button>
+          </form>}
+        </article>})}</div>
+      </>}
     </section>
 
     <section className="adminSectionCard" style={{marginBottom:20}}>
