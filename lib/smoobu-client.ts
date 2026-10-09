@@ -67,3 +67,22 @@ export async function getSmoobuReservationOverview():Promise<{total:number;page:
   return {total:payload.total_items!,page:payload.page||1,pageCount:payload.page_count!,byApartment:[...counts.values()]};
  }finally{clearTimeout(timeout);}
 }
+
+/** Inspect the first Smoobu reservation page without persisting or exposing guest details. */
+export async function getSmoobuReservationPreview():Promise<Array<{externalId:number;apartmentId:number|null;arrival:string|null;departure:string|null;status:string}>>{
+ const path="/api/reservations";
+ const controller=new AbortController();
+ const timeout=setTimeout(()=>controller.abort(),10000);
+ try{
+  const response=await fetch(API_ORIGIN+path,{method:"GET",headers:{...signSmoobuRequest("GET",path),Accept:"application/json"},cache:"no-store",signal:controller.signal});
+  if(!response.ok)throw new Error("Falha ao consultar prévia de reservas Smoobu: HTTP "+response.status);
+  const payload=await response.json() as {bookings?:Array<{id?:number;apartment?:{id?:number};arrival?:string;departure?:string;status?:string}>};
+  if(!payload||!Array.isArray(payload.bookings))throw new Error("Formato de reservas Smoobu inesperado.");
+  return payload.bookings.filter(x=>Number.isSafeInteger(x.id)).slice(0,30).map(x=>({
+   externalId:x.id!,apartmentId:Number.isSafeInteger(x.apartment?.id)?x.apartment!.id!:null,
+   arrival:typeof x.arrival==="string"?x.arrival:null,
+   departure:typeof x.departure==="string"?x.departure:null,
+   status:typeof x.status==="string"?x.status.slice(0,40):"Não informado"
+  }));
+ }finally{clearTimeout(timeout);}
+}
