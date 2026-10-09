@@ -44,6 +44,20 @@ export default async function Page(){
       </div>
     </section>
 
+    <section className="adminSectionCard" style={{marginBottom:20}}>
+      <h2>SiteMinder — integração profissional</h2>
+      <p>A Booking.com da Moriah (propriedade 15089254) já informa uma ligação ativa com SiteMinder — RDX. Este painel ainda não possui credenciais nem autorização para consultar essa ligação.</p>
+      <div className="adminPageNote">
+        <strong>Estado: aguardando acesso e autorização.</strong>{" "}
+        Não altere o provedor na Booking até confirmar a titularidade da conta SiteMinder, o mapeamento dos quartos e o procedimento de migração. Esta seção não ativa sincronização nem envia dados.
+      </div>
+      <div className="adminInlineActions" style={{marginTop:14}}>
+        <a className="adminSecondaryAction" href="https://www.siteminder.com/login/" target="_blank" rel="noopener noreferrer">Acessar SiteMinder ↗</a>
+        <a className="adminSecondaryAction" href="https://www.siteminder.com/pt/contacto/" target="_blank" rel="noopener noreferrer">Solicitar acesso / suporte ↗</a>
+      </div>
+      <p style={{marginTop:12}}>Próximas etapas: recuperar ou transferir a conta; obter documentação e credenciais autorizadas; mapear quartos, camas e tarifas; implementar importação de reservas e disponibilidade em ambiente de testes; validar idempotência e prevenção de overbooking antes da ativação.</p>
+    </section>
+
     <section className="adminMetricStrip">
       <div><small>Conexões</small><strong>{rows.length}</strong></div>
       <div><small>Ativas</small><strong>{active}</strong></div>
