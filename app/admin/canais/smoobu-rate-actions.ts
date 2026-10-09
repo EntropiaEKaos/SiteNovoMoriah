@@ -40,3 +40,22 @@ export async function stageSmoobuDailyRates(){
  },{timeout:120000});
  revalidatePath("/admin/canais");
 }
+
+/** Review a staged rate without publishing it to the site. */
+export async function reviewSmoobuDailyRate(form:FormData){
+ await requireAdmin();
+ const id=String(form.get("id")||"").trim();
+ const status=String(form.get("status")||"");
+ if(!id||!["APPROVED","REJECTED","PENDING"].includes(status))throw new Error("Revisão inválida.");
+ const expectedUpdatedAt=String(form.get("expectedUpdatedAt")||"");
+ if(!expectedUpdatedAt||!Number.isFinite(Date.parse(expectedUpdatedAt)))throw new Error("Versão da tarifa inválida.");
+ await prisma.$transaction(async tx=>{
+  const rate=await tx.smoobuDailyRateSnapshot.findUnique({where:{id}});
+  if(!rate)throw new Error("Tarifa não encontrada.");
+  if(rate.updatedAt.toISOString()!==expectedUpdatedAt)throw new Error("Tarifa alterada desde a abertura da página. Atualize e revise novamente.");
+  const updated=await tx.smoobuDailyRateSnapshot.updateMany({where:{id,updatedAt:rate.updatedAt},data:{reviewStatus:status}});
+  if(updated.count!==1)throw new Error("Tarifa modificada por outro administrador.");
+  await tx.adminAuditLog.create({data:{action:"SMOOBU_DAILY_RATE_REVIEWED",targetType:"SmoobuDailyRateSnapshot",targetId:id,details:{status,previousStatus:rate.reviewStatus,accommodationId:rate.accommodationId,date:rate.date,priceCents:rate.priceCents,sitePricesUnchanged:true}}});
+ });
+ revalidatePath("/admin/canais");
+}
