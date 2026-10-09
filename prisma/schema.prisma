@@ -1254,3 +1254,21 @@ model OtaRoomLink {
   @@unique([provider, accommodationId])
   @@index([accommodationId])
 }
+
+/** Staged Smoobu daily rates; never applied to live inventory or site pricing implicitly. */
+model SmoobuDailyRateSnapshot {
+  id String @id @default(cuid())
+  smoobuApartmentId Int
+  accommodationId String
+  date String
+  priceCents Int
+  currency String @default("BRL")
+  minNights Int?
+  available Int?
+  reviewStatus String @default("PENDING")
+  fetchedAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@unique([smoobuApartmentId,date])
+  @@index([accommodationId,date])
+  @@index([reviewStatus,date])
+}
