@@ -8,6 +8,8 @@ export async function stageSmoobuDailyRates(){
  await requireAdmin();
  const mappings=await prisma.smoobuAccommodationMapping.findMany({select:{smoobuApartmentId:true,accommodationId:true}});
  if(mappings.length===0)throw new Error("Vincule os quartos antes de consultar tarifas.");
+ const active=await prisma.accommodation.findMany({where:{id:{in:mappings.map(m=>m.accommodationId)},active:true},select:{id:true}});
+ if(active.length!==new Set(mappings.map(m=>m.accommodationId)).size)throw new Error("Há quartos vinculados inativos ou inexistentes.");
  const ids=mappings.map(m=>m.smoobuApartmentId);
  const data=await getSmoobuDailyRates(ids,90);
  if(data.length===0)throw new Error("A Smoobu não retornou tarifas.");
