@@ -1,3 +1,4 @@
+import {getSmoobuDailyRates} from "../../../lib/smoobu-rates";
 import {saveOtaRoomLink,stageOtaPrice,applyOtaPriceToSite} from "./ota-room-actions";
 import {Prisma} from "@prisma/client";
 import {prisma} from "../../../lib/prisma";
@@ -60,6 +61,8 @@ export default async function Page(){
   const smoobuReservations=smoobuReady?await getSmoobuReservationOverview().then(data=>({data,error:null as string|null})).catch(()=>({data:null,error:"Consulta de reservas indisponível. Confira autenticação e permissões da Smoobu."})):null;
 
   const smoobuPreview=smoobuReady?await getSmoobuReservationPreview().then(items=>({items,error:null as string|null})).catch(()=>({items:[] as Awaited<ReturnType<typeof getSmoobuReservationPreview>>,error:"Não foi possível carregar a prévia das reservas."})):null;
+
+  const smoobuRates=smoobuReady&&smoobuResult&&!smoobuResult.error&&smoobuResult.apartments.length>0?await getSmoobuDailyRates(smoobuResult.apartments.map(x=>x.id)).then(items=>({items,error:null as string|null})).catch(()=>({items:[] as Awaited<ReturnType<typeof getSmoobuDailyRates>>,error:"Tarifas indisponíveis ou sem autorização. Nenhum preço foi alterado."})):null;
 
   const reservationDiagnostics=smoobuPreview&&!smoobuPreview.error?diagnoseSmoobuReservations(smoobuPreview.items,smoobuMappings):[];
   const reservationWarnings=reservationDiagnostics.filter(x=>x.issues.length>0).length;
@@ -156,6 +159,17 @@ export default async function Page(){
         <summary style={{cursor:"pointer",fontWeight:700}}>Acomodações retornadas ({smoobuResult.apartments.length})</summary>
         <div className="adminStack">{smoobuResult.apartments.map(item=><div className="adminStatusLine" key={item.id}><span>{item.name}</span><b className="adminChip">ID {item.id}</b></div>)}</div>
       </details>}
+      <details style={{marginTop:16}}>
+        <summary style={{cursor:"pointer",fontWeight:700}}>Tarifas Smoobu por data — prévia de até 90 dias</summary>
+        <p>Valores consultados diretamente na API Smoobu, sem alterar preços do site, tarifas do Booking/Airbnb ou disponibilidade. A moeda deve ser conferida na configuração da propriedade antes de qualquer publicação.</p>
+        {smoobuRates?.error&&<p role="alert">{smoobuRates.error}</p>}
+        {smoobuRates&&!smoobuRates.error&&<><p><strong>{smoobuRates.items.length} tarifas diárias</strong> recebidas para {smoobuResult?.apartments.length??0} unidades. Mostrando as primeiras 45 datas/unidades.</p>
+          <div className="adminStack">{smoobuRates.items.slice(0,45).map(item=><div className="adminStatusLine" key={item.apartmentId+"-"+item.date}>
+            <span><strong>{smoobuResult?.apartments.find(a=>a.id===item.apartmentId)?.name||"Unidade "+item.apartmentId}</strong> · {item.date} · {item.priceCents===null?"Sem tarifa":(item.priceCents/100).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})+" (moeda da Smoobu)"}<small style={{display:"block"}}>Mínimo {item.minNights??"—"} noite(s) · Disponibilidade {item.available??"—"}</small></span>
+            <b className="adminChip">Somente leitura</b>
+          </div>)}</div>
+        </>}
+      </details>
       <div className="adminStatusLine"><span>Reservas Smoobu (somente leitura)</span><b className={"adminChip "+(smoobuReservations?.data?"ok":"warn")}>{smoobuReservations?.data?"API RESPONDEU":"PENDENTE"}</b></div>
       {smoobuReservations?.data&&<p>Reservas informadas pela Smoobu: <strong>{smoobuReservations.data.total}</strong>. Página {smoobuReservations.data.page} de {smoobuReservations.data.pageCount}. Prévia de {smoobuReservations.data.byApartment.length} unidade(s) nesta página, sem dados pessoais dos hóspedes.</p>}
       {smoobuReservations?.error&&<p>{smoobuReservations.error}</p>}
