@@ -225,6 +225,18 @@ export default function AdminCalendar({events,rooms}:{events:Event[];rooms:Room[
         <button type="button" onClick={()=>move(1)} aria-label="Próximo período" title="Próximo período">→</button>
       </div>
 
+      <label className="calendarJumpToDate" style={{display:"flex",alignItems:"center",gap:8,fontSize:13}}>
+        Ir para data
+        <input type="date" aria-label="Ir para data no calendário" value={dayKey(cursor)}
+          onChange={event=>{
+            if(!event.target.value)return;
+            const chosen=new Date(event.target.value+"T00:00:00Z");
+            if(Number.isNaN(chosen.getTime()))return;
+            setSelected(null);setDraft(null);
+            setCursor(view==="MONTH"?new Date(Date.UTC(chosen.getUTCFullYear(),chosen.getUTCMonth(),1)):chosen);
+          }}/>
+      </label>
+      <Link href="/admin/canais" className="adminSecondaryAction" title="Abrir integrações Booking, Airbnb e Smoobu">Integrações de canais ↗</Link>
       <div className="reservationMapRange">
         <strong>{rangeStart.toLocaleDateString("pt-BR",{day:"2-digit",month:"short",year:"numeric",timeZone:"UTC"})}</strong>
         <span>até</span>
