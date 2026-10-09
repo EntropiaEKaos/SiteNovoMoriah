@@ -1,3 +1,4 @@
+import {simulateApprovedDailyRates} from "../../../lib/smoobu-rate-simulation";
 import {stageSmoobuDailyRates,reviewSmoobuDailyRate} from "./smoobu-rate-actions";
 import {getSmoobuDailyRates} from "../../../lib/smoobu-rates";
 import {saveOtaRoomLink,stageOtaPrice,applyOtaPriceToSite} from "./ota-room-actions";
@@ -57,6 +58,14 @@ export default async function Page(){
     if(error instanceof Prisma.PrismaClientKnownRequestError&&["P2021","P2022"].includes(error.code))smoobuSchemaReady=false;
     else throw error;
   }
+  const approvedRateSimulations=rooms.map(room=>{
+    const approved=stagedRates.filter(rate=>rate.accommodationId===room.id&&rate.reviewStatus==="APPROVED");
+    if(!approved.length)return null;
+    const first=approved[0].date;
+    const next=new Date(Date.parse(first+"T00:00:00Z")+86400000).toISOString().slice(0,10);
+    const simulation=simulateApprovedDailyRates({checkIn:first,checkOut:next,basePriceCents:room.priceCents,sharedRoom:room.sharedRoom,requestedUnits:1,approvedRates:approved.map(rate=>({date:rate.date,priceCents:rate.priceCents,minNights:rate.minNights,available:rate.available,reviewStatus:rate.reviewStatus}))});
+    return {roomName:room.name,...simulation[0]};
+  }).filter((x):x is NonNullable<typeof x>=>x!==null);
   const active=rows.filter(x=>x.active).length;
   const errors=rows.filter(x=>x.lastError).length;
   const adapters=listChannelAdapterCapabilities();
@@ -167,6 +176,7 @@ export default async function Page(){
       <div className="adminPageNote" style={{marginTop:16}}>
         <h3>Importar tarifas para conferência</h3>
         <p><strong>{stagedRateCount} tarifas diárias</strong> armazenadas. A importação é manual e não altera o preço publicado no site.</p>
+        {approvedRateSimulations.length>0&&<div className="adminPageNote" style={{marginTop:12}}><h4>Simulação de tarifas aprovadas (sem publicar)</h4><p>Comparação ilustrativa de uma diária por quarto, usando o preço base cadastrado. Planos tarifários, promoções e regras dinâmicas do motor de reservas podem alterar o valor final.</p>{approvedRateSimulations.map(item=><p key={item.roomName+"-"+item.date}><strong>{item.roomName}</strong> · {item.date} · Base: {(item.currentPriceCents/100).toLocaleString("pt-BR",{style:"currency",currency:"BRL"})} · Proposta: {item.proposedPriceCents===null?item.reason:(item.proposedPriceCents/100).toLocaleString("pt-BR",{style:"currency",currency:"BRL"})+" ("+item.reason+")"}</p>)}</div>}
         {rateSnapshotReady&&stagedRates.length>0&&<div className="adminStack" style={{marginTop:12}}>{stagedRates.map(rate=><div className="adminStatusLine" key={rate.id}><span><strong>{rooms.find(room=>room.id===rate.accommodationId)?.name||"Quarto não encontrado"}</strong> · {rate.date} · {(rate.priceCents/100).toLocaleString("pt-BR",{style:"currency",currency:"BRL"})}<small style={{display:"block"}}>Smoobu #{rate.smoobuApartmentId} · Estadia mínima {rate.minNights??"—"} · Disponibilidade {rate.available??"—"}</small></span><div><b className="adminChip">{rate.reviewStatus==="PENDING"?"Aguardando revisão":rate.reviewStatus==="APPROVED"?"Aprovada (não publicada)":"Rejeitada"}</b><form action={reviewSmoobuDailyRate} style={{display:"flex",gap:6,marginTop:6,flexWrap:"wrap"}}><input type="hidden" name="id" value={rate.id}/><input type="hidden" name="expectedUpdatedAt" value={rate.updatedAt.toISOString()}/><button type="submit" name="status" value="APPROVED" disabled={rate.reviewStatus==="APPROVED"}>Aprovar</button><button type="submit" name="status" value="REJECTED" disabled={rate.reviewStatus==="REJECTED"}>Rejeitar</button></form></div></div>)}</div>}
         {!rateSnapshotReady?<p role="alert">Migração da tabela de tarifas pendente.</p>:!smoobuSchemaReady?<p role="alert">Migração dos vínculos Smoobu pendente.</p>:smoobuMappings.length===0?<p>Vincule pelo menos um quarto da Smoobu antes de importar tarifas.</p>:<form action={stageSmoobuDailyRates}><button type="submit" className="adminPrimaryAction">Importar 90 dias para conferência</button></form>}
       </div>
