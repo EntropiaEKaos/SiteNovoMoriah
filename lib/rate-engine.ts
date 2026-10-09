@@ -83,7 +83,9 @@ export async function quoteAccommodation(
   const units=Math.max(1,Math.floor(requestedUnits||1));
   const smoobuPricingEnabled=process.env.SMOOBU_APPROVED_RATES_IN_QUOTES==="true";
   const approvedDailyRates=smoobuPricingEnabled?await prisma.smoobuDailyRateSnapshot.findMany({where:{accommodationId,reviewStatus:"APPROVED",date:{gte:checkIn.toISOString().slice(0,10),lt:checkOut.toISOString().slice(0,10)}}}):[];
-  const approvedByDate=new Map(approvedDailyRates.map(rate=>[rate.date,rate]));
+  // All-or-nothing coverage: do not mix external and internal daily rates for one stay.
+  const completeCoverage=approvedDailyRates.length===nights&&Array.from({length:nights},(_,i)=>{const day=new Date(checkIn);day.setUTCDate(day.getUTCDate()+i);return day.toISOString().slice(0,10);}).every(date=>approvedDailyRates.some(rate=>rate.date===date));
+  const approvedByDate=new Map((completeCoverage?approvedDailyRates:[]).map(rate=>[rate.date,rate]));
 
   const [room,plan,rules]=await Promise.all([
     prisma.accommodation.findFirst({
