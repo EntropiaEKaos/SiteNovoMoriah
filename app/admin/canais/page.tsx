@@ -4,7 +4,7 @@ import {createChannelIntegration,toggleChannelIntegration,deleteChannelIntegrati
 import {listChannelAdapterCapabilities} from "../../../lib/channel-adapter-registry";
 import CalendarExportActions from "./calendar-export-actions";
 import {saveSmoobuMapping} from "./smoobu-mapping-actions";
-import {smoobuConfigured,getSmoobuApartments,getSmoobuReservationOverview} from "../../../lib/smoobu-client";
+import {smoobuConfigured,getSmoobuApartments,getSmoobuReservationOverview,getSmoobuReservationPreview} from "../../../lib/smoobu-client";
 
 export const dynamic="force-dynamic";
 
@@ -38,6 +38,8 @@ export default async function Page(){
   const smoobuResult=smoobuReady?await getSmoobuApartments().then(apartments=>({apartments,error:null as string|null})).catch(()=>({apartments:[] as {id:number;name:string}[],error:"Não foi possível validar a conexão. Confira as credenciais HMAC e a autorização da API."})):null;
 
   const smoobuReservations=smoobuReady?await getSmoobuReservationOverview().then(data=>({data,error:null as string|null})).catch(()=>({data:null,error:"Consulta de reservas indisponível. Confira autenticação e permissões da Smoobu."})):null;
+
+  const smoobuPreview=smoobuReady?await getSmoobuReservationPreview().then(items=>({items,error:null as string|null})).catch(()=>({items:[] as Awaited<ReturnType<typeof getSmoobuReservationPreview>>,error:"Não foi possível carregar a prévia das reservas."})):null;
 
   return <main className="adminPage">
     <section className="adminPageHero">
@@ -103,6 +105,8 @@ export default async function Page(){
       {smoobuReservations?.error&&<p>{smoobuReservations.error}</p>}
       {smoobuResult&&!smoobuResult.error&&<div className="adminPageNote" style={{marginTop:16}}><h3>Pré-mapeamento Smoobu ↔ PMS Moriah</h3><p>Confira os nomes antes de associar unidades. Este quadro é apenas uma sugestão visual: nenhuma associação ou reserva é gravada automaticamente.</p><div className="adminStack">{smoobuResult.apartments.map(item=>{const matches=rooms.filter(room=>room.name.trim().toLocaleLowerCase("pt-BR")===item.name.trim().toLocaleLowerCase("pt-BR"));return <div className="adminStatusLine" key={item.id}><span><strong>{item.name}</strong> (Smoobu #{item.id}) → {matches.length===1?matches[0].name:matches.length>1?"Múltiplas unidades com mesmo nome":"Sem correspondência exata"}</span><b className={"adminChip "+(matches.length===1?"ok":"warn")}>{matches.length===1?"SUGESTÃO":"REVISAR"}</b></div>})}</div><p>Antes de habilitar sincronização de inventário, valide manualmente quartos privativos, compartilhados e respectivas capacidades.</p></div>}
       {smoobuResult&&!smoobuResult.error&&<div className="adminSectionCard" style={{marginTop:18}}><h3>Vincular unidades Smoobu ao PMS</h3><p>Confirme manualmente cada vínculo. Não importa reservas nem altera disponibilidade.</p><div className="adminStack">{smoobuResult.apartments.map(item=>{const mapping=smoobuMappings.find(x=>x.smoobuApartmentId===item.id);return <form action={saveSmoobuMapping} key={item.id} className="adminFormGrid"><input type="hidden" name="smoobuApartmentId" value={item.id}/><label><strong>{item.name}</strong> · ID {item.id}</label><label>Quarto correspondente<select name="accommodationId" required defaultValue={mapping?.accommodationId||""}><option value="">Selecione o quarto</option>{rooms.map(room=><option key={room.id} value={room.id}>{room.name}{room.sharedRoom?" · compartilhado ("+room.bedCount+" camas)":""}</option>)}</select></label><button type="submit">{mapping?"Atualizar vínculo":"Confirmar vínculo"}</button></form>})}</div></div>}
+      {smoobuPreview&&!smoobuPreview.error&&<details style={{marginTop:18}}><summary style={{cursor:"pointer",fontWeight:700}}>Reservas externas — prévia somente leitura ({smoobuPreview.items.length})</summary><p>Identificadores e datas retornados pela API, sem nomes de hóspedes. Nenhum registro é importado automaticamente.</p><div className="adminStack">{smoobuPreview.items.map(item=><div className="adminStatusLine" key={item.externalId}><span><strong>Reserva #{item.externalId}</strong> · Unidade {item.apartmentId??"não identificada"} · {item.arrival||"Data pendente"} → {item.departure||"Data pendente"}</span><b className="adminChip">{item.status}</b></div>)}</div></details>}
+      {smoobuPreview?.error&&<p>{smoobuPreview.error}</p>}
       <p style={{marginTop:12}}>Configuração: SMOOBU_API_KEY e SMOOBU_API_SECRET no ambiente da Vercel. Nenhum segredo é exibido no painel. Esta fase não importa reservas nem altera tarifas ou disponibilidade.</p>
       <a className="adminSecondaryAction" href="https://support.smoobu.com/hc/en-us/articles/360003170740-Use-the-Smoobu-API-get-an-API-key-set-up-webhooks-and-sign-your-requests" target="_blank" rel="noopener noreferrer">Como obter as credenciais ↗</a>
     </section>
