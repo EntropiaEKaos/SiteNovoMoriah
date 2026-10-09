@@ -96,9 +96,18 @@ export default function AdminCalendar({events,rooms}:{events:Event[];rooms:Room[
   const rangeEnd=new Date((days.at(-1)||today).getTime()+DAY);
   const q=search.trim().toLowerCase();
 
+  function capacityAt(room:Room,date:Date){
+    const key=dayKey(date);
+    const overlapping=events.filter(event=>event.roomId===room.id&&dayKey(new Date(event.start))<=key&&dayKey(new Date(event.end))>key);
+    const blocked=overlapping.some(event=>event.kind!=="BOOKING");
+    const used=overlapping.filter(event=>event.kind==="BOOKING").reduce((sum,event)=>sum+Math.max(1,event.guests||1),0);
+    const total=room.sharedRoom?Math.max(1,room.bedCount):1;
+    return {total,used,blocked,free:blocked?0:Math.max(0,total-(room.sharedRoom?used:overlapping.length))};
+  }
+
   const visibleRooms=useMemo(
-    ()=>rooms.filter(room=>(!roomFilter||room.id===roomFilter)&&(!onlyFree||room.sharedRoom||!events.some(event=>event.roomId===room.id&&new Date(event.start)<rangeEnd&&new Date(event.end)>rangeStart))),
-    [rooms,roomFilter,onlyFree,events,rangeStart,rangeEnd]
+    ()=>rooms.filter(room=>(!roomFilter||room.id===roomFilter)&&(!onlyFree||days.some(day=>capacityAt(room,day).free>0))),
+    [rooms,roomFilter,onlyFree,events,days]
   );
 
   const visibleEvents=useMemo(
@@ -367,7 +376,8 @@ export default function AdminCalendar({events,rooms}:{events:Event[];rooms:Room[
           <div className="reservationMapRoom"><small>{room.roomNumber||"UNIDADE"}</small><strong>{room.name}</strong><span>{room.sharedRoom?`Compartilhado • ${room.bedCount} camas (ocupação parcial exige conferência)`:`até ${room.capacity} hóspede(s)`}</span></div>
 
           {days.map(day=>{
-            const isOccupied=occupied(room.id,day);
+            const availability=capacityAt(room,day);
+            const isOccupied=availability.free===0;
             const dropAllowed=canDrop(room.id,day,dragging);
             const keyValue=room.id+"|"+dayKey(day);
             return <button
@@ -380,6 +390,8 @@ export default function AdminCalendar({events,rooms}:{events:Event[];rooms:Room[
                 (dropKey===keyValue?" isDropHover":"")
               }
               aria-disabled={isOccupied}
+              title={room.sharedRoom?(availability.blocked?"Bloqueado por canal ou operação":availability.free+" de "+availability.total+" camas disponíveis"):(isOccupied?"Indisponível":"Disponível")}
+              aria-label={room.name+" "+dayKey(day)+": "+(room.sharedRoom?availability.free+" camas disponíveis":isOccupied?"ocupado":"livre")}
               onClick={()=>{if(!isOccupied)startDraft(room.id,day);}}
               onDragOver={event=>{if(dropAllowed){event.preventDefault();setDropKey(keyValue);}}}
               onDragLeave={()=>{if(dropKey===keyValue)setDropKey("");}}
