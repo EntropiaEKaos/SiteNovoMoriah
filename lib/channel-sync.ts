@@ -17,6 +17,8 @@ export async function syncChannelIntegration(id:string){
   // Deletion is deliberately disabled until cancellation and snapshot-order certification.
   // Missing feed events must not silently release externally blocked inventory.
   await prisma.$transaction(async tx=>{
+   // Serialize reconciliation per integration, including competing workers.
+   await tx.$queryRaw`SELECT 1 AS locked FROM pg_advisory_xact_lock(hashtext(${id}))`;
    for(const block of result.blocks)await tx.channelBlock.upsert({where:{integrationId_externalUid:{integrationId:id,externalUid:block.externalUid}},create:{integrationId:id,...block},update:{summary:block.summary||null,startsAt:block.startsAt,endsAt:block.endsAt}});
    // No deleteMany here: missing UIDs are retained for manual reconciliation.
    await tx.channelIntegration.update({where:{id},data:{lastSyncAt:result.syncedAt,lastSuccessAt:result.syncedAt,syncStatus:"HEALTHY",lastError:null,etag:result.etag,lastModified:result.lastModified,consecutiveFailures:0,nextSyncAt:new Date(Date.now()+10*60_000),syncDurationMs:Date.now()-started}});
