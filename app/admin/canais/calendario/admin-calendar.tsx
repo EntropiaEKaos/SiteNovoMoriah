@@ -35,6 +35,8 @@ type Room={
   name:string;
   roomNumber:string|null;
   capacity:number;
+  sharedRoom:boolean;
+  bedCount:number;
 };
 
 type ViewMode="7"|"15"|"30"|"MONTH";
@@ -95,7 +97,7 @@ export default function AdminCalendar({events,rooms}:{events:Event[];rooms:Room[
   const q=search.trim().toLowerCase();
 
   const visibleRooms=useMemo(
-    ()=>rooms.filter(room=>(!roomFilter||room.id===roomFilter)&&(!onlyFree||!events.some(event=>event.roomId===room.id&&new Date(event.start)<rangeEnd&&new Date(event.end)>rangeStart))),
+    ()=>rooms.filter(room=>(!roomFilter||room.id===roomFilter)&&(!onlyFree||room.sharedRoom||!events.some(event=>event.roomId===room.id&&new Date(event.start)<rangeEnd&&new Date(event.end)>rangeStart))),
     [rooms,roomFilter,onlyFree,events,rangeStart,rangeEnd]
   );
 
@@ -362,7 +364,7 @@ export default function AdminCalendar({events,rooms}:{events:Event[];rooms:Room[
       {visibleRooms.map(room=>{
         const roomEvents=visibleEvents.filter(event=>event.roomId===room.id).sort((a,b)=>a.start.localeCompare(b.start));
         return <div className="reservationMapRow" style={{gridTemplateColumns:gridTemplate}} key={room.id}>
-          <div className="reservationMapRoom"><small>{room.roomNumber||"UNIDADE"}</small><strong>{room.name}</strong><span>até {room.capacity} hóspede(s)</span></div>
+          <div className="reservationMapRoom"><small>{room.roomNumber||"UNIDADE"}</small><strong>{room.name}</strong><span>{room.sharedRoom?`Compartilhado • ${room.bedCount} camas (ocupação parcial exige conferência)`:`até ${room.capacity} hóspede(s)`}</span></div>
 
           {days.map(day=>{
             const isOccupied=occupied(room.id,day);
