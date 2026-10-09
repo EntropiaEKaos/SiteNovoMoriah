@@ -61,6 +61,16 @@ export default async function Page(){
           <a className="adminSecondaryAction" href="https://www.siteminder.com/" target="_blank" rel="noopener noreferrer">Conhecer SiteMinder ↗</a>
         </article>
       </div>
+      <details style={{marginTop:16}}>
+        <summary style={{cursor:"pointer",fontWeight:700}}>Pré-mapeamento das acomodações ({rooms.length})</summary>
+        <p>Confira as unidades cadastradas antes de solicitar os identificadores externos ao SiteMinder. Este inventário é somente leitura e não modifica disponibilidade.</p>
+        <div className="adminStack">
+          {rooms.map(room=><div className="adminStatusLine" key={room.id}>
+            <span>{room.name} {room.sharedRoom?"· compartilhado · "+room.bedCount+" cama(s)":"· privativo"}</span>
+            <b className="adminChip warn">ID externo pendente</b>
+          </div>)}
+        </div>
+      </details>
       <p style={{marginTop:16}}>Integração API ainda não habilitada: ambos os caminhos exigem documentação oficial, mapeamento de quartos/camas e testes de sincronização antes de qualquer ativação. O iCal existente continua independente.</p>
     </section>
 
