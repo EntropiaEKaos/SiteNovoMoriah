@@ -81,10 +81,12 @@ export async function quoteAccommodation(
   if(nights<1||nights>365)throw new Error("Período fora do limite.");
 
   const units=Math.max(1,Math.floor(requestedUnits||1));
+  // Require an explicit deployment-level kill switch; never enabled by default.
   const smoobuPricingEnabled=process.env.SMOOBU_APPROVED_RATES_IN_QUOTES==="true";
   const approvedDailyRates=smoobuPricingEnabled?await prisma.smoobuDailyRateSnapshot.findMany({where:{accommodationId,reviewStatus:"APPROVED",date:{gte:checkIn.toISOString().slice(0,10),lt:checkOut.toISOString().slice(0,10)}}}):[];
   // All-or-nothing coverage: do not mix external and internal daily rates for one stay.
-  const completeCoverage=approvedDailyRates.length===nights&&Array.from({length:nights},(_,i)=>{const day=new Date(checkIn);day.setUTCDate(day.getUTCDate()+i);return day.toISOString().slice(0,10);}).every(date=>approvedDailyRates.some(rate=>rate.date===date&&rate.priceCents>=100&&(rate.minNights===null||rate.minNights<=nights)&&(rate.available===null||rate.available>=units)));
+  const freshnessCutoff=Date.now()-24*60*60*1000;
+  const completeCoverage=approvedDailyRates.length===nights&&Array.from({length:nights},(_,i)=>{const day=new Date(checkIn);day.setUTCDate(day.getUTCDate()+i);return day.toISOString().slice(0,10);}).every(date=>approvedDailyRates.some(rate=>rate.date===date&&rate.currency==="BRL"&&rate.fetchedAt.getTime()>=freshnessCutoff&&rate.priceCents>=100&&(rate.minNights===null||rate.minNights<=nights)&&(rate.available===null||rate.available>=units)));
   const approvedByDate=new Map((completeCoverage?approvedDailyRates:[]).map(rate=>[rate.date,rate]));
 
   const [room,plan,rules]=await Promise.all([
