@@ -7,18 +7,20 @@ import {validateChannelSnapshot} from "./channel-sync-safety";
 export async function syncChannelIntegration(id:string){
  const row=await prisma.channelIntegration.findUnique({where:{id}});
  if(!row?.active||!row.accommodationId)throw new Error("Canal inativo ou sem hospedagem.");
- const started=Date.now();await prisma.channelIntegration.update({where:{id},data:{lastAttemptAt:new Date(),syncStatus:"SYNCING"}});
+ const started=Date.now();const attemptAt=new Date();await prisma.channelIntegration.update({where:{id},data:{lastAttemptAt:attemptAt,syncStatus:"SYNCING"}});
  try{
   const kind=resolveAdapterKind(row.integrationType);
   const adapter=getChannelAdapter(kind);
   const result=await adapter.sync({integrationId:id,accommodationId:row.accommodationId,provider:row.provider});
-  if(result.notModified){await prisma.channelIntegration.update({where:{id},data:{lastSyncAt:result.syncedAt,lastSuccessAt:result.syncedAt,syncStatus:"HEALTHY",lastError:null,etag:result.etag,lastModified:result.lastModified,consecutiveFailures:0,nextSyncAt:new Date(Date.now()+10*60_000),syncDurationMs:Date.now()-started}});return 0;}
+  if(result.notModified){await prisma.channelIntegration.updateMany({where:{id,lastAttemptAt:attemptAt},data:{lastSyncAt:result.syncedAt,lastSuccessAt:result.syncedAt,syncStatus:"HEALTHY",lastError:null,etag:result.etag,lastModified:result.lastModified,consecutiveFailures:0,nextSyncAt:new Date(Date.now()+10*60_000),syncDurationMs:Date.now()-started}});return 0;}
   validateChannelSnapshot(result.blocks);
   // Deletion is deliberately disabled until cancellation and snapshot-order certification.
   // Missing feed events must not silently release externally blocked inventory.
   await prisma.$transaction(async tx=>{
    // Serialize reconciliation per integration, including competing workers.
    await tx.$queryRaw`SELECT 1 AS locked FROM pg_advisory_xact_lock(hashtext(${id}))`;
+   const current=await tx.channelIntegration.findUnique({where:{id},select:{lastAttemptAt:true}});
+   if(current?.lastAttemptAt?.getTime()!==attemptAt.getTime())return; // A newer sync started: never apply this stale snapshot.
    for(const block of result.blocks)await tx.channelBlock.upsert({where:{integrationId_externalUid:{integrationId:id,externalUid:block.externalUid}},create:{integrationId:id,...block},update:{summary:block.summary||null,startsAt:block.startsAt,endsAt:block.endsAt}});
    // No deleteMany here: missing UIDs are retained for manual reconciliation.
    await tx.channelIntegration.update({where:{id},data:{lastSyncAt:result.syncedAt,lastSuccessAt:result.syncedAt,syncStatus:"HEALTHY",lastError:null,etag:result.etag,lastModified:result.lastModified,consecutiveFailures:0,nextSyncAt:new Date(Date.now()+10*60_000),syncDurationMs:Date.now()-started}});
@@ -26,7 +28,8 @@ export async function syncChannelIntegration(id:string){
   return result.blocks.length;
  }catch(error){
   const message=error instanceof Error?error.message:"Erro desconhecido";
-  const failures=(row.consecutiveFailures||0)+1;const delay=Math.min(60,Math.pow(2,Math.min(failures,5))*5);await prisma.channelIntegration.update({where:{id},data:{syncStatus:"ERROR",lastError:message.slice(0,500),consecutiveFailures:failures,nextSyncAt:new Date(Date.now()+delay*60_000),syncDurationMs:Date.now()-started}});
+  const failures=(row.consecutiveFailures||0)+1;const delay=Math.min(60,Math.pow(2,Math.min(failures,5))*5);const changed=await prisma.channelIntegration.updateMany({where:{id,lastAttemptAt:attemptAt},data:{syncStatus:"ERROR",lastError:message.slice(0,500),consecutiveFailures:failures,nextSyncAt:new Date(Date.now()+delay*60_000),syncDurationMs:Date.now()-started}});
+  if(!changed.count)throw error; // A newer sync owns status and notifications.
   await queueSystemNotification({module:"CANAIS",eventKey:"SYNC_ERROR",title:"Falha de sincronização de canal",body:row.provider+" • "+message.slice(0,260),dedupeKey:"channel-sync:"+id+":"+String(failures),actionUrl:"/admin/canais"});
   throw error;
  }
