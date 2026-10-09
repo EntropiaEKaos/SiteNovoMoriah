@@ -1220,3 +1220,20 @@ model SmoobuAccommodationMapping {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
+/** Read-only external reservation inbox. Not part of PMS occupancy calculations. */
+model SmoobuReservationInbox {
+  id String @id @default(cuid())
+  externalId Int @unique
+  apartmentId Int?
+  accommodationId String?
+  arrival String?
+  departure String?
+  externalStatus String
+  reviewStatus String @default("PENDING")
+  validationIssues Json?
+  firstSeenAt DateTime @default(now())
+  lastSeenAt DateTime @updatedAt
+  @@index([reviewStatus, lastSeenAt])
+  @@index([apartmentId])
+}
