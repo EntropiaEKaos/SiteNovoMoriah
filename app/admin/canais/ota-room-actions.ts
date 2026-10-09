@@ -33,7 +33,7 @@ export async function stageOtaPrice(form:FormData){
  const provider=parseProvider(form);
  const externalRoomId=String(form.get("externalRoomId")||"").trim();
  const raw=String(form.get("priceBRL")||"").trim();
- if(!/^\\d{1,7}(?:[,.]\\d{1,2})?$/.test(raw))throw new Error("Informe valor em reais válido.");
+ if(!/^\d{1,7}(?:[,.]\d{1,2})?$/.test(raw))throw new Error("Informe valor em reais válido.");
  const cents=Math.round(Number(raw.replace(",","."))*100);
  if(!Number.isSafeInteger(cents)||cents<100||cents>100000000)throw new Error("Preço fora dos limites.");
  await prisma.$transaction(async tx=>{
