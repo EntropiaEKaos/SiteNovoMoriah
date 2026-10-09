@@ -3,6 +3,7 @@ import {requireAdmin} from "../../../lib/admin-auth";
 import {createChannelIntegration,toggleChannelIntegration,deleteChannelIntegration,syncChannelNow} from "../actions";
 import {listChannelAdapterCapabilities} from "../../../lib/channel-adapter-registry";
 import CalendarExportActions from "./calendar-export-actions";
+import {smoobuConfigured,getSmoobuApartments} from "../../../lib/smoobu-client";
 
 export const dynamic="force-dynamic";
 
@@ -31,6 +32,8 @@ export default async function Page(){
   const active=rows.filter(x=>x.active).length;
   const errors=rows.filter(x=>x.lastError).length;
   const adapters=listChannelAdapterCapabilities();
+  const smoobuReady=smoobuConfigured();
+  const smoobuResult=smoobuReady?await getSmoobuApartments().then(apartments=>({apartments,error:null as string|null})).catch(()=>({apartments:[] as {id:number;name:string}[],error:"Não foi possível validar a conexão. Confira as credenciais HMAC e a autorização da API."})):null;
 
   return <main className="adminPage">
     <section className="adminPageHero">
@@ -72,6 +75,26 @@ export default async function Page(){
         </div>
       </details>
       <p style={{marginTop:16}}>Integração API ainda não habilitada: ambos os caminhos exigem documentação oficial, mapeamento de quartos/camas e testes de sincronização antes de qualquer ativação. O iCal existente continua independente.</p>
+    </section>
+
+    <section className="adminSectionCard" style={{marginBottom:20}}>
+      <h2>Smoobu — integração por API</h2>
+      <p>Conexão de leitura com autenticação HMAC-SHA256. O acesso exige uma conta Smoobu com API habilitada e duas variáveis de ambiente configuradas no servidor.</p>
+      <div className="adminStatusLine">
+        <span>Credenciais de API</span>
+        <b className={"adminChip "+(smoobuReady?"ok":"warn")}>{smoobuReady?"CONFIGURADAS":"PENDENTES"}</b>
+      </div>
+      <div className="adminStatusLine">
+        <span>Teste de consulta de acomodações</span>
+        <b className={"adminChip "+(smoobuResult&&!smoobuResult.error?"ok":"warn")}>{smoobuResult&&!smoobuResult.error?"CONECTADO":"NÃO VALIDADO"}</b>
+      </div>
+      {smoobuResult?.error&&<p>{smoobuResult.error}</p>}
+      {smoobuResult&&!smoobuResult.error&&<details style={{marginTop:12}}>
+        <summary style={{cursor:"pointer",fontWeight:700}}>Acomodações retornadas ({smoobuResult.apartments.length})</summary>
+        <div className="adminStack">{smoobuResult.apartments.map(item=><div className="adminStatusLine" key={item.id}><span>{item.name}</span><b className="adminChip">ID {item.id}</b></div>)}</div>
+      </details>}
+      <p style={{marginTop:12}}>Configuração: SMOOBU_API_KEY e SMOOBU_API_SECRET no ambiente da Vercel. Nenhum segredo é exibido no painel. Esta fase não importa reservas nem altera tarifas ou disponibilidade.</p>
+      <a className="adminSecondaryAction" href="https://support.smoobu.com/hc/en-us/articles/360003170740-Use-the-Smoobu-API-get-an-API-key-set-up-webhooks-and-sign-your-requests" target="_blank" rel="noopener noreferrer">Como obter as credenciais ↗</a>
     </section>
 
     <section className="adminMetricStrip">
