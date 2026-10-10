@@ -77,6 +77,10 @@ export default function AdminCalendar({events,rooms}:{events:Event[];rooms:Room[
   const [dragging,setDragging]=useState<Event|null>(null);
   const [dropKey,setDropKey]=useState("");
   const [moveError,setMoveError]=useState("");
+  const [showOnlyAvailable,setShowOnlyAvailable]=useState(false);
+  const [hoveredDay,setHoveredDay]=useState<string|null>(null);
+  const [selectionStart,setSelectionStart]=useState<{roomId:string;date:string}|null>(null);
+  const [selectionEnd,setSelectionEnd]=useState<string|null>(null);
 
   const days=useMemo(()=>{
     if(view==="MONTH"){
@@ -147,6 +151,22 @@ export default function AdminCalendar({events,rooms}:{events:Event[];rooms:Room[
     setSelected(null);
     setBookingError("");
     setDraft({mode:draftMode,roomId,checkIn:dayKey(date),checkOut:dayKey(next)});
+  }
+
+  function completeSelection(roomId:string,date:Date){
+    if(!selectionStart||selectionStart.roomId!==roomId)return;
+    const first=selectionStart.date;
+    const last=dayKey(date);
+    const begin=first<last?first:last;
+    const finish=first<last?last:first;
+    const end=dayKey(new Date(new Date(finish+"T00:00:00Z").getTime()+DAY));
+    setSelectionStart(null);setSelectionEnd(null);
+    if(events.some(event=>event.roomId===roomId&&dayKey(new Date(event.start))<end&&dayKey(new Date(event.end))>begin)){
+      setMoveError("O período selecionado possui ocupação ou bloqueio. Escolha datas livres.");
+      return;
+    }
+    setMoveError("");setSelected(null);setBookingError("");
+    setDraft({mode:draftMode,roomId,checkIn:begin,checkOut:end});
   }
 
   function occupied(roomId:string,date:Date,excludeId?:string){
@@ -265,6 +285,12 @@ export default function AdminCalendar({events,rooms}:{events:Event[];rooms:Room[
       <p>Reservas confirmadas também podem ser arrastadas para outra data/quarto. O sistema valida disponibilidade e recalcula a tarifa antes de salvar.</p>
     </div>
 
+    <div className="calendarEnhancedToolbar" role="group" aria-label="Ferramentas de visualização do calendário">
+      <div className="calendarEnhancedTitle"><span aria-hidden="true">✦</span><div><strong>Visão operacional ao vivo</strong><small>Clique em um dia livre ou arraste entre dias livres para selecionar um período</small></div></div>
+      <label className="calendarAvailableToggle"><input type="checkbox" checked={showOnlyAvailable} onChange={event=>setShowOnlyAvailable(event.target.checked)}/> Destacar dias livres</label>
+      <button type="button" onClick={()=>{setSearch("");setRoomFilter("");setShowOnlyAvailable(false);setSelected(null);setDraft(null);}}>Limpar filtros</button>
+    </div>
+
     <div className="adminMetricStrip reservationMapMetrics">
       <div><small>Ocupação do período</small><strong>{metrics.occupancy}%</strong></div>
       <div><small>Entradas</small><strong>{metrics.arrivals}</strong></div>
@@ -285,11 +311,12 @@ export default function AdminCalendar({events,rooms}:{events:Event[];rooms:Room[
     <div className="reservationMapScroll" role="region" aria-label="Mapa de reservas por hospedagem e data" tabIndex={0}>
       <div className="reservationMapHeader" style={{gridTemplateColumns:gridTemplate}}>
         <div className="reservationMapRoomHeader">HOSPEDAGEM</div>
-        {days.map(day=><div className={"reservationMapDayHead"+(dayKey(day)===dayKey(today)?" isToday":"")} key={dayKey(day)}>
+        {days.map(day=><div className={"reservationMapDayHead"+(dayKey(day)===dayKey(today)?" isToday":"")+(hoveredDay===dayKey(day)?" isHoveredDay":"")} key={dayKey(day)}>
           <small>{day.toLocaleDateString("pt-BR",{weekday:"short",timeZone:"UTC"}).replace(".","")}</small><b>{day.getUTCDate()}</b>
         </div>)}
       </div>
 
+      {visibleRooms.length===0&&<div className="calendarEmptyState" role="status">Nenhuma hospedagem corresponde aos filtros. Limpe os filtros para voltar a visualizar o mapa.</div>}
       {visibleRooms.map(room=>{
         const roomEvents=visibleEvents.filter(event=>event.roomId===room.id).sort((a,b)=>a.start.localeCompare(b.start));
         return <div className="reservationMapRow" style={{gridTemplateColumns:gridTemplate}} key={room.id}>
@@ -303,6 +330,8 @@ export default function AdminCalendar({events,rooms}:{events:Event[];rooms:Room[
               type="button"
               key={dayKey(day)}
               className={"reservationMapCell reservationMapCellButton"+
+                (showOnlyAvailable&&!isOccupied?" isAvailableHighlighted":"")+
+                (selectionStart?.roomId===room.id&&selectionEnd&&dayKey(day)>=(selectionStart.date<selectionEnd?selectionStart.date:selectionEnd)&&dayKey(day)<=(selectionStart.date>selectionEnd?selectionStart.date:selectionEnd)?" isRangeSelecting":"")+
                 (dayKey(day)===dayKey(today)?" isToday":"")+
                 (isOccupied?" isOccupied":"")+
                 (dropAllowed?" isDropAllowed":"")+
@@ -311,7 +340,13 @@ export default function AdminCalendar({events,rooms}:{events:Event[];rooms:Room[
               aria-disabled={isOccupied}
               aria-label={`${room.name}, ${dateLabel(day)}: ${isOccupied?"ocupado":"livre; criar "+(draftMode==="BOOKING"?"reserva":"bloqueio")}`}
               title={`${room.name} • ${dateLabel(day)} • ${isOccupied?"Ocupado":"Disponível"}`}
-              onClick={()=>{if(!isOccupied)startDraft(room.id,day);}}
+              onMouseDown={event=>{if(event.button===0&&!dragging&&!isOccupied){setSelectionStart({roomId:room.id,date:dayKey(day)});setSelectionEnd(dayKey(day));}}}
+              onMouseUp={()=>{if(selectionStart)completeSelection(room.id,day);}}
+              onMouseEnter={()=>{setHoveredDay(dayKey(day));if(selectionStart?.roomId===room.id)setSelectionEnd(dayKey(day));}}
+              onMouseLeave={()=>setHoveredDay(null)}
+              onFocus={()=>setHoveredDay(dayKey(day))}
+              onBlur={()=>setHoveredDay(null)}
+              onClick={()=>{if(!isOccupied&&!selectionStart&&!draft)startDraft(room.id,day);}}
               onDragOver={event=>{if(dropAllowed){event.preventDefault();setDropKey(keyValue);}}}
               onDragLeave={()=>{if(dropKey===keyValue)setDropKey("");}}
               onDrop={event=>{event.preventDefault();dropBooking(room.id,day);}}
