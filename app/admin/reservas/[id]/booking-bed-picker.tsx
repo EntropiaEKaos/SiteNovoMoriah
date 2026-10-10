@@ -11,13 +11,15 @@ export default function BookingBedPicker({count,initialNumber,initialLevel,occup
  const selectedOccupants=number?occupied.get(number)||[]:[];
  const conflict=number!==null&&selectedOccupants.some(item=>item.level===level);
  const unresolved=pendingBookings>0||pendingHolds>0;
+ const assignedCount=occupied.size+(initialNumber!==null&&!occupied.has(initialNumber)?1:0);
  const formatDate=(date:string)=>date?date.split("-").reverse().join("/"):"Data não informada";
  return <section className={styles.wrapper} aria-label="Selecionar cama do hostel">
   <div className={styles.head}><div><small>HOSTEL • QUARTO COMPARTILHADO</small><h3>Escolha a cama</h3><p>{roomName} · Clique no leito desejado e selecione a altura.</p></div><span>{count} camas</span></div>
-  <div className={styles.legend}><span>● Sem atribuição</span><span>● Ocupada</span><span>● Selecionada</span></div>
+  <div className={styles.legend}><span>● Sem cama registrada</span><span>● Ocupada por outra reserva</span><span>● Cama desta reserva</span></div>
+  <p className={styles.note} role="status">{assignedCount} cama(s) identificada(s) com atribuição neste período. {initialNumber!==null?`Esta reserva está gravada na cama ${initialNumber} (${initialLevel||"altura não informada"}).`:"Esta reserva ainda não tem cama gravada. Selecione cama e altura e clique em Salvar reserva no fim do formulário."}</p>
   {unresolved&&<p className={styles.warning} role="status">Atenção: {pendingBookings} reserva(s) confirmada(s) sem cama definida e {pendingHolds} bloqueio(s) temporário(s) no período. A disponibilidade precisa de conferência.</p>}
   <div className={styles.grid}>
-   {Array.from({length:Math.min(count,100)},(_,index)=>{const bed=index+1;const taken=occupied.has(bed);return <button key={bed} type="button" aria-pressed={number===bed} aria-label={`Cama ${bed}${taken?", com reserva atribuída":""}`} className={[styles.bed,taken?styles.taken:"",number===bed?styles.selected:""].join(" ")} onClick={()=>{setNumber(bed);if((occupied.get(bed)||[]).some(item=>item.level===level))setLevel("")}}><span className={styles.pillow}/><strong>{String(bed).padStart(2,"0")}</strong><small>{taken?"OCUPADA":"SEM ATRIB."}</small></button>})}
+   {Array.from({length:Math.min(count,100)},(_,index)=>{const bed=index+1;const taken=occupied.has(bed);const mine=initialNumber===bed;return <button key={bed} type="button" aria-pressed={number===bed} aria-label={`Cama ${bed}${mine?", atribuída a esta reserva":taken?", com reserva atribuída":""}`} className={[styles.bed,taken?styles.taken:"",mine?styles.mine:"",number===bed?styles.selected:""].join(" ")} onClick={()=>{setNumber(bed);if((occupied.get(bed)||[]).some(item=>item.level===level))setLevel("")}}><span className={styles.pillow}/><strong>{String(bed).padStart(2,"0")}</strong><small>{mine?"DESTA RESERVA":taken?"OCUPADA":"SEM REGISTRO"}</small></button>})}
   </div>
   {count>100&&<p>Exibindo os primeiros 100 leitos.</p>}
   <div className={styles.selection}>
