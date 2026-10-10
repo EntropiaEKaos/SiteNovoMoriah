@@ -262,7 +262,7 @@ export async function updateConfirmedBookingPlacement(formData:FormData){
 
   const room=await prisma.accommodation.findUnique({
     where:{id:accommodationId},
-    select:{id:true,active:true,capacity:true}
+    select:{id:true,active:true,capacity:true,sharedRoom:true,bedCount:true}
   });
   if(!room?.active)throw new Error("Hospedagem inativa ou inexistente.");
   if(booking.guests>room.capacity)throw new Error("A nova hospedagem não comporta todos os hóspedes.");
