@@ -1,3 +1,4 @@
+import {flushReadyGuestEmails} from "../../lib/guest-email-dispatch";
 "use server";import {deleteMediaObject} from "../../lib/media-storage";import {prisma} from "../../lib/prisma";import {revalidatePath} from "next/cache";import {redirect} from "next/navigation";import {requireAdmin} from "../../lib/admin-auth";import {criticalAvailabilityCheck,hasAvailabilityConflict,syncChannelIntegration} from "../../lib/channel-sync";import {quoteAccommodation} from "../../lib/rate-engine";import {createInventoryHold,consumeInventoryHold,releaseInventoryHold} from "../../lib/inventory-holds";import {hasUnitCapacity,maxConcurrentUnits} from "../../lib/shared-inventory";import {normalizeMediaUrl,normalizeMediaUrls} from "../../lib/media-url";import {queueSystemNotification} from "../../lib/system-notifications";
 function readAccommodationForm(formData:FormData){
   const text=(name:string,max=500)=>String(formData.get(name)||"").trim().slice(0,max);
@@ -402,6 +403,22 @@ export async function setBookingStatus(formData:FormData){
           checkOut:notifyBooking.checkOut?.toLocaleDateString("pt-BR")||""
         }
       });
+      if(notifyBooking.email&&/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(notifyBooking.email)){
+        const title=status==="CONFIRMED"?"Sua reserva na Moriah foi confirmada":"Atualização da sua solicitação na Moriah";
+        const body=status==="CONFIRMED"
+          ?"Olá, "+notifyBooking.name+"! Sua reserva na Moriah foi aceita. Confira sua solicitação: "
+          :"Olá, "+notifyBooking.name+". Sua solicitação foi cancelada. Entre em contato com a recepção para saber mais: ";
+        const url=notifyBooking.publicRequestToken?"https://moriahpousada.com/reservar/status?protocolo="+encodeURIComponent(notifyBooking.publicRequestToken):"https://moriahpousada.com/reservar";
+        const ready=Boolean(process.env.RESEND_API_KEY&&process.env.RESEND_FROM_EMAIL);
+        await prisma.notificationMessage.upsert({
+          where:{dedupeKey:"guest-decision:"+id+":"+status},
+          create:{dedupeKey:"guest-decision:"+id+":"+status,channel:"EMAIL",audience:"GUEST",recipient:notifyBooking.email,title,body:body+url,actionUrl:url,status:ready?"READY":"BLOCKED",error:ready?null:"Envio de e-mail não configurado."},
+          update:{}
+        });
+        if(ready){
+          try{await flushReadyGuestEmails(10);}catch(error){console.error("Falha no processamento do e-mail de reserva",error);}
+        }
+      }
     }
   }
 
