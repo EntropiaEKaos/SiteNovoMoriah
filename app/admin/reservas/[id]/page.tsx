@@ -54,7 +54,7 @@ export default async function BookingDetail({params}:{params:Promise<{id:string}
   });
   if(!booking)notFound();
 
-  const bedOccupants=booking.accommodation?.sharedRoom&&booking.accommodationId&&booking.checkIn&&booking.checkOut?await prisma.bookingLead.findMany({where:{id:{not:booking.id},accommodationId:booking.accommodationId,bedNumber:{not:null},status:{in:["CONFIRMED","CHECKED_IN"]},checkIn:{lt:booking.checkOut},checkOut:{gt:booking.checkIn}},select:{id:true,name:true,bedNumber:true,bedLevel:true}}):[];
+  const bedOccupants=(booking.accommodation?.sharedRoom||booking.accommodation?.name.trim().toLocaleLowerCase("pt-BR")==="hostel")&&booking.accommodationId&&booking.checkIn&&booking.checkOut?await prisma.bookingLead.findMany({where:{id:{not:booking.id},accommodationId:booking.accommodationId,bedNumber:{not:null},status:{in:["CONFIRMED","CHECKED_IN"]},checkIn:{lt:booking.checkOut},checkOut:{gt:booking.checkIn}},select:{id:true,name:true,bedNumber:true,bedLevel:true}}):[];
 
   const paid=booking.payments
     .filter(payment=>payment.status==="PAID"&&payment.reference!=="RESTAURANT_FOLIO")
@@ -140,7 +140,7 @@ export default async function BookingDetail({params}:{params:Promise<{id:string}
         <article className="adminSectionCard">
           <h2>Titular e observações</h2>
           <form action={updateBookingProfile} className="adminFormGrid" data-feedback-success="Reserva salva com sucesso.">
-            {booking.accommodation?.sharedRoom&&<BookingBedPicker count={booking.accommodation.bedCount} roomName={booking.accommodation.name} initialNumber={booking.bedNumber} initialLevel={booking.bedLevel} occupants={bedOccupants.filter(item=>item.bedNumber!==null).map(item=>({id:item.id,number:item.bedNumber!,level:item.bedLevel,name:item.name}))}/>}
+            {(booking.accommodation?.sharedRoom||booking.accommodation?.name.trim().toLocaleLowerCase("pt-BR")==="hostel")&&<BookingBedPicker count={booking.accommodation.bedCount} roomName={booking.accommodation.name} initialNumber={booking.bedNumber} initialLevel={booking.bedLevel} occupants={bedOccupants.filter(item=>item.bedNumber!==null).map(item=>({id:item.id,number:item.bedNumber!,level:item.bedLevel,name:item.name}))}/>}
             <input type="hidden" name="id" value={booking.id}/>
             <label className="span2">Nome
               <input name="name" required defaultValue={booking.name}/>
