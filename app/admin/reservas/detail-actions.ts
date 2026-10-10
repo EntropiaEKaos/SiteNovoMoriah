@@ -44,7 +44,7 @@ export async function updateBookingProfile(formData:FormData){
       if(bedNumber>room.bedCount)throw new Error("Número de cama acima da quantidade cadastrada no quarto.");
       if(!booking.checkIn||!booking.checkOut)throw new Error("Informe as datas antes de atribuir cama.");
       await tx.$queryRaw`SELECT 1 AS locked FROM pg_advisory_xact_lock(hashtext(${booking.accommodationId}))`;
-      const occupied=await tx.bookingLead.findFirst({where:{id:{not:id},accommodationId:booking.accommodationId,bedNumber,bedLevel,status:{in:["CONFIRMED","CHECKED_IN"]},checkIn:{lt:booking.checkOut},checkOut:{gt:booking.checkIn}},select:{id:true}});
+      const occupied=await tx.bookingLead.findFirst({where:{id:{not:id},accommodationId:booking.accommodationId,bedNumber,bedLevel,status:{in:["NEW","CONFIRMED","CHECKED_IN"]},checkIn:{lt:booking.checkOut},checkOut:{gt:booking.checkIn}},select:{id:true}});
       if(occupied)throw new Error("Essa cama já está atribuída a outra reserva no período.");
     }
 
