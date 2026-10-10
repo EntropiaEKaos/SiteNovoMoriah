@@ -4,31 +4,51 @@ import styles from "./booking-bed-picker.module.css";
 
 type Occupant={id:string;number:number;level:string|null;name:string;start:string;end:string};
 export default function BookingBedPicker({count,initialNumber,initialLevel,occupants,roomName,pendingBookings,pendingHolds}:{pendingBookings:number;pendingHolds:number;count:number;initialNumber:number|null;initialLevel:string|null;occupants:Occupant[];roomName:string}){
- const [number,setNumber]=useState<number|null>(initialNumber);
- const [level,setLevel]=useState(initialLevel||"");
- const occupied=new Map<number,Occupant[]>();
- for(const item of occupants){const list=occupied.get(item.number)||[];list.push(item);occupied.set(item.number,list)}
- const selectedOccupants=number?occupied.get(number)||[]:[];
- const conflict=number!==null&&selectedOccupants.some(item=>item.level===level);
- const unresolved=pendingBookings>0||pendingHolds>0;
- const assignedCount=occupied.size+(initialNumber!==null&&!occupied.has(initialNumber)?1:0);
+ const levels=[{id:"BAIXA",label:"Baixa"},{id:"MEDIA",label:"Média"},{id:"ALTA",label:"Alta"}] as const;
+ const bunkCount=Math.ceil(count/3);
+ // Legacy bookings used a bed index from 1..18. Do not silently remap those records.
+ const legacy=initialNumber!==null&&initialNumber>bunkCount;
+ const [number,setNumber]=useState<number|null>(legacy?null:initialNumber);
+ const [level,setLevel]=useState(legacy?"":initialLevel||"");
+ const occupied=new Map<string,Occupant>();
+ const legacyOccupants:Occupant[]=[];
+ for(const item of occupants){
+   if(item.number>bunkCount||!item.level){legacyOccupants.push(item);continue;}
+   occupied.set(item.number+":"+item.level,item);
+ }
+ const pending=pendingBookings+pendingHolds+legacyOccupants.length+(legacy?1:0);
+ const selectedKey=number!==null&&level?number+":"+level:"";
+ const conflict=Boolean(selectedKey&&occupied.has(selectedKey));
  const formatDate=(date:string)=>date?date.split("-").reverse().join("/"):"Data não informada";
- return <section className={styles.wrapper} aria-label="Selecionar cama do hostel">
-  <div className={styles.head}><div><small>HOSTEL • QUARTO COMPARTILHADO</small><h3>Escolha a cama</h3><p>{roomName} · Clique no leito desejado e selecione a altura.</p></div><span>{count} camas</span></div>
-  <div className={styles.legend}><span>● Sem cama registrada</span><span>● Ocupada por outra reserva</span><span>● Cama desta reserva</span></div>
-  <p className={styles.note} role="status">{assignedCount} cama(s) identificada(s) com atribuição neste período. {initialNumber!==null?`Esta reserva está gravada na cama ${initialNumber} (${initialLevel||"altura não informada"}).`:"Esta reserva ainda não tem cama gravada. Selecione cama e altura e clique em Salvar reserva no fim do formulário."}</p>
-  {unresolved&&<p className={styles.warning} role="status">Atenção: {pendingBookings} reserva(s) confirmada(s) sem cama definida e {pendingHolds} bloqueio(s) temporário(s) no período. A disponibilidade precisa de conferência.</p>}
+ return <section className={styles.wrapper} aria-label="Selecionar leito do triliche">
+  <div className={styles.head}><div><small>HOSTEL • 3 LEITOS POR TRILICHE</small><h3>Escolha o leito físico</h3><p>{roomName} · {bunkCount} triliches · {count} vagas. Selecione uma altura específica.</p></div><span>{count} leitos</span></div>
+  <div className={styles.legend}><span>● Sem atribuição</span><span>● Ocupado</span><span>● Desta reserva</span></div>
+  {pending>0&&<p className={styles.warning} role="alert">{pending} pendência(s) de atribuição ou bloqueio no período. Reservas antigas com numeração de cama de 1 a 18 não são convertidas automaticamente: confira os leitos antes de confirmar.</p>}
+  {legacy&&<p className={styles.warning} role="alert">Esta reserva usa a numeração antiga (cama {initialNumber} — {initialLevel||"sem altura"}). Escolha manualmente um dos {bunkCount} triliches e a altura correta para atualizar o cadastro.</p>}
   <div className={styles.grid}>
-   {Array.from({length:Math.min(count,100)},(_,index)=>{const bed=index+1;const taken=occupied.has(bed);const mine=initialNumber===bed;return <button key={bed} type="button" aria-pressed={number===bed} aria-label={`Cama ${bed}${mine?", atribuída a esta reserva":taken?", com reserva atribuída":""}`} className={[styles.bed,taken?styles.taken:"",mine?styles.mine:"",number===bed?styles.selected:""].join(" ")} onClick={()=>{setNumber(bed);if((occupied.get(bed)||[]).some(item=>item.level===level))setLevel("")}}><span className={styles.pillow}/><strong>{String(bed).padStart(2,"0")}</strong><small>{mine?"DESTA RESERVA":taken?"OCUPADA":"SEM REGISTRO"}</small></button>})}
+   {Array.from({length:bunkCount},(_,index)=>{
+    const bunk=index+1;
+    return <div key={bunk} className={styles.bunk}>
+      <strong>Triliche {String(bunk).padStart(2,"0")}</strong>
+      {levels.map(item=>{
+       const key=bunk+":"+item.id;
+       const occupant=occupied.get(key);
+       const mine=!legacy&&initialNumber===bunk&&initialLevel===item.id;
+       const selected=number===bunk&&level===item.id;
+       return <button key={key} type="button" disabled={Boolean(occupant)&&!mine} aria-pressed={selected} aria-label={`Triliche ${bunk}, ${item.label}, ${mine?"desta reserva":occupant?"ocupado":"sem atribuição"}`} className={[styles.bed,occupant?styles.taken:"",mine?styles.mine:"",selected?styles.selected:""].join(" ")} onClick={()=>{setNumber(bunk);setLevel(item.id)}}>
+        <strong>{item.label}</strong><small>{mine?"DESTA RESERVA":occupant?"OCUPADO":"DISPONÍVEL"}</small>
+       </button>;
+      })}
+    </div>;
+   })}
   </div>
-  {count>100&&<p>Exibindo os primeiros 100 leitos.</p>}
   <div className={styles.selection}>
-   <div><strong>{number?"Cama "+number:"Nenhuma cama selecionada"}</strong><p>{selectedOccupants.length?selectedOccupants.map(item=>item.name+" ("+(item.level||"altura não definida")+", "+formatDate(item.start)+" a "+formatDate(item.end)+")").join(", "):"Sem atribuição de cama encontrada no período."}</p></div>
-   <label>Altura<select name="bedLevel" value={number?level:""} onChange={event=>setLevel(event.target.value)} required={number!==null} disabled={number===null}><option value="">Selecione a altura</option><option value="BAIXA">Baixa</option><option value="MEDIA">Média</option><option value="ALTA">Alta</option></select></label>
+   <div><strong>{number&&level?`Triliche ${number} — ${levels.find(item=>item.id===level)?.label}`:"Nenhum leito selecionado"}</strong><p>{conflict?"Leito ocupado por outra reserva no período.":"A atribuição será gravada ao clicar em Salvar reserva no fim do formulário."}</p></div>
    <input type="hidden" name="bedNumber" value={number??""}/>
-   <button type="button" className={styles.clear} onClick={()=>{setNumber(null);setLevel("")}}>Limpar cama</button>
+   <input type="hidden" name="bedLevel" value={number?level:""}/>
+   <button type="button" className={styles.clear} onClick={()=>{setNumber(null);setLevel("")}}>Limpar seleção</button>
   </div>
-  {conflict&&<p className={styles.warning} role="alert">Essa cama e altura já estão atribuídas a outra reserva neste período. Escolha outra opção.</p>}
-  <p className={styles.note}>O mapa considera todo o período da reserva, não apenas hoje. Uma cama ocupada pode ter outra altura livre; confira o detalhe antes de selecionar. Canais externos ainda não estão sincronizados automaticamente. A validação final acontece ao salvar.</p>
+  {conflict&&<p className={styles.warning} role="alert">Leito já atribuído a outra reserva neste período.</p>}
+  <p className={styles.note}>Uma combinação triliche + altura corresponde a exatamente uma vaga. A ocupação considera o período completo; reservas antigas sem atribuição precisam de conferência.</p>
  </section>;
 }

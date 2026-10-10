@@ -108,7 +108,7 @@ export default async function BookingDetail({params}:{params:Promise<{id:string}
           <div className="adminStatusLine"><span>Entrada</span><b>{booking.checkIn?.toLocaleDateString("pt-BR")||"—"}</b></div>
           <div className="adminStatusLine"><span>Saída</span><b>{booking.checkOut?.toLocaleDateString("pt-BR")||"—"}</b></div>
           <div className="adminStatusLine"><span>Hóspedes declarados</span><b>{booking.guests}</b></div>
-          {booking.accommodation?.sharedRoom&&<div className="adminStatusLine"><span>Cama atribuída</span><b>{booking.bedNumber?`Cama ${booking.bedNumber} • ${booking.bedLevel==="BAIXA"?"Baixa":booking.bedLevel==="MEDIA"?"Média":booking.bedLevel==="ALTA"?"Alta":"—"}`:"Não atribuída"}</b></div>}
+          {booking.accommodation?.sharedRoom&&<div className="adminStatusLine"><span>Cama atribuída</span><b>{booking.bedNumber?`${booking.bedNumber>Math.ceil((booking.accommodation?.bedCount||0)/3)?"Numeração antiga — cama":"Triliche"} ${booking.bedNumber} • ${booking.bedLevel==="BAIXA"?"Baixa":booking.bedLevel==="MEDIA"?"Média":booking.bedLevel==="ALTA"?"Alta":"—"}`:"Não atribuída"}</b></div>}
           <div className="adminStatusLine"><span>Tarifa</span><b>{booking.quotedRatePlan||"—"}</b></div>
           <div className="adminStatusLine"><span>Origem</span><b>{booking.source}</b></div>
 

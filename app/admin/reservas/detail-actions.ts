@@ -41,7 +41,7 @@ export async function updateBookingProfile(formData:FormData){
       if(!booking.accommodationId)throw new Error("Selecione uma hospedagem antes de atribuir cama.");
       const room=await tx.accommodation.findUnique({where:{id:booking.accommodationId},select:{sharedRoom:true,bedCount:true}});
       if(!room?.sharedRoom)throw new Error("Atribuição de cama é exclusiva de quarto compartilhado.");
-      if(bedNumber>room.bedCount)throw new Error("Número de cama acima da quantidade cadastrada no quarto.");
+      if(bedNumber>Math.ceil(room.bedCount/3))throw new Error("Número de triliche acima da quantidade cadastrada no quarto.");
       if(!booking.checkIn||!booking.checkOut)throw new Error("Informe as datas antes de atribuir cama.");
       await tx.$queryRaw`SELECT 1 AS locked FROM pg_advisory_xact_lock(hashtext(${booking.accommodationId}))`;
       const occupied=await tx.bookingLead.findFirst({where:{id:{not:id},accommodationId:booking.accommodationId,bedNumber,bedLevel,status:{in:["NEW","CONFIRMED","CHECKED_IN"]},checkIn:{lt:booking.checkOut},checkOut:{gt:booking.checkIn}},select:{id:true}});
