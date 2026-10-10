@@ -54,7 +54,10 @@ export default async function BookingDetail({params}:{params:Promise<{id:string}
   });
   if(!booking)notFound();
 
-  const bedOccupants=(booking.accommodation?.sharedRoom||booking.accommodation?.name.trim().toLocaleLowerCase("pt-BR")==="hostel")&&booking.accommodationId&&booking.checkIn&&booking.checkOut?await prisma.bookingLead.findMany({where:{id:{not:booking.id},accommodationId:booking.accommodationId,bedNumber:{not:null},status:{in:["CONFIRMED","CHECKED_IN"]},checkIn:{lt:booking.checkOut},checkOut:{gt:booking.checkIn}},select:{id:true,name:true,bedNumber:true,bedLevel:true}}):[];
+  const isShared=Boolean(booking.accommodation?.sharedRoom);
+  const bedOccupants=isShared&&booking.accommodationId&&booking.checkIn&&booking.checkOut?await prisma.bookingLead.findMany({where:{id:{not:booking.id},accommodationId:booking.accommodationId,bedNumber:{not:null},status:{in:["CONFIRMED","CHECKED_IN"]},checkIn:{lt:booking.checkOut},checkOut:{gt:booking.checkIn}},select:{id:true,name:true,bedNumber:true,bedLevel:true,checkIn:true,checkOut:true}}):[];
+  const pendingBedBookings=isShared&&booking.accommodationId&&booking.checkIn&&booking.checkOut?await prisma.bookingLead.count({where:{id:{not:booking.id},accommodationId:booking.accommodationId,bedNumber:null,status:{in:["CONFIRMED","CHECKED_IN"]},checkIn:{lt:booking.checkOut},checkOut:{gt:booking.checkIn}}}):0;
+  const pendingBedHolds=isShared&&booking.accommodationId&&booking.checkIn&&booking.checkOut?await prisma.inventoryHold.count({where:{accommodationId:booking.accommodationId,expiresAt:{gt:new Date()},checkIn:{lt:booking.checkOut},checkOut:{gt:booking.checkIn}}}):0;
 
   const paid=booking.payments
     .filter(payment=>payment.status==="PAID"&&payment.reference!=="RESTAURANT_FOLIO")
@@ -140,7 +143,7 @@ export default async function BookingDetail({params}:{params:Promise<{id:string}
         <article className="adminSectionCard">
           <h2>Titular e observações</h2>
           <form action={updateBookingProfile} className="adminFormGrid" data-feedback-success="Reserva salva com sucesso.">
-            {(booking.accommodation?.sharedRoom||booking.accommodation?.name.trim().toLocaleLowerCase("pt-BR")==="hostel")&&<BookingBedPicker count={booking.accommodation.bedCount} roomName={booking.accommodation.name} initialNumber={booking.bedNumber} initialLevel={booking.bedLevel} occupants={bedOccupants.filter(item=>item.bedNumber!==null).map(item=>({id:item.id,number:item.bedNumber!,level:item.bedLevel,name:item.name}))}/>}
+            {isShared&&booking.accommodation&&<BookingBedPicker count={booking.accommodation.bedCount} roomName={booking.accommodation.name} initialNumber={booking.bedNumber} initialLevel={booking.bedLevel} pendingBookings={pendingBedBookings} pendingHolds={pendingBedHolds} occupants={bedOccupants.filter(item=>item.bedNumber!==null).map(item=>({id:item.id,number:item.bedNumber!,level:item.bedLevel,name:item.name,start:item.checkIn?.toISOString().slice(0,10)||"",end:item.checkOut?.toISOString().slice(0,10)||""}))}/>}
             <input type="hidden" name="id" value={booking.id}/>
             <label className="span2">Nome
               <input name="name" required defaultValue={booking.name}/>
