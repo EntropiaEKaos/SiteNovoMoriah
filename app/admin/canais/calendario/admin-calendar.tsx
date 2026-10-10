@@ -341,7 +341,7 @@ export default function AdminCalendar({events,rooms}:{events:Event[];rooms:Room[
       {visibleRooms.map(room=>{
         const roomEvents=visibleEvents.filter(event=>event.roomId===room.id).sort((a,b)=>a.start.localeCompare(b.start));
         return <div className="reservationMapRow" style={{gridTemplateColumns:gridTemplate}} key={room.id}>
-          <div className="reservationMapRoom"><small>{room.roomNumber||"UNIDADE"}</small><strong>{room.name}</strong><span>até {room.capacity} hóspede(s)</span></div>
+          <div className="reservationMapRoom"><small>{room.roomNumber||"UNIDADE"}</small><strong>{room.name}</strong><span>até {room.capacity} hóspede(s)</span>{room.sharedRoom&&<button type="button" className="adminSecondaryAction" style={{marginTop:8,padding:"6px 9px",fontSize:11}} onClick={()=>{setDraftMode("BOOKING");setSelected(null);setMoveError("");setBookingError("");setDraft({mode:"BOOKING",roomId:room.id,checkIn:dayKey(today),checkOut:dayKey(new Date(today.getTime()+DAY))});}}>+ Nova reserva no hostel</button>}</div>
 
           {days.map(day=>{
             const isOccupied=occupied(room.id,day);
