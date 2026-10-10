@@ -104,7 +104,7 @@ export default async function ReportsPage(){
     return (current-previous)/previous*100;
   };
 
-  return <main className="adminPage">
+  return <main className="adminPage adminPremiumPage">
     <section className="adminPageHero">
       <div>
         <small>MORIAH / EXECUTIVE REPORTS</small>

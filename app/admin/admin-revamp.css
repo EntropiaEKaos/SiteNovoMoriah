@@ -151,3 +151,15 @@
 @media(max-width:760px){.adminRevamp .adminPremiumPage .adminPageHero{padding:20px;border-radius:16px}.adminRevamp .adminPremiumPage .adminPageHeroActions{width:100%}.adminRevamp .adminPremiumPage .adminPageHeroActions>a{flex:1;min-width:135px}.adminRevamp .adminPremiumPage .adminMetricStrip{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.adminRevamp .adminPremiumPage .adminMetricStrip>div{padding:14px}.adminRevamp .adminPremiumPage .adminListCardHead{flex-wrap:wrap}}
 @media(max-width:390px){.adminRevamp .adminPremiumPage .adminMetricStrip{grid-template-columns:1fr 1fr}.adminRevamp .adminPremiumPage .adminMetricStrip strong{font-size:22px}}
 @media(prefers-reduced-motion:reduce){.adminRevamp .adminPremiumPage .adminMetricStrip>div,.adminRevamp .adminPremiumPage .adminListCard{transition:none}}
+
+/* Premium operations v2: scoped presentation only. */
+.adminRevamp .adminPremiumRestaurant{border-radius:22px;background:linear-gradient(150deg,#f1f8f6,#f7f7f5 42%,#fff9eb)!important;color:#19313b}
+.adminRevamp .adminPremiumRestaurant>h1{letter-spacing:-.05em;line-height:1.1}
+.adminRevamp .adminPremiumRestaurant>small{color:#147d73;font-weight:800;letter-spacing:.13em}
+.adminRevamp .adminPremiumRestaurant article{box-shadow:0 8px 24px rgba(25,49,59,.07);transition:box-shadow .18s}
+.adminRevamp .adminPremiumRestaurant article:hover{box-shadow:0 14px 30px rgba(25,49,59,.12)}
+.adminRevamp .adminPremiumRestaurant :is(input,button,a):focus-visible,.adminRevamp .kitchen40 :is(button,a,input,select):focus-visible{outline:3px solid #147d73;outline-offset:2px}
+.adminRevamp .adminPremiumPage .frontDeskActionCenter{border-radius:18px;box-shadow:0 9px 28px rgba(25,49,59,.06)}
+.adminRevamp .kitchen40 .kitchenHero{border-radius:19px;box-shadow:0 12px 35px rgba(25,49,59,.08)}
+@media(max-width:760px){.adminRevamp .adminPremiumRestaurant{padding:24px 14px!important}.adminRevamp .adminPremiumRestaurant>h1{font-size:clamp(30px,9vw,46px)!important}}
+@media(prefers-reduced-motion:reduce){.adminRevamp .adminPremiumRestaurant article{transition:none}}
