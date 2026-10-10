@@ -14,7 +14,7 @@ export default async function Page(){
   const capacity=rooms.reduce((sum,room)=>sum+(room.sharedRoom?room.bedCount:room.capacity),0);
   const sharedRooms=rooms.filter(room=>room.sharedRoom).length;
 
-  return <main className="adminPage">
+  return <main className="adminPage adminPremiumPage">
     <section className="adminPageHero">
       <div>
         <small>MORIAH CMS / INVENTÁRIO</small>
