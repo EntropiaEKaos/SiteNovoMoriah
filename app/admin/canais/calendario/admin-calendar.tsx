@@ -28,6 +28,8 @@ type Event={
   currency:string;
   source:string;
   notes:string|null;
+  bedNumber?:number|null;
+  bedLevel?:string|null;
 };
 
 type Room={
@@ -100,7 +102,7 @@ export default function AdminCalendar({events,rooms}:{events:Event[];rooms:Room[
     ()=>events.filter(event=>{
       if(roomFilter&&event.roomId!==roomFilter)return false;
       if(q&&![
-        event.title,event.guest,event.room,event.status,event.source
+        event.title,event.guest,event.room,event.status,event.source,event.bedNumber?String(event.bedNumber):""
       ].some(value=>String(value||"").toLowerCase().includes(q)))return false;
       const start=new Date(event.start);
       const end=new Date(event.end);
@@ -334,7 +336,7 @@ export default function AdminCalendar({events,rooms}:{events:Event[];rooms:Room[
               onDragEnd={()=>{setDragging(null);setDropKey("");}}
               onClick={()=>{setDraft(null);setSelected(event);}}
             >
-              <b>{event.guest||event.title}</b><small>{event.kind==="BOOKING"?event.status:event.source}</small>
+              <b>{event.guest||event.title}</b>{event.bedNumber&&<small>Cama {event.bedNumber} • {event.bedLevel==="BAIXA"?"Baixa":event.bedLevel==="MEDIA"?"Média":"Alta"}</small>}<small>{event.kind==="BOOKING"?event.status:event.source}</small>
             </button>;
           })}
         </div>;
@@ -383,6 +385,7 @@ export default function AdminCalendar({events,rooms}:{events:Event[];rooms:Room[
         <div><small>Valor</small><b>{money(selected.valueCents,selected.currency)||"—"}</b></div>
       </div>
 
+      {selected.bedNumber&&<div className="adminPageNote">Cama {selected.bedNumber} • {selected.bedLevel==="BAIXA"?"Baixa":selected.bedLevel==="MEDIA"?"Média":"Alta"}</div>}
       {selected.notes&&<div className="adminPageNote">{selected.notes}</div>}
 
       {selected.kind==="BOOKING"&&<div className="calendarQuickCommands">
