@@ -257,6 +257,8 @@ model BookingLead {
   companions      BookingCompanion[]
   rentals         RentalOrder[]
   internalNotes   String?
+  bedNumber       Int?
+  bedLevel        String?
   createdAt       DateTime       @default(now())
 
   @@index([accommodationId])
