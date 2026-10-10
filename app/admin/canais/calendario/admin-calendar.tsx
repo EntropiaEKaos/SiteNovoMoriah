@@ -37,6 +37,7 @@ type Room={
   name:string;
   roomNumber:string|null;
   capacity:number;
+  sharedRoom:boolean;
 };
 
 type ViewMode="7"|"15"|"30"|"MONTH";
@@ -164,7 +165,7 @@ export default function AdminCalendar({events,rooms}:{events:Event[];rooms:Room[
     const finish=first<last?last:first;
     const end=dayKey(new Date(new Date(finish+"T00:00:00Z").getTime()+DAY));
     setSelectionStart(null);setSelectionEnd(null);
-    if(events.some(event=>event.roomId===roomId&&dayKey(new Date(event.start))<end&&dayKey(new Date(event.end))>begin)){
+    if(events.some(event=>event.roomId===roomId&&dayKey(new Date(event.start))<end&&dayKey(new Date(event.end))>begin&&(!rooms.find(room=>room.id===roomId)?.sharedRoom||draftMode==="BLOCK"||event.kind!=="BOOKING"))){
       setMoveError("O período selecionado possui ocupação ou bloqueio. Escolha datas livres.");
       return;
     }
@@ -174,6 +175,7 @@ export default function AdminCalendar({events,rooms}:{events:Event[];rooms:Room[
 
   function occupied(roomId:string,date:Date,excludeId?:string){
     const key=dayKey(date);
+    if(rooms.find(room=>room.id===roomId)?.sharedRoom&&draftMode==="BOOKING")return false;
     return events.some(event=>
       event.id!==excludeId&&event.roomId===roomId&&
       dayKey(new Date(event.start))<=key&&dayKey(new Date(event.end))>key
@@ -183,6 +185,7 @@ export default function AdminCalendar({events,rooms}:{events:Event[];rooms:Room[
   function canDrop(roomId:string,date:Date,event:Event|null){
     if(!event||event.kind!=="BOOKING"||event.status!=="CONFIRMED")return false;
     const duration=Math.max(1,diffDays(new Date(event.end),new Date(event.start)));
+    if(rooms.find(room=>room.id===roomId)?.sharedRoom)return true;
     for(let offset=0;offset<duration;offset++){
       const day=new Date(date.getTime()+offset*DAY);
       if(occupied(roomId,day,event.id))return false;
