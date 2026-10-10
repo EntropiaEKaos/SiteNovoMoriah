@@ -143,7 +143,7 @@ export default async function BookingDetail({params}:{params:Promise<{id:string}
         <article className="adminSectionCard">
           <h2>Titular e observações</h2>
           <form action={updateBookingProfile} className="adminFormGrid" data-feedback-success="Reserva salva com sucesso.">
-            {isShared&&<BookingBedPicker count={booking.accommodation.bedCount} roomName={booking.accommodation.name} initialNumber={booking.bedNumber} initialLevel={booking.bedLevel} pendingBookings={pendingBedBookings} pendingHolds={pendingBedHolds} occupants={bedOccupants.filter(item=>item.bedNumber!==null).map(item=>({id:item.id,number:item.bedNumber!,level:item.bedLevel,name:item.name,start:item.checkIn?.toISOString().slice(0,10)||"",end:item.checkOut?.toISOString().slice(0,10)||""}))}/>}
+            {isShared&&booking.accommodation&&<BookingBedPicker count={booking.accommodation.bedCount} roomName={booking.accommodation.name} initialNumber={booking.bedNumber} initialLevel={booking.bedLevel} pendingBookings={pendingBedBookings} pendingHolds={pendingBedHolds} occupants={bedOccupants.filter(item=>item.bedNumber!==null).map(item=>({id:item.id,number:item.bedNumber!,level:item.bedLevel,name:item.name,start:item.checkIn?.toISOString().slice(0,10)||"",end:item.checkOut?.toISOString().slice(0,10)||""}))}/>}
             <input type="hidden" name="id" value={booking.id}/>
             <label className="span2">Nome
               <input name="name" required defaultValue={booking.name}/>
