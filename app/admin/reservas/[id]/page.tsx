@@ -102,6 +102,7 @@ export default async function BookingDetail({params}:{params:Promise<{id:string}
           <div className="adminStatusLine"><span>Entrada</span><b>{booking.checkIn?.toLocaleDateString("pt-BR")||"—"}</b></div>
           <div className="adminStatusLine"><span>Saída</span><b>{booking.checkOut?.toLocaleDateString("pt-BR")||"—"}</b></div>
           <div className="adminStatusLine"><span>Hóspedes declarados</span><b>{booking.guests}</b></div>
+          {booking.accommodation?.sharedRoom&&<div className="adminStatusLine"><span>Cama atribuída</span><b>{booking.bedNumber?`Cama ${booking.bedNumber} • ${booking.bedLevel==="BAIXA"?"Baixa":booking.bedLevel==="MEDIA"?"Média":booking.bedLevel==="ALTA"?"Alta":"—"}`:"Não atribuída"}</b></div>}
           <div className="adminStatusLine"><span>Tarifa</span><b>{booking.quotedRatePlan||"—"}</b></div>
           <div className="adminStatusLine"><span>Origem</span><b>{booking.source}</b></div>
 
@@ -136,6 +137,7 @@ export default async function BookingDetail({params}:{params:Promise<{id:string}
         <article className="adminSectionCard">
           <h2>Titular e observações</h2>
           <form action={updateBookingProfile} className="adminFormGrid" data-feedback-success="Reserva salva com sucesso.">
+            {booking.accommodation?.sharedRoom&&<div className="adminFormGrid cols2"><label>Número da cama<input name="bedNumber" type="number" min="1" max={booking.accommodation.bedCount} defaultValue={booking.bedNumber??""} placeholder="Ex.: 2"/></label><label>Altura da cama<select name="bedLevel" defaultValue={booking.bedLevel||""}><option value="">Não atribuída</option><option value="BAIXA">Baixa</option><option value="MEDIA">Média</option><option value="ALTA">Alta</option></select></label></div>}
             <input type="hidden" name="id" value={booking.id}/>
             <label className="span2">Nome
               <input name="name" required defaultValue={booking.name}/>

@@ -24,12 +24,29 @@ export async function updateBookingProfile(formData:FormData){
   }
   if(email&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))throw new Error("E-mail inválido.");
 
+  const bedNumberRaw=String(formData.get("bedNumber")||"").trim();
+  const bedLevel=String(formData.get("bedLevel")||"").trim();
+  const bedNumber=bedNumberRaw?Number(bedNumberRaw):null;
+  if(bedNumber!==null&&(!Number.isInteger(bedNumber)||bedNumber<1||bedNumber>500))throw new Error("Número de cama inválido.");
+  if(bedLevel&&!["BAIXA","MEDIA","ALTA"].includes(bedLevel))throw new Error("Altura de cama inválida.");
+  if((bedNumber===null)!==(!bedLevel))throw new Error("Informe o número e a altura da cama juntos.");
+
   await prisma.$transaction(async tx=>{
     const booking=await tx.bookingLead.findUnique({
       where:{id},
       select:{accommodationId:true,checkIn:true,checkOut:true,status:true,guests:true}
     });
     if(!booking)throw new Error("Reserva não encontrada.");
+    if(bedNumber!==null){
+      if(!booking.accommodationId)throw new Error("Selecione uma hospedagem antes de atribuir cama.");
+      const room=await tx.accommodation.findUnique({where:{id:booking.accommodationId},select:{sharedRoom:true,bedCount:true}});
+      if(!room?.sharedRoom)throw new Error("Atribuição de cama é exclusiva de quarto compartilhado.");
+      if(bedNumber>room.bedCount)throw new Error("Número de cama acima da quantidade cadastrada no quarto.");
+      if(!booking.checkIn||!booking.checkOut)throw new Error("Informe as datas antes de atribuir cama.");
+      await tx.$queryRaw`SELECT 1 AS locked FROM pg_advisory_xact_lock(hashtext(${booking.accommodationId}))`;
+      const occupied=await tx.bookingLead.findFirst({where:{id:{not:id},accommodationId:booking.accommodationId,bedNumber,bedLevel,status:{in:["CONFIRMED","CHECKED_IN"]},checkIn:{lt:booking.checkOut},checkOut:{gt:booking.checkIn}},select:{id:true}});
+      if(occupied)throw new Error("Essa cama já está atribuída a outra reserva no período.");
+    }
 
     if(guests!==booking.guests&&booking.accommodationId&&
       (booking.status==="CONFIRMED"||booking.status==="CHECKED_IN")){
@@ -79,7 +96,7 @@ export async function updateBookingProfile(formData:FormData){
     await tx.bookingLead.update({
       where:{id},
       data:{
-        name,phone,email,guests,
+        name,phone,email,guests,bedNumber,bedLevel:bedLevel||null,
         message:text(formData,"message",4000),
         internalNotes:text(formData,"internalNotes",6000)
       }

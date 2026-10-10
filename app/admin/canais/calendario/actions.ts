@@ -156,7 +156,7 @@ async function createMapBookingInternal(formData:FormData){
 
   const room=await prisma.accommodation.findUnique({
     where:{id:accommodationId},
-    select:{id:true,active:true,capacity:true}
+    select:{id:true,active:true,capacity:true,sharedRoom:true,bedCount:true}
   });
   if(!room?.active)throw new Error("Hospedagem inativa ou inexistente.");
   if(guests>room.capacity)throw new Error("Quantidade de hóspedes acima da capacidade.");
@@ -262,7 +262,7 @@ export async function updateConfirmedBookingPlacement(formData:FormData){
 
   const room=await prisma.accommodation.findUnique({
     where:{id:accommodationId},
-    select:{id:true,active:true,capacity:true}
+    select:{id:true,active:true,capacity:true,sharedRoom:true,bedCount:true}
   });
   if(!room?.active)throw new Error("Hospedagem inativa ou inexistente.");
   if(booking.guests>room.capacity)throw new Error("A nova hospedagem não comporta todos os hóspedes.");
@@ -280,6 +280,12 @@ export async function updateConfirmedBookingPlacement(formData:FormData){
 
   await prisma.$transaction(async tx=>{
     await assertInventoryFree(tx,accommodationId,checkIn,checkOut,id,booking.guests);
+    const sameRoom=booking.accommodationId===accommodationId;
+    if(sameRoom&&booking.bedNumber!==null){
+      if(!room.sharedRoom||booking.bedNumber>room.bedCount)throw new Error("Cama atribuída incompatível com a hospedagem.");
+      const conflict=await tx.bookingLead.findFirst({where:{id:{not:id},accommodationId,bedNumber:booking.bedNumber,bedLevel:booking.bedLevel,status:{in:["CONFIRMED","CHECKED_IN"]},checkIn:{lt:checkOut},checkOut:{gt:checkIn}},select:{id:true}});
+      if(conflict)throw new Error("A cama atribuída já está ocupada no novo período.");
+    }
 
     await tx.bookingLead.update({
       where:{id},
@@ -287,6 +293,7 @@ export async function updateConfirmedBookingPlacement(formData:FormData){
         accommodationId,
         checkIn,
         checkOut,
+        ...(!sameRoom?{bedNumber:null,bedLevel:null}:{}),
         quotedTotalCents:quote.totalCents,
         quotedCurrency:quote.currency,
         quotedRatePlan:quote.ratePlan,
