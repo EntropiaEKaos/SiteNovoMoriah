@@ -20,7 +20,7 @@ export default async function Page({searchParams}:{searchParams:Promise<{focus?:
   const to=new Date(now);
   to.setUTCDate(to.getUTCDate()+180);
 
-  const [external,internal,holds,manual,rooms,widget]=await Promise.all([
+  const [external,internal,holds,manual,rooms,widget,smoobuInbox]=await Promise.all([
     prisma.channelBlock.findMany({
       where:{endsAt:{gt:from},startsAt:{lt:to}},
       include:{integration:{include:{accommodation:true}}},
@@ -53,7 +53,8 @@ export default async function Page({searchParams}:{searchParams:Promise<{focus?:
       where:{active:true},
       orderBy:[{roomNumber:"asc"},{name:"asc"}]
     }),
-    prisma.calendarWidgetSettings.findUnique({where:{id:"main"}})
+    prisma.calendarWidgetSettings.findUnique({where:{id:"main"}}),
+    prisma.smoobuReservationInbox.findMany({orderBy:{lastSeenAt:"desc"},take:100})
   ]);
 
   const events=[
@@ -170,6 +171,32 @@ export default async function Page({searchParams}:{searchParams:Promise<{focus?:
         {widget&&<form action={rotateCalendarWidgetToken} style={{marginTop:10}}><button className="danger">Trocar token do widget</button></form>}
       </article>
     </details>}
+
+    {!focused&&<section className="adminSectionCard" aria-label="Reservas externas Smoobu para conferência">
+      <div className="adminListCardHead">
+        <div>
+          <small>SMOOBU / CONFERÊNCIA DE RESERVAS</small>
+          <h2>Reservas externas recebidas</h2>
+          <p>Prévia de conferência: estes registros não bloqueiam quartos nem criam reservas PMS automaticamente.</p>
+        </div>
+        <a className="adminSecondaryAction" href="/admin/canais">Revisar e atualizar no painel de canais →</a>
+      </div>
+      <p><strong>{smoobuInbox.length}</strong> registros recentes • <strong>{smoobuInbox.filter(x=>x.reviewStatus==="PENDING").length}</strong> pendentes • <strong>{smoobuInbox.filter(x=>Array.isArray(x.validationIssues)&&x.validationIssues.length>0).length}</strong> com alertas</p>
+      {smoobuInbox.length>0&&<details>
+        <summary>Ver últimas reservas externas para conferência</summary>
+        <div style={{overflowX:"auto"}}>
+          <table style={{width:"100%",borderCollapse:"collapse",textAlign:"left"}}>
+            <thead><tr><th>Reserva Smoobu</th><th>Unidade PMS</th><th>Entrada</th><th>Saída</th><th>Situação</th></tr></thead>
+            <tbody>{smoobuInbox.slice(0,25).map(x=><tr key={x.id}>
+              <td>#{x.externalId}</td>
+              <td>{rooms.find(r=>r.id===x.accommodationId)?.name||"Sem vínculo confirmado"}</td>
+              <td>{x.arrival||"—"}</td><td>{x.departure||"—"}</td>
+              <td>{x.reviewStatus}{Array.isArray(x.validationIssues)&&x.validationIssues.length>0?" • verificar alertas":""}</td>
+            </tr>)}</tbody>
+          </table>
+        </div>
+      </details>}
+    </section>}
 
     <AdminCalendar
       events={events}
