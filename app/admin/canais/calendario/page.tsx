@@ -90,7 +90,9 @@ export default async function Page({searchParams}:{searchParams:Promise<{focus?:
       valueCents:x.quotedTotalCents,
       currency:x.quotedCurrency||"BRL",
       source:x.source,
-      notes:x.message
+      notes:x.message,
+      bedNumber:x.bedNumber,
+      bedLevel:x.bedLevel
     })),
     ...holds.map(x=>({
       id:"hold:"+x.id,
