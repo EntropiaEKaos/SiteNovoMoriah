@@ -80,6 +80,7 @@ export default function AdminCalendar({events,rooms}:{events:Event[];rooms:Room[
   const [editError,setEditError]=useState("");
   const [editSaving,setEditSaving]=useState(false);
   const [showOnlyAvailable,setShowOnlyAvailable]=useState(false);
+  const [density,setDensity]=useState<"comfortable"|"compact">("comfortable");
   const [hoveredDay,setHoveredDay]=useState<string|null>(null);
   const [selectionStart,setSelectionStart]=useState<{roomId:string;date:string}|null>(null);
   const [selectionEnd,setSelectionEnd]=useState<string|null>(null);
@@ -254,7 +255,8 @@ export default function AdminCalendar({events,rooms}:{events:Event[];rooms:Room[
   const gridTemplate="190px repeat("+days.length+", minmax(44px,1fr))";
   const dateLabel=(date:Date)=>date.toLocaleDateString("pt-BR",{weekday:"long",day:"2-digit",month:"long",year:"numeric",timeZone:"UTC"});
 
-  return <section className={"reservationMap reservationMap50"+(isPending?" isSaving":"")}>
+  return <section className={"reservationMap reservationMap50 calendarPremiumV7 "+(density==="compact"?"calendarDensityCompact ":"")+(isPending?" isSaving":"")}>
+    <div className="calendarPremiumHero"><div><span className="calendarPremiumEyebrow">MORIAH · CENTRAL DE HOSPEDAGENS</span><h1>Mapa de reservas <em>7.0</em></h1><p>Uma visão clara de cada hospedagem, chegada e saída.</p></div><div className="calendarPremiumHeroAside"><span className="calendarLiveDot"/> Painel operacional <strong>{visibleRooms.length} hospedagens</strong></div></div>
     <div className="reservationMapToolbar">
       <div className="reservationMapNav" aria-label="Navegação do calendário">
         <button type="button" onClick={()=>move(-1)} aria-label="Período anterior" title="Período anterior">←</button>
@@ -302,6 +304,7 @@ export default function AdminCalendar({events,rooms}:{events:Event[];rooms:Room[
 
     <div className="calendarEnhancedToolbar" role="group" aria-label="Ferramentas de visualização do calendário">
       <div className="calendarEnhancedTitle"><span aria-hidden="true">✦</span><div><strong>Visão operacional ao vivo</strong><small>Clique em um dia livre ou arraste entre dias livres para selecionar um período</small></div></div>
+      <div className="calendarDensitySwitch" role="group" aria-label="Densidade do calendário"><button type="button" className={density==="comfortable"?"isActive":""} aria-pressed={density==="comfortable"} onClick={()=>setDensity("comfortable")}>Confortável</button><button type="button" className={density==="compact"?"isActive":""} aria-pressed={density==="compact"} onClick={()=>setDensity("compact")}>Compacta</button></div>
       <label className="calendarAvailableToggle"><input type="checkbox" checked={showOnlyAvailable} onChange={event=>setShowOnlyAvailable(event.target.checked)}/> Destacar dias livres</label>
       <button type="button" onClick={()=>{setSearch("");setRoomFilter("");setShowOnlyAvailable(false);setSelected(null);setDraft(null);}}>Limpar filtros</button>
     </div>
@@ -397,7 +400,7 @@ export default function AdminCalendar({events,rooms}:{events:Event[];rooms:Room[
 
     {draft&&<aside className="reservationDetail reservationDraft">
       <div className="reservationDetailHead">
-        <div><small>{draft.mode==="BOOKING"?"NOVA RESERVA":"NOVO BLOQUEIO"} / CALENDÁRIO 5.0</small><h2>{draft.mode==="BOOKING"?"Reserva direta":"Bloqueio operacional"}</h2><p>{rooms.find(room=>room.id===draft.roomId)?.name}</p></div>
+        <div><small>{draft.mode==="BOOKING"?"NOVA RESERVA":"NOVO BLOQUEIO"} / CALENDÁRIO 7.0</small><h2>{draft.mode==="BOOKING"?"Reserva direta":"Bloqueio operacional"}</h2><p>{rooms.find(room=>room.id===draft.roomId)?.name}</p></div>
         <button type="button" onClick={()=>setDraft(null)}>Fechar</button>
       </div>
 
