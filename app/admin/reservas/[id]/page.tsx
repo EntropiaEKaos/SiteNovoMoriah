@@ -55,7 +55,7 @@ export default async function BookingDetail({params}:{params:Promise<{id:string}
   if(!booking)notFound();
 
   const isShared=Boolean(booking.accommodation?.sharedRoom);
-  const bedOccupants=isShared&&booking.accommodationId&&booking.checkIn&&booking.checkOut?await prisma.bookingLead.findMany({where:{id:{not:booking.id},accommodationId:booking.accommodationId,bedNumber:{not:null},status:{in:["CONFIRMED","CHECKED_IN"]},checkIn:{lt:booking.checkOut},checkOut:{gt:booking.checkIn}},select:{id:true,name:true,bedNumber:true,bedLevel:true,checkIn:true,checkOut:true}}):[];
+  const bedOccupants=isShared&&booking.accommodationId&&booking.checkIn&&booking.checkOut?await prisma.bookingLead.findMany({where:{id:{not:booking.id},accommodationId:booking.accommodationId,bedNumber:{not:null},status:{in:["NEW","CONFIRMED","CHECKED_IN"]},checkIn:{lt:booking.checkOut},checkOut:{gt:booking.checkIn}},select:{id:true,name:true,bedNumber:true,bedLevel:true,checkIn:true,checkOut:true}}):[];
   const pendingBedBookings=isShared&&booking.accommodationId&&booking.checkIn&&booking.checkOut?await prisma.bookingLead.count({where:{id:{not:booking.id},accommodationId:booking.accommodationId,bedNumber:null,status:{in:["CONFIRMED","CHECKED_IN"]},checkIn:{lt:booking.checkOut},checkOut:{gt:booking.checkIn}}}):0;
   const pendingBedHolds=isShared&&booking.accommodationId&&booking.checkIn&&booking.checkOut?await prisma.inventoryHold.count({where:{accommodationId:booking.accommodationId,expiresAt:{gt:new Date()},checkIn:{lt:booking.checkOut},checkOut:{gt:booking.checkIn}}}):0;
 
