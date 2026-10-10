@@ -1,6 +1,7 @@
 import {prisma} from "../../../../lib/prisma";
 import {requireAdmin} from "../../../../lib/admin-auth";
 import AdminCalendar from "./admin-calendar";
+import SharedBedMap from "./shared-bed-map";
 import {
   createManualBlock,
   rotateCalendarWidgetToken,
@@ -200,13 +201,16 @@ export default async function Page({searchParams}:{searchParams:Promise<{focus?:
       </details>}
     </section>}
 
+    <SharedBedMap rooms={rooms.map(r=>({id:r.id,name:r.name,roomNumber:r.roomNumber,bedCount:r.bedCount,sharedRoom:r.sharedRoom}))} events={events}/>
     <AdminCalendar
       events={events}
       rooms={rooms.map(r=>({
         id:r.id,
         name:r.name,
         roomNumber:r.roomNumber,
-        capacity:r.capacity
+        capacity:r.capacity,
+        sharedRoom:r.sharedRoom,
+        bedCount:r.bedCount
       }))}
     />
   </main>;
