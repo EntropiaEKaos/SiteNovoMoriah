@@ -14,6 +14,7 @@ import {
   updateBookingProfile
 } from "../detail-actions";
 import CheckInForm from "../../pms/check-in-form";
+import BookingBedPicker from "./booking-bed-picker";
 
 export const dynamic="force-dynamic";
 
@@ -52,6 +53,8 @@ export default async function BookingDetail({params}:{params:Promise<{id:string}
     }
   });
   if(!booking)notFound();
+
+  const bedOccupants=booking.accommodation?.sharedRoom&&booking.accommodationId&&booking.checkIn&&booking.checkOut?await prisma.bookingLead.findMany({where:{id:{not:booking.id},accommodationId:booking.accommodationId,bedNumber:{not:null},status:{in:["CONFIRMED","CHECKED_IN"]},checkIn:{lt:booking.checkOut},checkOut:{gt:booking.checkIn}},select:{id:true,name:true,bedNumber:true,bedLevel:true}}):[];
 
   const paid=booking.payments
     .filter(payment=>payment.status==="PAID"&&payment.reference!=="RESTAURANT_FOLIO")
@@ -137,7 +140,7 @@ export default async function BookingDetail({params}:{params:Promise<{id:string}
         <article className="adminSectionCard">
           <h2>Titular e observações</h2>
           <form action={updateBookingProfile} className="adminFormGrid" data-feedback-success="Reserva salva com sucesso.">
-            {booking.accommodation?.sharedRoom&&<div className="adminFormGrid cols2"><label>Número da cama<input name="bedNumber" type="number" min="1" max={booking.accommodation.bedCount} defaultValue={booking.bedNumber??""} placeholder="Ex.: 2"/></label><label>Altura da cama<select name="bedLevel" defaultValue={booking.bedLevel||""}><option value="">Não atribuída</option><option value="BAIXA">Baixa</option><option value="MEDIA">Média</option><option value="ALTA">Alta</option></select></label></div>}
+            {booking.accommodation?.sharedRoom&&<BookingBedPicker count={booking.accommodation.bedCount} roomName={booking.accommodation.name} initialNumber={booking.bedNumber} initialLevel={booking.bedLevel} occupants={bedOccupants.filter(item=>item.bedNumber!==null).map(item=>({id:item.id,number:item.bedNumber!,level:item.bedLevel,name:item.name}))}/>}
             <input type="hidden" name="id" value={booking.id}/>
             <label className="span2">Nome
               <input name="name" required defaultValue={booking.name}/>
