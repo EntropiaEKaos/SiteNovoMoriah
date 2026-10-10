@@ -157,7 +157,7 @@ export async function saveSettings(formData:FormData){
 export async function createBookingLead(formData:FormData){
   const publicRequestToken=String(formData.get("publicRequestToken")||"").trim();
   if(!/^[0-9a-f-]{36}$/i.test(publicRequestToken))throw new Error("Identificador da solicitação inválido.");
-  if(await prisma.bookingLead.findUnique({where:{publicRequestToken},select:{id:true}}))redirect("/reservar/obrigado");
+  if(await prisma.bookingLead.findUnique({where:{publicRequestToken},select:{id:true}}))redirect("/reservar/obrigado?protocolo="+encodeURIComponent(publicRequestToken));
 
   const accommodationId=String(formData.get("accommodationId")||"");
   const room=accommodationId
@@ -250,7 +250,7 @@ export async function createBookingLead(formData:FormData){
 
   revalidatePath("/admin/reservas");
   revalidatePath("/admin/notificacoes");
-  redirect("/reservar/obrigado");
+  redirect("/reservar/obrigado?protocolo="+encodeURIComponent(publicRequestToken));
 }
 
 export async function setBookingStatus(formData:FormData){
