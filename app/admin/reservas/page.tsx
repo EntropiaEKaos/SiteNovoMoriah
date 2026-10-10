@@ -31,13 +31,15 @@ const statusClass=(status:string)=>{
 export default async function Page({
   searchParams
 }:{
-  searchParams:Promise<{status?:string;source?:string;q?:string}>
+  searchParams:Promise<{status?:string;source?:string;q?:string;page?:string}>
 }){
   await requireAdmin();
   const params=await searchParams;
   const status=String(params.status||"").trim();
   const source=String(params.source||"").trim();
   const q=String(params.q||"").trim();
+  const page=Math.max(1,Math.min(10000,Number.parseInt(String(params.page||"1"),10)||1));
+  const pageSize=50;
 
   const where={
     ...(status?{status}:{}),
@@ -51,7 +53,7 @@ export default async function Page({
     }:{})
   };
 
-  const [leads,total,newCount,confirmed,checkedIn]=await Promise.all([
+  const [leads,total,newCount,confirmed,checkedIn,filteredTotal,allSources]=await Promise.all([
     prisma.bookingLead.findMany({
       where,
       include:{
@@ -61,15 +63,20 @@ export default async function Page({
         charges:true
       },
       orderBy:{createdAt:"desc"},
-      take:150
+      skip:(page-1)*pageSize,
+      take:pageSize
     }),
     prisma.bookingLead.count(),
     prisma.bookingLead.count({where:{status:"NEW"}}),
     prisma.bookingLead.count({where:{status:"CONFIRMED"}}),
-    prisma.bookingLead.count({where:{status:"CHECKED_IN"}})
+    prisma.bookingLead.count({where:{status:"CHECKED_IN"}}),
+    prisma.bookingLead.count({where}),
+    prisma.bookingLead.findMany({distinct:["source"],select:{source:true}})
   ]);
 
-  const sources=Array.from(new Set(leads.map(item=>item.source))).sort();
+  const sources=allSources.map(item=>item.source).sort();
+  const pageCount=Math.max(1,Math.ceil(filteredTotal/pageSize));
+  const pageHref=(next:number)=>"/admin/reservas?"+new URLSearchParams({...(q?{q}:{}),...(status?{status}:{}),...(source?{source}:{}),page:String(next)}).toString();
 
   return <main className="adminPage">
     <section className="adminPageHero">
@@ -114,6 +121,7 @@ export default async function Page({
       </form>
     </section>
 
+    <div className="adminMetaRow" style={{marginBottom:16}}><span className="adminChip">{filteredTotal} reserva(s) encontrada(s)</span><span className="adminChip">Página {page} de {pageCount}</span></div>
     {leads.length===0?<section className="adminEmptyState">
       <strong>Nenhuma reserva encontrada.</strong>
       <p>Ajuste os filtros ou aguarde novas solicitações do site.</p>
@@ -177,5 +185,9 @@ export default async function Page({
         </article>;
       })}
     </section>}
+    {pageCount>1&&<nav className="adminInlineActions" aria-label="Paginação de reservas" style={{marginTop:20}}>
+      {page>1&&<Link className="adminSecondaryAction" href={pageHref(page-1)}>← Anterior</Link>}
+      {page<pageCount&&<Link className="adminSecondaryAction" href={pageHref(page+1)}>Próxima →</Link>}
+    </nav>}
   </main>;
 }
