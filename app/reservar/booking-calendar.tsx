@@ -55,7 +55,7 @@ export default function BookingCalendar({
   const [quote,setQuote]=useState<Quote|null>(null);
   const [quoteLoading,setQuoteLoading]=useState(false);
 
-  const min=useMemo(()=>new Date().toISOString().slice(0,10),[]);
+  const min=useMemo(()=>new Intl.DateTimeFormat("en-CA",{timeZone:"America/Sao_Paulo",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date()),[]);
   const selectedRoom=rooms.find(item=>item.id===room)||null;
   const guestCount=Math.max(1,Number(guests)||1);
   const sellableUnits=selectedRoom
