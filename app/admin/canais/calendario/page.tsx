@@ -206,7 +206,9 @@ export default async function Page({searchParams}:{searchParams:Promise<{focus?:
         id:r.id,
         name:r.name,
         roomNumber:r.roomNumber,
-        capacity:r.capacity
+        capacity:r.capacity,
+        sharedRoom:r.sharedRoom,
+        bedCount:r.bedCount
       }))}
     />
   </main>;
