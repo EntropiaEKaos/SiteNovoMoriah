@@ -86,3 +86,5 @@
 .reservationMapEvent:focus-visible{outline:3px solid #f6be38;outline-offset:2px;z-index:6}
 .calendarEmptyState{padding:24px;text-align:center;font-size:14px;opacity:.8}
 @media(max-width:720px){.calendarEnhancedToolbar{padding:14px;gap:12px}.calendarEnhancedTitle{width:100%}.calendarEnhancedToolbar>button{flex:1}.calendarAvailableToggle{flex:1}}
+
+.reservationMapCell.isRangeSelecting{background:rgba(31,163,126,.34)!important;box-shadow:inset 0 0 0 2px #169a75;cursor:crosshair}
