@@ -18,3 +18,14 @@ test("certificação exige todos os controles explícitos",()=>{
  assert.equal(report.status,"CERTIFIED");
  assert.doesNotThrow(()=>assertCertifiedForOutboundWrite(report));
 });
+
+test("iCal permanece bloqueado mesmo se todos os demais controles forem marcados",()=>{
+ const report=assessBidirectionalReadiness({...base,canWriteAvailability:true,canWriteRates:true,canReadChanges:true,webhookVerified:true,idempotencyVerified:true,cancellationVerified:true,conflictProtectionVerified:true});
+ assert.equal(report.status,"NOT_CERTIFIED");
+ assert.equal(report.checks.find(x=>x.id==="api_transport").passed,false);
+ assert.throws(()=>assertCertifiedForOutboundWrite(report),/bloqueada/);
+});
+test("transporte misto API/iCal não recebe certificação",()=>{
+ const report=assessBidirectionalReadiness({...base,importMode:"API",canWriteAvailability:true,canWriteRates:true,canReadChanges:true,webhookVerified:true,idempotencyVerified:true,cancellationVerified:true,conflictProtectionVerified:true});
+ assert.equal(report.status,"NOT_CERTIFIED");
+});
