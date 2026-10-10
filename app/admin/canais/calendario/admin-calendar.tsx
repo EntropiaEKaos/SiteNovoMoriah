@@ -77,6 +77,8 @@ export default function AdminCalendar({events,rooms}:{events:Event[];rooms:Room[
   const [dragging,setDragging]=useState<Event|null>(null);
   const [dropKey,setDropKey]=useState("");
   const [moveError,setMoveError]=useState("");
+  const [editError,setEditError]=useState("");
+  const [editSaving,setEditSaving]=useState(false);
   const [showOnlyAvailable,setShowOnlyAvailable]=useState(false);
   const [hoveredDay,setHoveredDay]=useState<string|null>(null);
   const [selectionStart,setSelectionStart]=useState<{roomId:string;date:string}|null>(null);
@@ -211,6 +213,19 @@ export default function AdminCalendar({events,rooms}:{events:Event[];rooms:Room[
         setDropKey("");
       }
     });
+  }
+
+  async function submitQuickMove(event:React.FormEvent<HTMLFormElement>){
+    event.preventDefault();
+    if(editSaving)return;
+    setEditSaving(true);setEditError("");
+    try{
+      await updateConfirmedBookingPlacement(new FormData(event.currentTarget));
+      setSelected(null);
+      router.refresh();
+    }catch(error){
+      setEditError(error instanceof Error&&error.message&&!/digest/i.test(error.message)?error.message:"Não foi possível salvar. Confira as datas e a disponibilidade.");
+    }finally{setEditSaving(false);}
   }
 
   async function submitMapBooking(event:React.FormEvent<HTMLFormElement>){
@@ -369,7 +384,7 @@ export default function AdminCalendar({events,rooms}:{events:Event[];rooms:Room[
               aria-haspopup="dialog"
               onDragStart={()=>{if(draggable){setDragging(event);setSelected(null);setDraft(null);}}}
               onDragEnd={()=>{setDragging(null);setDropKey("");}}
-              onClick={()=>{setDraft(null);setSelected(event);}}
+              onClick={()=>{setDraft(null);setEditError("");setSelected(event);}}
             >
               <b>{event.guest||event.title}</b>{event.bedNumber&&<small>Cama {event.bedNumber} • {event.bedLevel==="BAIXA"?"Baixa":event.bedLevel==="MEDIA"?"Média":"Alta"}</small>}<small>{event.kind==="BOOKING"?event.status:event.source}</small>
             </button>;
@@ -431,12 +446,14 @@ export default function AdminCalendar({events,rooms}:{events:Event[];rooms:Room[
         {selected.status==="CONFIRMED"&&<form action={calendarBookingStatus}><input type="hidden" name="id" value={selected.entityId}/><input type="hidden" name="status" value="CANCELLED"/><button className="danger">Cancelar reserva</button></form>}
       </div>}
 
-      {selected.kind==="BOOKING"&&selected.status==="CONFIRMED"&&<form action={updateConfirmedBookingPlacement} className="adminFormGrid cols3 calendarMoveForm">
+      {selected.kind==="BOOKING"&&selected.status==="CONFIRMED"&&<form onSubmit={submitQuickMove} className="adminFormGrid cols3 calendarMoveForm">
+        <div className="span2 calendarQuickEditHeading"><strong>✦ Edição rápida no calendário</strong><small>Altere a hospedagem ou as datas sem sair do mapa. O servidor valida conflitos antes de salvar.</small></div>
         <label>Hospedagem<select name="accommodationId" defaultValue={selected.roomId} required>{rooms.map(room=><option key={room.id} value={room.id}>{room.roomNumber?room.roomNumber+" • ":""}{room.name}</option>)}</select></label>
         <label>Nova entrada<input name="checkIn" type="date" required defaultValue={selected.start.slice(0,10)}/></label>
         <label>Nova saída<input name="checkOut" type="date" required defaultValue={selected.end.slice(0,10)}/></label>
         <input type="hidden" name="id" value={selected.entityId}/>
-        <button className="span2">Validar e mover reserva</button>
+        {editError&&<div className="span2 adminPageNote" role="alert">{editError}</div>}
+        <button className="span2" disabled={editSaving||isPending}>{editSaving?"Validando disponibilidade…":"Salvar alteração no calendário"}</button>
       </form>}
 
       {selected.kind==="MANUAL"&&<form action={deleteManualBlock} style={{marginTop:18}}><input type="hidden" name="id" value={selected.entityId}/><button className="danger">Remover bloqueio manual</button></form>}
