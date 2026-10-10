@@ -82,7 +82,7 @@ export default async function PMS(){
     return sum+Math.max(0,(booking.quotedTotalCents||0)+charges-paid)+restaurant;
   },0);
 
-  return <main className="adminPage">
+  return <main className="adminPage adminPremiumPage">
     <section className="adminPageHero">
       <div>
         <small>MORIAH PMS / OPERAÇÃO</small>
