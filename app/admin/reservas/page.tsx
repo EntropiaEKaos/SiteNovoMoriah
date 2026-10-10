@@ -78,7 +78,7 @@ export default async function Page({
   const pageCount=Math.max(1,Math.ceil(filteredTotal/pageSize));
   const pageHref=(next:number)=>"/admin/reservas?"+new URLSearchParams({...(q?{q}:{}),...(status?{status}:{}),...(source?{source}:{}),page:String(next)}).toString();
 
-  return <main className="adminPage">
+  return <main className="adminPage adminPremiumPage">
     <section className="adminPageHero">
       <div>
         <small>MORIAH CMS / COMERCIAL</small>

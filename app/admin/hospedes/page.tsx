@@ -65,7 +65,7 @@ export default async function GuestsPage({
 
   const positionByGuest=new Map(staffAssignments.map(item=>[item.guestId,item.position.name]));
 
-  return <main className="adminPage">
+  return <main className="adminPage adminPremiumPage">
     <section className="adminPageHero">
       <div>
         <small>MORIAH PMS / CRM 2.0</small>

@@ -80,7 +80,7 @@ export default async function Page(){
     console.error("SITE_BRANDING_SCHEMA_PENDING",error);
   }
 
-  return <main className="adminPage">
+  return <main className="adminPage adminPremiumPage">
     <section className="adminPageHero">
       <div>
         <small>MORIAH CMS / IDENTIDADE VISUAL</small>
