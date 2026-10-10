@@ -249,6 +249,7 @@ export default async function GuestDetail({
                 <small>{booking.status} • {booking.source}</small>
                 <h3>{booking.accommodation?.name||"Hospedagem"}</h3>
                 <p>{booking.checkIn?booking.checkIn.toLocaleDateString("pt-BR"):"—"} → {booking.checkOut?booking.checkOut.toLocaleDateString("pt-BR"):"—"} • {booking.guests} hóspede(s)</p>
+                {booking.accommodation?.sharedRoom&&<p><b>Leito:</b> {booking.bedNumber?(booking.bedNumber>Math.ceil((booking.accommodation.bedCount||0)/3)?"Numeração antiga — cama ":"Triliche ")+booking.bedNumber+" · "+(booking.bedLevel==="BAIXA"?"Baixa":booking.bedLevel==="MEDIA"?"Média":booking.bedLevel==="ALTA"?"Alta":"Altura não informada"):"Pendente de atribuição"}</p>}
               </div>
               <div style={{textAlign:"right"}}>
                 <strong>{(total/100).toLocaleString("pt-BR",{style:"currency",currency:booking.quotedCurrency||"BRL"})}</strong>
@@ -256,7 +257,7 @@ export default async function GuestDetail({
               </div>
             </div>
             <div className="adminInlineActions">
-              <Link className="highlight" href={"/admin/reservas/"+booking.id}>Abrir reserva →</Link>
+              <Link className="highlight" href={"/admin/reservas/"+booking.id}>{booking.status==="CONFIRMED"?"Abrir reserva e fazer check-in →":"Abrir reserva →"}</Link>
             </div>
           </article>;
         })}
