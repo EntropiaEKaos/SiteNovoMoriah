@@ -210,11 +210,7 @@ export default async function BookingDetail({params}:{params:Promise<{id:string}
           <div className="adminStatusLine"><span>Recebido</span><b>{money(paid)}</b></div>
           <div className="adminStatusLine"><span>Saldo</span><b>{money(balance)}</b></div>
 
-          {booking.status==="CONFIRMED"?<CheckInForm
-            bookingId={booking.id}
-            lodgingTotalCents={lodgingTotal}
-            alreadyPaidCents={paid}
-          />:<form action={registerPayment} className="adminFormGrid" style={{marginTop:18}} data-feedback-success="Pagamento registrado com sucesso.">
+          <form action={registerPayment} className="adminFormGrid" style={{marginTop:18}} data-feedback-success="Pagamento registrado com sucesso.">
             <input type="hidden" name="bookingId" value={booking.id}/>
             <label>Valor
               <input name="amount" inputMode="decimal" required placeholder="R$"/>
@@ -229,7 +225,13 @@ export default async function BookingDetail({params}:{params:Promise<{id:string}
               </select>
             </label>
             <button className="span2">Registrar pagamento</button>
-          </form>}
+          </form>
+
+          {booking.status==="CONFIRMED"&&<CheckInForm
+            bookingId={booking.id}
+            lodgingTotalCents={lodgingTotal}
+            alreadyPaidCents={paid}
+          />}
 
           {booking.charges.length>0&&<div className="adminStack" style={{marginTop:18}}>
             <small>ADICIONAIS DA RESERVA</small>
