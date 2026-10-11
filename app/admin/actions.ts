@@ -861,7 +861,12 @@ export async function registerPayment(formData:FormData){
   await requireAdmin();
 
   const bookingId=String(formData.get("bookingId")||"");
-  const amount=Number(String(formData.get("amount")||"").replace(",","."));
+  const amountRaw=String(formData.get("amount")||"").trim().replace(/\s|R\$/gi,"");
+  // Accept Brazilian monetary notation (1.234,56), as well as 1234.56 and 150,00.
+  const normalizedAmount=amountRaw.includes(",")
+    ?amountRaw.replace(/\./g,"").replace(",",".")
+    :amountRaw;
+  const amount=/^\d+(?:\.\d{1,2})?$/.test(normalizedAmount)?Number(normalizedAmount):NaN;
   const method=String(formData.get("method")||"PIX").toUpperCase();
   const reference=String(formData.get("reference")||"").trim().slice(0,240)||null;
   const allowed=new Set(["PIX","CARD","CASH","TRANSFER","EXTERNAL","ROOM_SETTLEMENT"]);
