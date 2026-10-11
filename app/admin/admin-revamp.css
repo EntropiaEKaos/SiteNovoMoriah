@@ -163,3 +163,28 @@
 .adminRevamp .kitchen40 .kitchenHero{border-radius:19px;box-shadow:0 12px 35px rgba(25,49,59,.08)}
 @media(max-width:760px){.adminRevamp .adminPremiumRestaurant{padding:24px 14px!important}.adminRevamp .adminPremiumRestaurant>h1{font-size:clamp(30px,9vw,46px)!important}}
 @media(prefers-reduced-motion:reduce){.adminRevamp .adminPremiumRestaurant article{transition:none}}
+
+
+/* Reservation pages: contain wide content within the desktop workspace. */
+@media(min-width:761px){
+ .adminRevamp .adminPremiumPage{width:100%;min-width:0;max-width:min(1560px,100%);box-sizing:border-box}
+ .adminRevamp .adminPremiumPage .adminStack{min-width:0}
+ .adminRevamp .adminPremiumPage .adminListCard{min-width:0;max-width:100%;overflow-wrap:anywhere}
+ .adminRevamp .adminPremiumPage .adminTwoCol{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+ .adminRevamp .adminPremiumPage .adminTwoCol>div{min-width:0;max-width:100%}
+ .adminRevamp .adminPremiumPage .adminListCardHead>div{min-width:0;overflow-wrap:anywhere}
+ .adminRevamp .adminPremiumPage .adminInlineActions{flex-wrap:wrap;min-width:0}
+ .adminRevamp .adminPremiumPage .adminStatusLine{gap:12px;min-width:0}
+ .adminRevamp .adminPremiumPage .adminStatusLine>b{min-width:0;overflow-wrap:anywhere;text-align:right}
+}
+@media(min-width:761px) and (max-width:1150px){
+ .adminRevamp .adminPremiumPage .adminTwoCol{grid-template-columns:minmax(0,1fr)}
+}
+.calendarPremiumV7{min-width:0;max-width:100%}
+.calendarPremiumV7 .reservationMapScroll{min-width:0;max-width:calc(100% - 32px);overscroll-behavior-inline:contain}
+.calendarPremiumV7 .reservationMapHeader,.calendarPremiumV7 .reservationMapRow{width:max-content;min-width:100%}
+.calendarPremiumV7 .reservationMapRoom{min-width:0;overflow:hidden}
+.calendarPremiumV7 .reservationMapRoom strong{overflow-wrap:anywhere}
+.calendarPremiumV7 .reservationMapEvent{min-width:0;max-width:100%;overflow:hidden}
+.calendarPremiumV7 .reservationMapEvent b{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media(max-width:760px){.calendarPremiumV7 .reservationMapScroll{max-width:calc(100% - 16px)}}
