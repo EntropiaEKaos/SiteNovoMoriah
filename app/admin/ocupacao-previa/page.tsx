@@ -7,7 +7,9 @@ export const dynamic = "force-dynamic";
 
 export default async function OccupancyPreviewPage() {
   await requireAdmin();
-  const today = new Date().toISOString().slice(0, 10);
+  const today = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Sao_Paulo", year: "numeric", month: "2-digit", day: "2-digit",
+  }).format(new Date());
   const rooms = await prisma.accommodation.findMany({
     where: { active: true },
     select: { id: true, name: true, sharedRoom: true, bedCount: true },
