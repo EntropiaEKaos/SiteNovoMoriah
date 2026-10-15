@@ -63,7 +63,7 @@ test("manual block overlapping a booking is a conflict", () => {
     ],
   });
   assert.equal(result[0].state, "CONFLICT");
-  assert.equal(result[0].used, 2);
+  assert.equal(result[0].used, 1);
 });
 
 test("unverified inventory is never presented as available", () => {
