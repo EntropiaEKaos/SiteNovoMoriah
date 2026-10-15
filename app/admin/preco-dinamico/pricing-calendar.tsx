@@ -1,6 +1,6 @@
 "use client";
 
-import {useMemo,useState} from "react";
+import {useMemo,useRef,useState} from "react";
 import {createRateRule,updateRateRule} from "../actions";
 
 type Room={id:string;name:string;priceCents:number|null};
@@ -17,6 +17,9 @@ export default function PricingCalendar({rooms,rules}:{rooms:Room[];rules:Rule[]
  const [view,setView]=useState<"month"|"week">("month");
  const [weekIndex,setWeekIndex]=useState(0);
  const [showBase,setShowBase]=useState(true);
+ const dragAnchor=useRef<string|null>(null);
+ const suppressClick=useRef(false);
+ const [dragging,setDragging]=useState(false);
  const [start,setStart]=useState<string|null>(null);
  const [end,setEnd]=useState<string|null>(null);
  const [price,setPrice]=useState("");
@@ -35,12 +38,15 @@ export default function PricingCalendar({rooms,rules}:{rooms:Room[];rules:Rule[]
  const changeMonth=(delta:number)=>{setMonth(new Date(Date.UTC(month.getUTCFullYear(),month.getUTCMonth()+delta,1,12)));setWeekIndex(0)};
  const weekCount=Math.ceil(cells.length/7);
  const visibleCells=view==="week"?cells.slice(weekIndex*7,weekIndex*7+7):cells;
- const choose=(date:string)=>{if(!start||end||date<start){setStart(date);setEnd(null)}else{setEnd(date)}};
+ const choose=(date:string)=>{if(suppressClick.current){suppressClick.current=false;return}if(!start||end||date<start){setStart(date);setEnd(null)}else{setEnd(date)}};
+ const beginDrag=(date:string)=>{dragAnchor.current=date;setDragging(true);setStart(date);setEnd(null);suppressClick.current=true};
+ const hoverDrag=(date:string)=>{if(!dragAnchor.current)return;setStart(date<dragAnchor.current?date:dragAnchor.current);setEnd(date>dragAnchor.current?date:dragAnchor.current)};
+ const finishDrag=()=>{dragAnchor.current=null;setDragging(false)};
  const rangeEnd=end??start;
  const dateLabel=(d:string|null)=>d?dateFrom(d).toLocaleDateString("pt-BR",{timeZone:"UTC"}):"—";
  return <section className="adminSectionCard" style={{marginBottom:20}}>
   <h2>Calendário de preços 2.0</h2>
-  <p>Escolha a hospedagem, clique no primeiro e no último dia, informe a diária final e salve. Os valores no calendário são referências antes de promoções e condições especiais.</p>
+  <p>Selecione uma hospedagem e arraste o mouse sobre as datas para escolher um período, ou use dois cliques. Informe a diária e salve. Os preços exibidos são referências antes de promoções.</p>
   <div className="adminFormGrid" style={{marginBottom:16}}>
    <label>Hospedagem<select value={roomId} onChange={e=>{setRoomId(e.target.value);setStart(null);setEnd(null)}}>{rooms.map(r=><option key={r.id} value={r.id}>{r.name}</option>)}</select></label>
    <div style={{display:"flex",alignItems:"end",gap:8,justifyContent:"space-between"}}>
@@ -51,13 +57,13 @@ export default function PricingCalendar({rooms,rules}:{rooms:Room[];rules:Rule[]
   </div>
   <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center",marginBottom:12}}><button type="button" aria-pressed={view==="month"} onClick={()=>setView("month")}>Mês</button><button type="button" aria-pressed={view==="week"} onClick={()=>setView("week")}>Semana</button><label style={{display:"flex",gap:6,alignItems:"center"}}><input type="checkbox" checked={showBase} onChange={e=>setShowBase(e.target.checked)}/> Exibir tarifa base</label></div>
   {view==="week"&&<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}><button type="button" disabled={weekIndex===0} onClick={()=>setWeekIndex(i=>Math.max(0,i-1))}>← Semana anterior</button><strong>Semana {weekIndex+1} / {weekCount}</strong><button type="button" disabled={weekIndex===weekCount-1} onClick={()=>setWeekIndex(i=>Math.min(weekCount-1,i+1))}>Próxima semana →</button></div>}
-  <div style={{display:"grid",gridTemplateColumns:"repeat(7,minmax(0,1fr))",gap:6}}>
+  <div onPointerUp={finishDrag} onPointerCancel={finishDrag} onPointerLeave={finishDrag} style={{display:"grid",gridTemplateColumns:"repeat(7,minmax(0,1fr))",gap:6,userSelect:dragging?"none":"auto"}}>
    {weekDays.map(d=><strong key={d} style={{textAlign:"center",fontSize:12}}>{d}</strong>)}
    {visibleCells.map((date,i)=>{
     if(!date)return <div key={"empty"+i}/>;
     const rule=rules.filter(r=>r.active&&r.accommodationId===roomId&&r.adjustmentType==="FIXED_PRICE"&&(!r.startsAt||r.startsAt.slice(0,10)<=date)&&(!r.endsAt||r.endsAt.slice(0,10)>=date)&&(r.weekdaysMask==null||(r.weekdaysMask&(1<<dateFrom(date).getUTCDay()))!==0)).sort((a,b)=>a.priority-b.priority)[0];
     const selected=Boolean(start&&rangeEnd&&date>=start&&date<=rangeEnd&&weekdays.includes(dateFrom(date).getUTCDay()));
-    return <button key={date} type="button" onClick={()=>choose(date)} aria-pressed={selected} title={rule?.name??"Tarifa base"} style={{minHeight:view==="week"?108:86,padding:"9px 3px",borderRadius:12,border:selected?"2px solid #bd8124":"1px solid #ddd",background:selected?"#fff0d5":rule?"#e6f4e8":"#fff",color:"#222",cursor:"pointer"}}>
+    return <button key={date} type="button" onClick={()=>choose(date)} onPointerDown={e=>{if(e.pointerType==="mouse"&&e.button===0)beginDrag(date)}} onPointerEnter={()=>hoverDrag(date)} aria-pressed={selected} title={rule?.name??"Tarifa base"} style={{minHeight:view==="week"?108:86,padding:"9px 3px",borderRadius:12,border:selected?"2px solid #bd8124":"1px solid #ddd",background:selected?"#fff0d5":rule?"#e6f4e8":"#fff",color:"#222",cursor:"pointer"}}>
      <span style={{display:"block",fontWeight:700}}>{Number(date.slice(-2))}</span>
      <span style={{display:"block",fontSize:12,fontWeight:700,overflowWrap:"anywhere"}}>{rule?money(rule.adjustmentValue):showBase&&selectedRoom?.priceCents!=null?money(selectedRoom.priceCents):"—"}</span>
     </button>;
