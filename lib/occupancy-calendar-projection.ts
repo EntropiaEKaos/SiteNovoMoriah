@@ -31,7 +31,7 @@ export function projectOccupancyDays(args: {
     const active = intervals.filter((x) => x.start <= date && date < x.end);
     const used = active.reduce((sum, x) => sum + x.units, 0);
     const state: OccupancyState = !verified ? "UNVERIFIED"
-      : used > capacity ? "CONFLICT"
+      : (used > capacity || (active.some((x) => x.kind === "BLOCK") && active.some((x) => x.kind !== "BLOCK"))) ? "CONFLICT"
       : active.some((x) => x.kind === "BLOCK") ? "BLOCKED"
       : active.some((x) => x.kind === "CHECKED_IN") ? "OCCUPIED"
       : active.length ? "RESERVED" : "AVAILABLE";
