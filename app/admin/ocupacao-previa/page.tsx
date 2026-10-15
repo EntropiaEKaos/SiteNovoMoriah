@@ -55,16 +55,16 @@ export default async function OccupancyPreviewPage() {
               </th>
               {dates.map((date,dayIndex)=>{
                 const item=days?.[dayIndex];
-                return <td key={date} title={item ? `Não certificado · ${item.used}/${item.capacity} unidades registradas` : "Falha de leitura"} style={{
+                return <td key={date} aria-label={item ? `${room.name}, ${date}: dados não verificados, ${item.used} de ${item.capacity} unidades preliminares` : `${room.name}, ${date}: falha de leitura`} title={item ? `Não certificado · ${item.used}/${item.capacity} unidades registradas` : "Falha de leitura"} style={{
                   textAlign:"center",padding:8,borderBottom:"1px solid #ddd",
                   background:item?"#fff4d6":"#fee2e2",color:"#6b4e00",
-                }}>{item ? "?" : "!"}</td>;
+                }}>{item ? <span style={{fontWeight:700}}>{item.used}/{item.capacity}<small style={{display:"block"}}>Não verificado</small></span> : <span>Falha</span>}</td>;
               })}
             </tr>;
           })}</tbody>
         </table>
       </div>
-      <p style={{fontSize:12,marginTop:12}}> ? Não verificado · ! Falha de leitura. Passe o mouse sobre a célula para consultar a contagem preliminar. Não utilize para autorizar novas reservas.</p>
+      <p style={{fontSize:12,marginTop:12}}> Os números representam contagens preliminares, não disponibilidade confirmada. Células com falha não possuem contagem confiável. Não utilize para autorizar novas reservas.</p>
     </section>
   </main>;
 }
