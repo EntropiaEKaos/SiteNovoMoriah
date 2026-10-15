@@ -16,7 +16,7 @@ export async function importSmoobuReservationInbox(){
  // Abort the entire snapshot if duplicate identifiers appear; never silently overwrite one.
  if(diagnostics.some(x=>x.issues.some(issue=>issue.includes("duplicado")||issue.includes("ID de reserva inválido"))))throw new Error("Prévia Smoobu contém IDs duplicados ou inválidos. Importação bloqueada.");
  await prisma.$transaction(async tx=>{
-  await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext('smoobu-reservation-inbox'))`;
+  await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext('smoobu-reservation-inbox'))::text AS lock_result`;
   for(const {reservation,issues,mappedAccommodationId} of diagnostics){
    const values={apartmentId:reservation.apartmentId,accommodationId:mappedAccommodationId,arrival:reservation.arrival,departure:reservation.departure,externalStatus:reservation.status,validationIssues:issues};
    await tx.smoobuReservationInbox.upsert({where:{externalId:reservation.externalId},create:{externalId:reservation.externalId,...values},update:values});
