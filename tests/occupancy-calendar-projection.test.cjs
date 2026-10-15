@@ -128,3 +128,25 @@ test("hard block dates must be valid calendar days", () => {
     hardBlockDates: ["2026-02-30"],
   }));
 });
+
+test("active inventory hold consumes a shared bed", () => {
+  const result = projectOccupancyDays({
+    dates: [dates[0]], capacity: 2, verified: true,
+    intervals: [
+      { start: dates[0], end: dates[1], units: 1, kind: "HOLD" },
+      { start: dates[0], end: dates[1], units: 1, kind: "RESERVATION" },
+    ],
+  });
+  assert.equal(result[0].used, 2);
+  assert.equal(result[0].state, "RESERVED");
+});
+test("holds count toward overbooking conflict", () => {
+  const result = projectOccupancyDays({
+    dates: [dates[0]], capacity: 1, verified: true,
+    intervals: [
+      { start: dates[0], end: dates[1], units: 1, kind: "HOLD" },
+      { start: dates[0], end: dates[1], units: 1, kind: "RESERVATION" },
+    ],
+  });
+  assert.equal(result[0].state, "CONFLICT");
+});
