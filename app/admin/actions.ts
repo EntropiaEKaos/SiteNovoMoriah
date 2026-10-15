@@ -573,7 +573,41 @@ export async function deleteRatePlan(formData:FormData){await requireAdmin();con
 export async function createRateOverride(formData:FormData){await requireAdmin();const ratePlanId=String(formData.get("ratePlanId")||"");const start=String(formData.get("startsAt")||""),end=String(formData.get("endsAt")||"");const price=Number(String(formData.get("price")||"").replace(",","."));const minRaw=Number(formData.get("minNights")||0);if(!ratePlanId||!start||!end||!Number.isFinite(price)||price<0||!Number.isInteger(minRaw)||minRaw<0)throw new Error("Ajuste tarifário inválido.");const startsAt=new Date(start+"T12:00:00Z"),endsAt=new Date(end+"T12:00:00Z");if(!(startsAt<endsAt))throw new Error("O fim deve ser posterior ao início.");await prisma.rateOverride.create({data:{ratePlanId,startsAt,endsAt,priceCents:Math.round(price*100),minNights:minRaw>0?minRaw:null,closedToArrival:formData.get("closedToArrival")==="on",closedToDeparture:formData.get("closedToDeparture")==="on"}});revalidatePath("/admin/tarifas");}
 export async function deleteRateOverride(formData:FormData){await requireAdmin();const id=String(formData.get("id")||"");if(id){await prisma.rateOverride.delete({where:{id}});revalidatePath("/admin/tarifas");}}
 
-export async function createRateRule(formData:FormData){await requireAdmin();const accommodationId=String(formData.get("accommodationId")||""),name=String(formData.get("name")||"").trim(),adjustmentType=String(formData.get("adjustmentType")||"PERCENT"),raw=Number(formData.get("adjustmentValue")||0);if(!accommodationId||!name||!["PERCENT","FIXED","FIXED_PRICE"].includes(adjustmentType)||!Number.isFinite(raw)||(adjustmentType==="FIXED_PRICE"&&raw<=0))throw new Error("Regra dinâmica inválida.");const num=(key:string)=>{const v=String(formData.get(key)||"").trim();if(v==="")return null;const n=Number(v);if(!Number.isFinite(n))throw new Error("Valor numérico inválido.");return n};const minOcc=num("minOccupancyPct"),maxOcc=num("maxOccupancyPct"),minDays=num("daysBeforeMin"),maxDays=num("daysBeforeMax"),priority=num("priority")??100;if((minOcc!=null&&(minOcc<0||minOcc>100))||(maxOcc!=null&&(maxOcc<0||maxOcc>100))||(minOcc!=null&&maxOcc!=null&&minOcc>maxOcc)||(minDays!=null&&minDays<0)||(maxDays!=null&&maxDays<0)||(minDays!=null&&maxDays!=null&&minDays>maxDays))throw new Error("Faixas da regra dinâmica são inválidas.");const starts=String(formData.get("startsAt")||""),ends=String(formData.get("endsAt")||"");const startsAt=starts?new Date(starts+"T00:00:00Z"):null,endsAt=ends?new Date(ends+"T23:59:59Z"):null;if(startsAt&&endsAt&&startsAt>endsAt)throw new Error("Período da regra inválido.");await prisma.rateRule.create({data:{accommodationId,name,adjustmentType,adjustmentValue:adjustmentType==="FIXED"||adjustmentType==="FIXED_PRICE"?Math.round(raw*100):Math.round(raw),minOccupancyPct:minOcc==null?null:Math.round(minOcc),maxOccupancyPct:maxOcc==null?null:Math.round(maxOcc),daysBeforeMin:minDays==null?null:Math.round(minDays),daysBeforeMax:maxDays==null?null:Math.round(maxDays),startsAt,endsAt,priority:Math.round(priority)}});revalidatePath("/admin/tarifas");revalidatePath("/admin/preco-dinamico");}
+function parseRateRuleForm(formData:FormData){
+ const accommodationId=String(formData.get("accommodationId")||"");
+ const name=String(formData.get("name")||"").trim();
+ const adjustmentType=String(formData.get("adjustmentType")||"PERCENT");
+ const raw=Number(String(formData.get("adjustmentValue")||"").replace(",","."));
+ if(!accommodationId||!name||!["PERCENT","FIXED","FIXED_PRICE"].includes(adjustmentType)||!Number.isFinite(raw)||(adjustmentType==="FIXED_PRICE"&&raw<=0))throw new Error("Regra dinâmica inválida.");
+ const num=(key:string)=>{const v=String(formData.get(key)||"").trim();if(v==="")return null;const n=Number(v.replace(",","."));if(!Number.isFinite(n))throw new Error("Valor numérico inválido.");return n};
+ const minOcc=num("minOccupancyPct"),maxOcc=num("maxOccupancyPct"),minDays=num("daysBeforeMin"),maxDays=num("daysBeforeMax"),priority=num("priority")??100;
+ if((minOcc!=null&&(minOcc<0||minOcc>100))||(maxOcc!=null&&(maxOcc<0||maxOcc>100))||(minOcc!=null&&maxOcc!=null&&minOcc>maxOcc)||(minDays!=null&&minDays<0)||(maxDays!=null&&maxDays<0)||(minDays!=null&&maxDays!=null&&minDays>maxDays))throw new Error("Faixas da regra dinâmica são inválidas.");
+ const starts=String(formData.get("startsAt")||""),ends=String(formData.get("endsAt")||"");
+ const startsAt=starts?new Date(starts+"T00:00:00Z"):null,endsAt=ends?new Date(ends+"T23:59:59Z"):null;
+ if((startsAt&&!Number.isFinite(startsAt.getTime()))||(endsAt&&!Number.isFinite(endsAt.getTime()))||(startsAt&&endsAt&&startsAt>endsAt))throw new Error("Período da regra inválido.");
+ const perGuest=formData.get("perGuest")==="on";
+ const guestAmount=perGuest?num("extraGuestAmount"):null;
+ if(perGuest&&(adjustmentType!=="FIXED_PRICE"||guestAmount==null||guestAmount<0))throw new Error("O adicional por hóspede requer diária final e valor válido.");
+ const extraGuestCents=guestAmount==null?null:Math.round(guestAmount*100);
+ const adjustmentValue=adjustmentType==="FIXED"||adjustmentType==="FIXED_PRICE"?Math.round(raw*100):Math.round(raw);
+ if(!Number.isSafeInteger(adjustmentValue)||!Number.isSafeInteger(extraGuestCents??0))throw new Error("Valor fora do limite.");
+ return {accommodationId,name,adjustmentType,adjustmentValue,extraGuestCents,minOccupancyPct:minOcc==null?null:Math.round(minOcc),maxOccupancyPct:maxOcc==null?null:Math.round(maxOcc),daysBeforeMin:minDays==null?null:Math.round(minDays),daysBeforeMax:maxDays==null?null:Math.round(maxDays),startsAt,endsAt,priority:Math.round(priority)};
+}
+export async function createRateRule(formData:FormData){
+ await requireAdmin();
+ await prisma.rateRule.create({data:parseRateRuleForm(formData)});
+ revalidatePath("/admin/tarifas");revalidatePath("/admin/preco-dinamico");
+}
+export async function updateRateRule(formData:FormData){
+ await requireAdmin();
+ const id=String(formData.get("id")||"");
+ if(!id)throw new Error("Regra não informada.");
+ const current=await prisma.rateRule.findUnique({where:{id}});
+ if(!current)throw new Error("Regra não encontrada.");
+ const data=parseRateRuleForm(formData);
+ await prisma.rateRule.update({where:{id},data});
+ revalidatePath("/admin/tarifas");revalidatePath("/admin/preco-dinamico");
+}
 export async function deleteRateRule(formData:FormData){await requireAdmin();const id=String(formData.get("id")||"");if(id){await prisma.rateRule.delete({where:{id}});revalidatePath("/admin/tarifas");revalidatePath("/admin/preco-dinamico");}}
 
 function readCheckInFinance(formData:FormData){
