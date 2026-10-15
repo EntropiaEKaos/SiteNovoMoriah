@@ -395,6 +395,7 @@ model RateRule {
   name            String
   adjustmentType  String        @default("PERCENT")
   adjustmentValue Int
+  weekdaysMask    Int?          // Null = every day; bit 0 Sunday through bit 6 Saturday
   extraGuestCents Int?          // Optional nightly surcharge per guest after the first (private rooms only)
   minOccupancyPct Int?
   maxOccupancyPct Int?
