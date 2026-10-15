@@ -33,8 +33,8 @@ type Props={
   sections:SiteSection[];
   settings:PublicSiteSettings|null;
   rooms:Accommodation[];
-  nightlyPrices:Record<string,number|null>;
-  priceDate:string;
+  nightlyPrices?:Record<string,number|null>;
+  priceDate?:string;
   promo:Promotion|null;
   posts:BlogPost[];
   media:Media[];
@@ -124,8 +124,8 @@ export default function SiteBuilderRenderer({
   sections,
   settings,
   rooms,
-  nightlyPrices,
-  priceDate,
+  nightlyPrices={},
+  priceDate="",
   promo,
   posts,
   media,
