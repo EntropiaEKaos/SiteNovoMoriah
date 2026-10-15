@@ -395,6 +395,7 @@ model RateRule {
   name            String
   adjustmentType  String        @default("PERCENT")
   adjustmentValue Int
+  extraGuestCents Int?          // Optional nightly surcharge per guest after the first (private rooms only)
   minOccupancyPct Int?
   maxOccupancyPct Int?
   daysBeforeMin   Int?
