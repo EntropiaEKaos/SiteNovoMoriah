@@ -58,11 +58,11 @@ export async function getAdminOccupancyPreview(args: {
     CONFIRMED: "RESERVATION", CHECKED_IN: "CHECKED_IN",
   }, room.sharedRoom);
   const holdResult = toVerifiedHoldIntervals(holds, asOf);
-  const intervals: OccupancyInterval[] = [...bookingResult.intervals, ...holdResult.intervals];
-  const hardBlockDates = new Set<string>();
+  // Do not render partial counts when any source cannot be reconciled.\n  const sourceRecordsValid = bookingResult.verified && holdResult.verified;\n  const intervals: OccupancyInterval[] = sourceRecordsValid\n    ? [...bookingResult.intervals, ...holdResult.intervals] : [];
+  const hardBlockDates = new Set<string>();\n  let blocksValid = true;
   for (const block of [...manual, ...channel]) {
     if (!Number.isFinite(block.startsAt.getTime()) || !Number.isFinite(block.endsAt.getTime()) ||
-        block.startsAt >= block.endsAt) continue;
+        block.startsAt >= block.endsAt) { blocksValid = false; continue; }
     for (const date of dates) {
       const nightStart = new Date(date + "T00:00:00Z");
       const nightEnd = new Date(nightStart.getTime() + DAY);
@@ -72,7 +72,7 @@ export async function getAdminOccupancyPreview(args: {
   // Private rooms are a single bookable unit, irrespective of guest capacity.
   const capacity = room.sharedRoom ? Math.max(1, room.bedCount) : 1;
   return projectOccupancyDays({
-    dates, capacity, intervals, hardBlockDates: [...hardBlockDates],
+    dates, capacity, intervals: blocksValid ? intervals : [], hardBlockDates: blocksValid && sourceRecordsValid ? [...hardBlockDates] : [],
     verified: false, // Deliberately fail closed pending property-timezone and feed certification.
   });
 }
