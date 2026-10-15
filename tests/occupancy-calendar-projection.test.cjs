@@ -80,3 +80,29 @@ test("invalid dates, intervals and capacity fail closed", () => {
     intervals: [{ start: dates[1], end: dates[0], units: 1, kind: "RESERVATION" }],
   }));
 });
+
+test("isolated block remains blocked and occupied night is occupied", () => {
+  const result = projectOccupancyDays({
+    dates: [dates[0], dates[1]], capacity: 2, verified: true,
+    intervals: [
+      { start: dates[0], end: dates[1], units: 1, kind: "BLOCK" },
+      { start: dates[1], end: dates[2], units: 1, kind: "CHECKED_IN" },
+    ],
+  });
+  assert.deepEqual(result.map((x) => x.state), ["BLOCKED", "OCCUPIED"]);
+});
+
+test("unrecognized inventory kind is rejected", () => {
+  assert.throws(() => projectOccupancyDays({
+    dates: [dates[0]], capacity: 1, verified: true,
+    intervals: [{ start: dates[0], end: dates[1], units: 1, kind: "UNKNOWN" }],
+  }));
+});
+
+test("year transition and leap day use local calendar days", () => {
+  const result = projectOccupancyDays({
+    dates: ["2028-02-28", "2028-02-29", "2028-03-01"], capacity: 1, verified: true,
+    intervals: [{ start: "2028-02-29", end: "2028-03-01", units: 1, kind: "RESERVATION" }],
+  });
+  assert.deepEqual(result.map((x) => x.state), ["AVAILABLE", "RESERVED", "AVAILABLE"]);
+});
