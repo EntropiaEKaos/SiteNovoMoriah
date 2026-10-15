@@ -33,6 +33,8 @@ type Props={
   sections:SiteSection[];
   settings:PublicSiteSettings|null;
   rooms:Accommodation[];
+  nightlyPrices?:Record<string,number|null>;
+  priceDate?:string;
   promo:Promotion|null;
   posts:BlogPost[];
   media:Media[];
@@ -122,6 +124,8 @@ export default function SiteBuilderRenderer({
   sections,
   settings,
   rooms,
+  nightlyPrices={},
+  priceDate="",
   promo,
   posts,
   media,
@@ -214,11 +218,11 @@ export default function SiteBuilderRenderer({
                 </div>}
                 <div className="siteStayOffer">
                   <div>
-                    <small>{room.priceCents!=null?t.from:t.rate}</small>
-                    <strong>{room.priceCents!=null
-                      ?(room.priceCents/100).toLocaleString("pt-BR",{style:"currency",currency:"BRL"})
+                    <small>{nightlyPrices[room.id]!=null?(locale==="en"?"Next night":locale==="es"?"Próxima noche":"Próxima diária"):t.rate}</small>
+                    <strong>{nightlyPrices[room.id]!=null
+                      ?(nightlyPrices[room.id]!/100).toLocaleString("pt-BR",{style:"currency",currency:"BRL"})
                       :"Sob consulta"}</strong>
-                    <span>{room.sharedRoom?t.perBed:t.directMoriah}</span>
+                    <span>{nightlyPrices[room.id]!=null?priceDate+" • "+(room.sharedRoom?t.perBed:t.directMoriah):t.directMoriah}</span>
                   </div>
                   <Link href={"/reservar?accommodationId="+room.id}>
                     {room.sharedRoom?t.bedsAvailable:t.availability} <ArrowRight size={15}/>
