@@ -1,7 +1,9 @@
 "use client";
 import {useState} from "react";
 type Room={id:string;name:string;capacity:number};
-type Result={available?:boolean;quote?:{totalCents?:number};error?:string};
+type Quote={totalCents?:number;subtotalCents?:number;discountCents?:number;nights?:number;averageNightCents?:number;ratePlan?:string;appliedRules?:string[];appliedPromotions?:string[];breakdown?:{date:string;priceCents:number;override:boolean}[]};
+type Result={available?:boolean;quote?:Quote|null;error?:string};
+const money=(cents:number)=>(cents/100).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
 const dateAfter=(days:number)=>{const date=new Date();date.setUTCDate(date.getUTCDate()+days);return date.toISOString().slice(0,10);};
 export default function RateSimulator({rooms}:{rooms:Room[]}){
  const [roomId,setRoomId]=useState(rooms[0]?.id||"");
@@ -35,7 +37,22 @@ export default function RateSimulator({rooms}:{rooms:Room[]}){
   </div>
   {result&&<div aria-live="polite" style={{marginTop:16,padding:16,border:"1px solid #ddd",borderRadius:12}}>
    {result.error?<strong>{result.error}</strong>:<>
-    <strong>Valor da estadia: {typeof result.quote?.totalCents==="number"?(result.quote.totalCents/100).toLocaleString("pt-BR",{style:"currency",currency:"BRL"}):"Sob consulta"}</strong>
+    <strong>Valor da estadia: {typeof result.quote?.totalCents==="number"?money(result.quote.totalCents):"Sob consulta"}</strong>
+   {result.quote&&<>
+    <p>Plano: {result.quote.ratePlan||"Tarifa padrão"} • {result.quote.nights??0} diária(s)</p>
+    {!!result.quote.breakdown?.length&&<div style={{overflowX:"auto",marginTop:12}}>
+     <table style={{width:"100%",borderCollapse:"collapse",textAlign:"left"}}>
+      <thead><tr><th style={{padding:8}}>Noite</th><th style={{padding:8}}>Diária</th><th style={{padding:8}}>Origem</th></tr></thead>
+      <tbody>{result.quote.breakdown.map(night=><tr key={night.date}><td style={{padding:8,borderTop:"1px solid #ddd"}}>{new Date(night.date+"T12:00:00Z").toLocaleDateString("pt-BR",{timeZone:"UTC"})}</td><td style={{padding:8,borderTop:"1px solid #ddd"}}>{money(night.priceCents)}</td><td style={{padding:8,borderTop:"1px solid #ddd"}}>{night.override?"Tarifa sazonal":"Tarifa calculada"}</td></tr>)}</tbody>
+     </table>
+    </div>}
+    {typeof result.quote.subtotalCents==="number"&&<p>Subtotal: {money(result.quote.subtotalCents)}</p>}
+    {typeof result.quote.discountCents==="number"&&<p>Descontos: − {money(result.quote.discountCents)}</p>}
+    {typeof result.quote.totalCents==="number"&&<p><strong>Total: {money(result.quote.totalCents)}</strong></p>}
+    {typeof result.quote.averageNightCents==="number"&&<p>Média por noite: {money(result.quote.averageNightCents)}</p>}
+    {!!result.quote.appliedRules?.length&&<p>Regras aplicadas: {result.quote.appliedRules.join(", ")}</p>}
+    {!!result.quote.appliedPromotions?.length&&<p>Promoções: {result.quote.appliedPromotions.join(", ")}</p>}
+   </>}
     <p>{result.available?"Disponível":"Indisponível"} no período selecionado. Simulação sujeita a alterações de tarifas e disponibilidade.</p>
    </>}
   </div>}
