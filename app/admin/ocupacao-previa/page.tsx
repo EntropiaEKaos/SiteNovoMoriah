@@ -7,15 +7,15 @@ export const dynamic = "force-dynamic";
 
 export default async function OccupancyPreviewPage() {
   await requireAdmin();
+  const asOf = new Date();
   const today = new Intl.DateTimeFormat("en-CA", {
     timeZone: "America/Sao_Paulo", year: "numeric", month: "2-digit", day: "2-digit",
-  }).format(new Date());
+  }).format(asOf);
   const rooms = await prisma.accommodation.findMany({
     where: { active: true },
     select: { id: true, name: true, sharedRoom: true, bedCount: true },
     orderBy: { name: "asc" },
   });
-  const asOf = new Date();
   const previews = await Promise.allSettled(rooms.map((room) =>
     getAdminOccupancyPreview({ accommodationId: room.id, start: today, days: 14, asOf })));
   const dates = Array.from({ length: 14 }, (_, index) => {
