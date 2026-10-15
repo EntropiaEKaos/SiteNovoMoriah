@@ -58,8 +58,12 @@ export async function getAdminOccupancyPreview(args: {
     CONFIRMED: "RESERVATION", CHECKED_IN: "CHECKED_IN",
   }, room.sharedRoom);
   const holdResult = toVerifiedHoldIntervals(holds, asOf);
-  // Do not render partial counts when any source cannot be reconciled.\n  const sourceRecordsValid = bookingResult.verified && holdResult.verified;\n  const intervals: OccupancyInterval[] = sourceRecordsValid\n    ? [...bookingResult.intervals, ...holdResult.intervals] : [];
-  const hardBlockDates = new Set<string>();\n  let blocksValid = true;
+  // Do not render partial counts when any source cannot be reconciled. 
+  const sourceRecordsValid = bookingResult.verified && holdResult.verified; 
+  const intervals: OccupancyInterval[] = sourceRecordsValid 
+    ? [...bookingResult.intervals, ...holdResult.intervals] : [];
+  const hardBlockDates = new Set<string>(); 
+  let blocksValid = true;
   for (const block of [...manual, ...channel]) {
     if (!Number.isFinite(block.startsAt.getTime()) || !Number.isFinite(block.endsAt.getTime()) ||
         block.startsAt >= block.endsAt) { blocksValid = false; continue; }
