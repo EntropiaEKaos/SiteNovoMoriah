@@ -9,6 +9,7 @@ import type {
   MoriahEvent
 } from "@prisma/client";
 import {prisma} from "../lib/prisma";
+import {quoteAccommodation} from "../lib/rate-engine";
 import {loadPublicSiteSettings,type PublicSiteSettings} from "../lib/public-site-settings";
 import SiteBuilderRenderer from "./site-builder-renderer";
 import PublicSiteChrome from "./public-site-chrome";
@@ -137,6 +138,15 @@ export default async function Home(){
     ?"https://wa.me/"+wa+"?text="+encodeURIComponent("Olá! Vim pelo site da Pousada Moriah e gostaria de informações sobre hospedagem.")
     :null;
 
+  // Public card prices are live quotes for the next night (one guest), not stale base rates.
+  const todayBrazil=new Intl.DateTimeFormat("en-CA",{timeZone:"America/Sao_Paulo",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date());
+  const checkIn=new Date(todayBrazil+"T12:00:00Z");
+  const checkOut=new Date(checkIn);checkOut.setUTCDate(checkOut.getUTCDate()+1);
+  const nightlyQuotes=await Promise.all(rooms.map(async room=>{
+    try{const quote=await quoteAccommodation(room.id,checkIn,checkOut,null,1);return [room.id,quote?.totalCents??null] as const;}
+    catch(error){console.error("HOME_RATE_QUOTE_FAILED",room.id,error);return [room.id,null] as const;}
+  }));
+  const nightlyPrices=Object.fromEntries(nightlyQuotes) as Record<string,number|null>;
   const localizedSettings=localizeRecord(settings,locale);
   const localizedRooms=rooms.map(room=>localizeRecord(room,locale)!).filter(Boolean);
   const localizedPromo=localizeRecord(promo,locale);
@@ -150,7 +160,7 @@ export default async function Home(){
 
   return <PublicSiteChrome settings={localizedSettings} navPages={localizedNavPages} locale={locale}>
     <>
-      <SiteBuilderRenderer sections={sections} settings={localizedSettings} rooms={localizedRooms} promo={localizedPromo} posts={localizedPosts} media={media} whatsappHref={whatsappHref} locale={locale}/>
+      <SiteBuilderRenderer sections={sections} settings={localizedSettings} rooms={localizedRooms} nightlyPrices={nightlyPrices} priceDate={todayBrazil} promo={localizedPromo} posts={localizedPosts} media={media} whatsappHref={whatsappHref} locale={locale}/>
       <EventShowcase events={localizedEvents} locale={locale}/>
     </>
   </PublicSiteChrome>;
