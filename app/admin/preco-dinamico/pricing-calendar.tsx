@@ -1,10 +1,10 @@
 "use client";
 
 import {useMemo,useState} from "react";
-import {createRateRule} from "../actions";
+import {createRateRule,updateRateRule} from "../actions";
 
 type Room={id:string;name:string;priceCents:number|null};
-type Rule={id:string;accommodationId:string;name:string;adjustmentType:string;adjustmentValue:number;startsAt:string|null;endsAt:string|null;active:boolean;priority:number};
+type Rule={id:string;accommodationId:string;name:string;adjustmentType:string;adjustmentValue:number;startsAt:string|null;endsAt:string|null;active:boolean;priority:number;extraGuestCents:number|null};
 const iso=(d:Date)=>d.toISOString().slice(0,10);
 const money=(c:number)=> (c/100).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
 const dateFrom=(s:string)=>new Date(s+"T12:00:00Z");
@@ -17,6 +17,11 @@ export default function PricingCalendar({rooms,rules}:{rooms:Room[];rules:Rule[]
  const [end,setEnd]=useState<string|null>(null);
  const [price,setPrice]=useState("");
  const [name,setName]=useState("Preço pelo calendário");
+ const [editingId,setEditingId]=useState("");
+ const [perGuest,setPerGuest]=useState(false);
+ const [guestAmount,setGuestAmount]=useState("");
+ const editable=rules.filter(r=>r.accommodationId===roomId&&r.adjustmentType==="FIXED_PRICE");
+ const selectRule=(id:string)=>{setEditingId(id);const r=rules.find(x=>x.id===id);if(r){setName(r.name);setPrice(String(r.adjustmentValue/100));setStart(r.startsAt?.slice(0,10)??null);setEnd(r.endsAt?.slice(0,10)??null);setPerGuest(r.extraGuestCents!=null);setGuestAmount(r.extraGuestCents!=null?String(r.extraGuestCents/100):"");}};
  const selectedRoom=rooms.find(r=>r.id===roomId);
  const firstDay=new Date(Date.UTC(month.getUTCFullYear(),month.getUTCMonth(),1,12));
  const offset=firstDay.getUTCDay();
@@ -50,7 +55,10 @@ export default function PricingCalendar({rooms,rules}:{rooms:Room[];rules:Rule[]
    })}
   </div>
   <p style={{fontSize:12,marginTop:10}}>Verde: diária final cadastrada. Branco: tarifa base de referência. Destaque: período selecionado. Outras regras e promoções podem alterar a cotação real.</p>
-  <form action={createRateRule} className="adminFormGrid" style={{marginTop:16}}>
+  <form action={editingId?updateRateRule:createRateRule} className="adminFormGrid" style={{marginTop:16}}>
+   <label className="span2">Editar preço existente ou criar novo<select value={editingId} onChange={e=>selectRule(e.target.value)}><option value="">Nova regra de preço</option>{editable.map(r=><option key={r.id} value={r.id}>{r.name} — {r.startsAt?.slice(0,10)??"sem início"} a {r.endsAt?.slice(0,10)??"sem fim"}</option>)}</select></label>
+   {editingId&&<input type="hidden" name="id" value={editingId}/>}
+   <input type="hidden" name="perGuest" value={perGuest?"on":"off"}/>
    <input type="hidden" name="accommodationId" value={roomId}/>
    <input type="hidden" name="adjustmentType" value="FIXED_PRICE"/>
    <input type="hidden" name="priority" value="0"/>
@@ -58,8 +66,10 @@ export default function PricingCalendar({rooms,rules}:{rooms:Room[];rules:Rule[]
    <input type="hidden" name="endsAt" value={rangeEnd??""}/>
    <label>Período escolhido<input readOnly value={start?dateLabel(start)+" até "+dateLabel(rangeEnd):"Selecione as datas no calendário"}/></label>
    <label>Diária final (R$)<input name="adjustmentValue" type="number" step="0.01" min="0.01" required value={price} onChange={e=>setPrice(e.target.value)} placeholder="Ex.: 180.00"/></label>
+   <label className="span2">Adicional por hóspede (opcional)<span style={{display:"flex",gap:8,alignItems:"center"}}><input type="checkbox" checked={perGuest} onChange={e=>setPerGuest(e.target.checked)}/> Cobrar por hóspede extra em quarto privativo</span></label>
+   {perGuest&&<label className="span2">Valor por hóspede extra / noite (R$)<input name="extraGuestAmount" type="number" step="0.01" min="0" required value={guestAmount} onChange={e=>setGuestAmount(e.target.value)} placeholder="Ex.: 30.00"/></label>}
    <label className="span2">Nome da regra<input name="name" required value={name} onChange={e=>setName(e.target.value)}/></label>
-   <button className="span2" disabled={!roomId||!start||!price||Number(price)<=0}>Salvar preço nas datas selecionadas</button>
+   <button className="span2" disabled={!roomId||!start||!price||Number(price)<=0}>{editingId?"Salvar alterações da regra":"Salvar preço nas datas selecionadas"}</button>
   </form>
  </section>;
 }
