@@ -24,6 +24,7 @@ export function projectOccupancyDays(args: {
   hardBlockDates?: string[];
 }): OccupancyDay[] {
   const { dates, capacity, verified, intervals, hardBlockDates = [] } = args;
+  const hardBlockSet = new Set(hardBlockDates);
   if (!Number.isSafeInteger(capacity) || capacity < 1) throw new Error("Invalid capacity");
   if (dates.some((d) => !isDay(d)) || hardBlockDates.some((d) => !isDay(d))) throw new Error("Invalid calendar date");
   if (intervals.some((x) => !isDay(x.start) || !isDay(x.end) || x.end <= x.start || !Number.isSafeInteger(x.units) || x.units < 1 || !["RESERVATION", "CHECKED_IN", "HOLD", "BLOCK"].includes(x.kind))) {
@@ -31,11 +32,11 @@ export function projectOccupancyDays(args: {
   }
   return dates.map((date) => {
     const active = intervals.filter((x) => x.start <= date && date < x.end);
-    const used = active.reduce((sum, x) => sum + x.units, 0);
-    const hardBlocked = hardBlockDates.includes(date);
+    const used = active.filter((x) => x.kind !== "BLOCK").reduce((sum, x) => sum + x.units, 0);
+    const hardBlocked = hardBlockSet.has(date) || active.some((x) => x.kind === "BLOCK");
     const state: OccupancyState = !verified ? "UNVERIFIED"
-      : (used > capacity || ((hardBlocked || active.some((x) => x.kind === "BLOCK")) && active.some((x) => x.kind !== "BLOCK"))) ? "CONFLICT"
-      : hardBlocked || active.some((x) => x.kind === "BLOCK") ? "BLOCKED"
+      : (used > capacity || (hardBlocked && active.some((x) => x.kind !== "BLOCK"))) ? "CONFLICT"
+      : hardBlocked ? "BLOCKED"
       : active.some((x) => x.kind === "CHECKED_IN") ? "OCCUPIED"
       : active.length ? "RESERVED" : "AVAILABLE";
     return { date, state, used, capacity };
