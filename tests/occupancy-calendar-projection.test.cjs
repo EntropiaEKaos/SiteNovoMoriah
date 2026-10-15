@@ -106,3 +106,25 @@ test("year transition and leap day use local calendar days", () => {
   });
   assert.deepEqual(result.map((x) => x.state), ["AVAILABLE", "RESERVED", "AVAILABLE"]);
 });
+
+test("hard block closes entire shared room even with empty beds", () => {
+  const result = projectOccupancyDays({
+    dates: [dates[0]], capacity: 5, verified: true, intervals: [],
+    hardBlockDates: [dates[0]],
+  });
+  assert.equal(result[0].state, "BLOCKED");
+});
+test("hard block and overlapping confirmed reservation show conflict", () => {
+  const result = projectOccupancyDays({
+    dates: [dates[0]], capacity: 5, verified: true,
+    intervals: [{ start: dates[0], end: dates[1], units: 1, kind: "RESERVATION" }],
+    hardBlockDates: [dates[0]],
+  });
+  assert.equal(result[0].state, "CONFLICT");
+});
+test("hard block dates must be valid calendar days", () => {
+  assert.throws(() => projectOccupancyDays({
+    dates: [dates[0]], capacity: 1, verified: true, intervals: [],
+    hardBlockDates: ["2026-02-30"],
+  }));
+});
