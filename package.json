@@ -11,7 +11,7 @@
     "prisma:push": "prisma db push",
     "db:deploy": "prisma migrate deploy",
     "vercel-build": "node scripts/vercel-build.mjs",
-    "test:occupancy": "node --test tests/occupancy-calendar-projection.test.cjs tests/occupancy-booking-adapter.test.cjs"
+    "test:occupancy": "node --test tests/occupancy-calendar-projection.test.cjs tests/occupancy-booking-adapter.test.cjs tests/occupancy-hold-adapter.test.cjs"
   },
   "dependencies": {
     "@prisma/client": "6.19.3",
