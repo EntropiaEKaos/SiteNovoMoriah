@@ -142,6 +142,7 @@ export default async function Home(){
   const todayBrazil=new Intl.DateTimeFormat("en-CA",{timeZone:"America/Sao_Paulo",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date());
   const checkIn=new Date(todayBrazil+"T12:00:00Z");
   const checkOut=new Date(checkIn);checkOut.setUTCDate(checkOut.getUTCDate()+1);
+  // Quote each card independently so one unavailable room does not hide other rates.
   const nightlyQuotes=await Promise.all(rooms.map(async room=>{
     try{const quote=await quoteAccommodation(room.id,checkIn,checkOut,null,1);return [room.id,quote?.totalCents??null] as const;}
     catch(error){console.error("HOME_RATE_QUOTE_FAILED",room.id,error);return [room.id,null] as const;}
