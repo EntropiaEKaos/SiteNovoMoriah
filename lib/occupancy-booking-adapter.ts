@@ -23,8 +23,10 @@ export function toVerifiedBookingIntervals(
   const intervals: OccupancyInterval[] = [];
   const issues: string[] = [];
   for (const [index, booking] of bookings.entries()) {
-    const statusKind = inventoryStatusPolicy[booking.status];
-    if (!statusKind) {
+    const statusKind = Object.prototype.hasOwnProperty.call(inventoryStatusPolicy, booking.status)
+      ? inventoryStatusPolicy[booking.status]
+      : undefined;
+    if (statusKind !== "RESERVATION" && statusKind !== "CHECKED_IN" && statusKind !== "IGNORE") {
       issues.push(`Unknown booking status at index ${index}`);
       continue;
     }
