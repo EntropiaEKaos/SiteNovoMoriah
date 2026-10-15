@@ -15,6 +15,7 @@ export default async function OccupancyPreviewPage() {
     where: { active: true },
     select: { id: true, name: true, sharedRoom: true, bedCount: true },
     orderBy: { name: "asc" },
+    take: 100,
   });
   const previews = await Promise.allSettled(rooms.map((room) =>
     getAdminOccupancyPreview({ accommodationId: room.id, start: today, days: 14, asOf })));
@@ -36,6 +37,7 @@ export default async function OccupancyPreviewPage() {
     </section>
     <section className="adminSectionCard">
       <h2>Próximos 14 dias</h2>
+      <p style={{fontSize:12}}>Exibindo até 100 hospedagens ativas nesta prévia administrativa.</p>
       <p role="status" style={{fontWeight:700}}>
         ⚠ Dados não certificados: esta grade NÃO comprova disponibilidade para venda.
         A reconciliação com canais e o fuso horário da pousada ainda estão pendentes.
