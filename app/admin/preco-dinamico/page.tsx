@@ -52,8 +52,8 @@ export default async function Page(){
 
     <section className="adminTwoCol" style={{marginBottom:20}}>
       <article className="adminSectionCard">
-        <h2>Nova regra</h2>
-        <p>Valores positivos aumentam a diária; negativos reduzem. Deixe faixas vazias quando não quiser limitar a condição.</p>
+        <h2>Nova regra de preço</h2>
+        <p>Escolha a hospedagem, as datas e o ajuste. O preço muda automaticamente na busca do site. Campos avançados são opcionais.</p>
         <form action={createRateRule} className="adminFormGrid cols3">
           <label className="span2">Hospedagem
             <select name="accommodationId" required>
@@ -61,23 +61,22 @@ export default async function Page(){
               {rooms.map(room=><option key={room.id} value={room.id}>{room.name}</option>)}
             </select>
           </label>
-          <label>Prioridade
-            <input name="priority" type="number" defaultValue="100"/>
-          </label>
+          <input type="hidden" name="priority" value="100"/>
 
           <label className="span2">Nome da regra
-            <input name="name" required placeholder="Ex.: Alta ocupação"/>
+            <input name="name" required placeholder="Ex.: Feriado de novembro"/>
           </label>
           <label>Tipo de ajuste
             <select name="adjustmentType" defaultValue="PERCENT">
-              <option value="PERCENT">Percentual %</option>
-              <option value="FIXED">Valor fixo R$</option>
+              <option value="PERCENT">Aumentar/reduzir em %</option>
+              <option value="FIXED">Aumentar/reduzir em R$</option>
             </select>
           </label>
 
-          <label>Ajuste
-            <input name="adjustmentValue" type="number" step="0.01" required placeholder="15 ou -10"/>
+          <label>Ajuste (+ aumenta / - reduz)
+            <input name="adjustmentValue" type="number" step="0.01" required placeholder="Ex.: 20 ou -10"/>
           </label>
+          <details className="span2" style={{padding:"12px 0"}}><summary style={{cursor:"pointer",fontWeight:700}}>Condições avançadas (opcional)</summary><div className="adminFormGrid cols3" style={{marginTop:12}}>
           <label>Ocupação mínima %
             <input name="minOccupancyPct" type="number" min="0" max="100"/>
           </label>
@@ -91,14 +90,15 @@ export default async function Page(){
           <label>Antecedência máx. dias
             <input name="daysBeforeMax" type="number" min="0"/>
           </label>
-          <label>Início
-            <input name="startsAt" type="date"/>
+          </div></details>
+          <label>Primeiro dia com novo preço
+            <input name="startsAt" type="date" required/>
           </label>
 
-          <label>Fim
-            <input name="endsAt" type="date"/>
+          <label>Último dia com novo preço
+            <input name="endsAt" type="date" required/>
           </label>
-          <button className="span2">Criar regra dinâmica</button>
+          <button className="span2">Ativar preço para o período</button>
         </form>
       </article>
 
