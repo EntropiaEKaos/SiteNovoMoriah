@@ -165,7 +165,9 @@ export async function quoteAccommodation(
       (!rule.startsAt||rule.startsAt<=day)&&(!rule.endsAt||rule.endsAt>=day));
     if(exactPriceRule)unitPriceCents=exactPriceRule.adjustmentValue;
 
-    const nightly=unitPriceCents*multiplier;
+    // Shared rooms are priced per bed already; do not charge the guest surcharge twice.
+    const surcharge=room.sharedRoom?0:Math.max(0,units-1)*(exactPriceRule?.extraGuestCents??0);
+    const nightly=unitPriceCents*multiplier+surcharge;
     subtotal+=nightly;
     breakdown.push({
       date:day.toISOString().slice(0,10),
