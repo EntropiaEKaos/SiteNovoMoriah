@@ -585,13 +585,17 @@ function parseRateRuleForm(formData:FormData){
  const starts=String(formData.get("startsAt")||""),ends=String(formData.get("endsAt")||"");
  const startsAt=starts?new Date(starts+"T00:00:00Z"):null,endsAt=ends?new Date(ends+"T23:59:59Z"):null;
  if((startsAt&&!Number.isFinite(startsAt.getTime()))||(endsAt&&!Number.isFinite(endsAt.getTime()))||(startsAt&&endsAt&&startsAt>endsAt))throw new Error("Período da regra inválido.");
+ const weekdayValues=formData.getAll("weekdays").map(v=>Number(v));
+ if(weekdayValues.some(v=>!Number.isInteger(v)||v<0||v>6)||new Set(weekdayValues).size!==weekdayValues.length)throw new Error("Dias da semana inválidos.");
+ const weekdaysMask=weekdayValues.length===7?null:weekdayValues.reduce((mask,day)=>mask|(1<<day),0);
+ if(weekdaysMask===0)throw new Error("Selecione ao menos um dia da semana.");
  const perGuest=formData.get("perGuest")==="on";
  const guestAmount=perGuest?num("extraGuestAmount"):null;
  if(perGuest&&(adjustmentType!=="FIXED_PRICE"||guestAmount==null||guestAmount<0))throw new Error("O adicional por hóspede requer diária final e valor válido.");
  const extraGuestCents=guestAmount==null?null:Math.round(guestAmount*100);
  const adjustmentValue=adjustmentType==="FIXED"||adjustmentType==="FIXED_PRICE"?Math.round(raw*100):Math.round(raw);
  if(!Number.isSafeInteger(adjustmentValue)||!Number.isSafeInteger(extraGuestCents??0))throw new Error("Valor fora do limite.");
- return {accommodationId,name,adjustmentType,adjustmentValue,extraGuestCents,minOccupancyPct:minOcc==null?null:Math.round(minOcc),maxOccupancyPct:maxOcc==null?null:Math.round(maxOcc),daysBeforeMin:minDays==null?null:Math.round(minDays),daysBeforeMax:maxDays==null?null:Math.round(maxDays),startsAt,endsAt,priority:Math.round(priority)};
+ return {accommodationId,name,adjustmentType,adjustmentValue,extraGuestCents,weekdaysMask,minOccupancyPct:minOcc==null?null:Math.round(minOcc),maxOccupancyPct:maxOcc==null?null:Math.round(maxOcc),daysBeforeMin:minDays==null?null:Math.round(minDays),daysBeforeMax:maxDays==null?null:Math.round(maxDays),startsAt,endsAt,priority:Math.round(priority)};
 }
 export async function createRateRule(formData:FormData){
  await requireAdmin();
