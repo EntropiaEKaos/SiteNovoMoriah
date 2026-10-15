@@ -34,3 +34,8 @@ test("missing dates and invalid guest count fail closed", () => {
   assert.equal(toVerifiedBookingIntervals([{ ...booking, checkOut: null }], policy, true).verified, false);
   assert.equal(toVerifiedBookingIntervals([{ ...booking, guests: 0 }], policy, true).verified, false);
 });
+
+test("prototype properties and invalid policy values cannot verify inventory", () => {
+  assert.equal(toVerifiedBookingIntervals([{ ...booking, status: "toString" }], {}, false).verified, false);
+  assert.equal(toVerifiedBookingIntervals([booking], { CONFIRMED: "AVAILABLE" }, false).verified, false);
+});
