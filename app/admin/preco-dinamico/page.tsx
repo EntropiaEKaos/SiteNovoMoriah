@@ -52,7 +52,7 @@ export default async function Page(){
       <div><small>Reduções</small><strong>{reductions}</strong></div>
     </section>
 
-    <PricingCalendar rooms={rooms.map(room=>({id:room.id,name:room.name,priceCents:room.priceCents}))} rules={rules.map(rule=>({id:rule.id,accommodationId:rule.accommodationId,name:rule.name,adjustmentType:rule.adjustmentType,adjustmentValue:rule.adjustmentValue,startsAt:rule.startsAt?.toISOString()??null,endsAt:rule.endsAt?.toISOString()??null,active:rule.active,priority:rule.priority}))}/>
+    <PricingCalendar rooms={rooms.map(room=>({id:room.id,name:room.name,priceCents:room.priceCents}))} rules={rules.map(rule=>({id:rule.id,accommodationId:rule.accommodationId,name:rule.name,adjustmentType:rule.adjustmentType,adjustmentValue:rule.adjustmentValue,startsAt:rule.startsAt?.toISOString()??null,endsAt:rule.endsAt?.toISOString()??null,active:rule.active,priority:rule.priority,extraGuestCents:rule.extraGuestCents}))}/>
 
     <section className="adminTwoCol" style={{marginBottom:20}}>
       <article className="adminSectionCard">
@@ -81,6 +81,7 @@ export default async function Page(){
           <label>Valor (R$ na diária final ou ajuste +/-)
             <input name="adjustmentValue" type="number" step="0.01" required placeholder="Ex.: 180,00 ou 20"/>
           </label>
+          <label className="span2">Hóspedes extras (opcional)<span style={{fontSize:12}}>Para diária final, marque para cobrar valor por hóspede adicional em quartos privativos.</span><input type="checkbox" name="perGuest"/><input name="extraGuestAmount" type="number" step="0.01" min="0" placeholder="R$ por hóspede extra/noite (se marcado)"/></label>
           <details className="span2" style={{padding:"12px 0"}}><summary style={{cursor:"pointer",fontWeight:700}}>Condições avançadas (opcional)</summary><div className="adminFormGrid cols3" style={{marginTop:12}}>
           <label>Ocupação mínima %
             <input name="minOccupancyPct" type="number" min="0" max="100"/>
