@@ -4,7 +4,7 @@ export type OccupancyInterval = {
   start: string; // YYYY-MM-DD in property-local calendar
   end: string; // exclusive checkout day
   units: number;
-  kind: "RESERVATION" | "CHECKED_IN" | "BLOCK";
+  kind: "RESERVATION" | "CHECKED_IN" | "HOLD" | "BLOCK";
 };
 export type OccupancyDay = { date: string; state: OccupancyState; used: number; capacity: number };
 
@@ -26,7 +26,7 @@ export function projectOccupancyDays(args: {
   const { dates, capacity, verified, intervals, hardBlockDates = [] } = args;
   if (!Number.isSafeInteger(capacity) || capacity < 1) throw new Error("Invalid capacity");
   if (dates.some((d) => !isDay(d)) || hardBlockDates.some((d) => !isDay(d))) throw new Error("Invalid calendar date");
-  if (intervals.some((x) => !isDay(x.start) || !isDay(x.end) || x.end <= x.start || !Number.isSafeInteger(x.units) || x.units < 1 || !["RESERVATION", "CHECKED_IN", "BLOCK"].includes(x.kind))) {
+  if (intervals.some((x) => !isDay(x.start) || !isDay(x.end) || x.end <= x.start || !Number.isSafeInteger(x.units) || x.units < 1 || !["RESERVATION", "CHECKED_IN", "HOLD", "BLOCK"].includes(x.kind))) {
     throw new Error("Invalid inventory interval");
   }
   return dates.map((date) => {
