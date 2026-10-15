@@ -1,5 +1,6 @@
 import Link from "next/link";
 import PricingCalendar from "./pricing-calendar";
+import RateSimulator from "./rate-simulator";
 import {prisma} from "../../../lib/prisma";
 import {requireAdmin} from "../../../lib/admin-auth";
 import {createRateRule,deleteRateRule} from "../actions";
@@ -51,6 +52,8 @@ export default async function Page(){
       <div><small>Aumentos</small><strong>{increases}</strong></div>
       <div><small>Reduções</small><strong>{reductions}</strong></div>
     </section>
+
+    <RateSimulator rooms={rooms.map(room=>({id:room.id,name:room.name,capacity:room.sharedRoom?room.bedCount:room.capacity}))}/>
 
     <PricingCalendar rooms={rooms.map(room=>({id:room.id,name:room.name,priceCents:room.priceCents}))} rules={rules.map(rule=>({id:rule.id,accommodationId:rule.accommodationId,name:rule.name,adjustmentType:rule.adjustmentType,adjustmentValue:rule.adjustmentValue,startsAt:rule.startsAt?.toISOString()??null,endsAt:rule.endsAt?.toISOString()??null,active:rule.active,priority:rule.priority,extraGuestCents:rule.extraGuestCents,weekdaysMask:rule.weekdaysMask}))}/>
 
