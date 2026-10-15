@@ -108,8 +108,8 @@ export async function quoteAccommodation(
       where:{
         accommodationId,
         active:true,
-        OR:[{startsAt:null},{startsAt:{lte:checkIn}}],
-        AND:[{OR:[{endsAt:null},{endsAt:{gte:checkOut}}]}]
+        OR:[{startsAt:null},{startsAt:{lt:checkOut}}],
+        AND:[{OR:[{endsAt:null},{endsAt:{gte:checkIn}}]}]
       },
       orderBy:{priority:"asc"}
     })
@@ -121,38 +121,13 @@ export async function quoteAccommodation(
   if(units>availableUnits)return null;
   const multiplier=room.sharedRoom?units:1;
 
-  if(!plan){
-    if(room.priceCents==null)return null;
-    const daily=Array.from({length:nights},(_,i)=>{const d=new Date(checkIn);d.setUTCDate(d.getUTCDate()+i);const date=d.toISOString().slice(0,10);return {date,priceCents:resolveSmoobuApprovedPrice(room.priceCents!,approvedByDate.get(date),nights,units)*multiplier};});
-    const subtotal=daily.reduce((sum,day)=>sum+day.priceCents,0);
-    const promo=await promotions(accommodationId,checkIn,checkOut,nights,subtotal,coupon);
+  if(plan&&(nights<plan.minNights||(plan.maxNights&&nights>plan.maxNights)))return null;
 
-    return {
-      currency:"BRL",
-      nights,
-      ...promo,
-      averageNightCents:Math.round(promo.totalCents/nights),
-      ratePlan:"Tarifa padrão",
-      breakdown:daily.map(day=>{
-        return {
-          date:day.date,
-          priceCents:day.priceCents,
-          override:Boolean(approvedByDate.get(day.date)&&resolveSmoobuApprovedPrice(room.priceCents!,approvedByDate.get(day.date),nights,units)!==room.priceCents)
-        };
-      }),
-      occupancyPct:null,
-      appliedRules:[],
-      unitCount:multiplier,
-      unitLabel:room.sharedRoom?"cama":"quarto"
-    };
-  }
-
-  if(nights<plan.minNights||(plan.maxNights&&nights>plan.maxNights))return null;
-
-  const arrival=plan.overrides.find(o=>o.startsAt<=checkIn&&o.endsAt>checkIn);
+  const overrides=plan?.overrides??[];
+  const arrival=overrides.find(o=>o.startsAt<=checkIn&&o.endsAt>checkIn);
   const departureProbe=new Date(checkOut);
   departureProbe.setUTCDate(departureProbe.getUTCDate()-1);
-  const departure=plan.overrides.find(o=>o.startsAt<=departureProbe&&o.endsAt>departureProbe);
+  const departure=overrides.find(o=>o.startsAt<=departureProbe&&o.endsAt>departureProbe);
   if(arrival?.closedToArrival||departure?.closedToDeparture)return null;
 
   const occupancy=await getOccupancyMetrics(checkIn,checkOut);
@@ -170,11 +145,13 @@ export async function quoteAccommodation(
   for(let i=0;i<nights;i++){
     const day=new Date(checkIn);
     day.setUTCDate(day.getUTCDate()+i);
-    const override=plan.overrides.find(o=>o.startsAt<=day&&o.endsAt>day);
+    const override=overrides.find(o=>o.startsAt<=day&&o.endsAt>day);
     if(override?.minNights&&nights<override.minNights)return null;
 
-    let unitPriceCents=override?.priceCents??resolveSmoobuApprovedPrice(plan.basePriceCents,approvedByDate.get(day.toISOString().slice(0,10)),nights,units);
-    for(const rule of applicable){
+    const basePriceCents=plan?.basePriceCents??room.priceCents;
+    if(basePriceCents==null)return null;
+    let unitPriceCents=override?.priceCents??resolveSmoobuApprovedPrice(basePriceCents,approvedByDate.get(day.toISOString().slice(0,10)),nights,units);
+    for(const rule of applicable.filter(rule=>(!rule.startsAt||rule.startsAt<=day)&&(!rule.endsAt||rule.endsAt>=day))){
       if(rule.adjustmentType==="PERCENT"){
         unitPriceCents=Math.max(0,Math.round(unitPriceCents*(100+rule.adjustmentValue)/100));
       }else if(rule.adjustmentType==="FIXED"){
@@ -194,14 +171,14 @@ export async function quoteAccommodation(
   const promo=await promotions(accommodationId,checkIn,checkOut,nights,subtotal,coupon);
 
   return {
-    currency:plan.currency,
+    currency:plan?.currency??"BRL",
     nights,
     ...promo,
     averageNightCents:Math.round(promo.totalCents/nights),
-    ratePlan:plan.name,
+    ratePlan:plan?.name??"Tarifa padrão",
     breakdown,
     occupancyPct:occupancy.occupancyPct,
-    appliedRules:applicable.map(r=>r.name),
+    appliedRules:applicable.filter(r=>breakdown.some(d=>(!r.startsAt||r.startsAt.toISOString().slice(0,10)<=d.date)&&(!r.endsAt||r.endsAt.toISOString().slice(0,10)>=d.date))).map(r=>r.name),
     unitCount:multiplier,
     unitLabel:room.sharedRoom?"cama":"quarto"
   };
