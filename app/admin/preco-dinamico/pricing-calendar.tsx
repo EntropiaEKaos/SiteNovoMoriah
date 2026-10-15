@@ -44,6 +44,7 @@ export default function PricingCalendar({rooms,rules}:{rooms:Room[];rules:Rule[]
  const finishDrag=()=>{dragAnchor.current=null;setDragging(false)};
  const rangeEnd=end??start;
  const dateLabel=(d:string|null)=>d?dateFrom(d).toLocaleDateString("pt-BR",{timeZone:"UTC"}):"—";
+ const selectedDays=useMemo(()=>{if(!start||!rangeEnd)return 0;let count=0;for(let timestamp=dateFrom(start).getTime();timestamp<=dateFrom(rangeEnd).getTime();timestamp+=86400000){if(weekdays.includes(new Date(timestamp).getUTCDay()))count++}return count},[start,rangeEnd,weekdays]);
  return <section className="adminSectionCard" style={{marginBottom:20}}>
   <h2>Calendário de preços 2.0</h2>
   <p>Selecione uma hospedagem e arraste o mouse sobre as datas para escolher um período, ou use dois cliques. Informe a diária e salve. Os preços exibidos são referências antes de promoções.</p>
@@ -70,6 +71,7 @@ export default function PricingCalendar({rooms,rules}:{rooms:Room[];rules:Rule[]
    })}
   </div>
   <p style={{fontSize:12,marginTop:10}}>🟢 Verde: diária definida · ⬜ Branco: tarifa base · 🟨 Amarelo: período selecionado. Outras regras e promoções podem alterar a cotação real.</p>
+  <div role="status" aria-live="polite" style={{display:"flex",flexWrap:"wrap",gap:14,alignItems:"center",padding:16,marginTop:18,borderRadius:14,background:"#f6f2e9",border:"1px solid #e5d6b9"}}><div><small style={{display:"block"}}>Período selecionado</small><strong>{start?dateLabel(start)+" → "+dateLabel(rangeEnd):"Selecione as datas"}</strong></div><div><small style={{display:"block"}}>Diárias afetadas</small><strong>{selectedDays}</strong></div><div><small style={{display:"block"}}>Novo valor por diária</small><strong>{Number(price)>0?money(Math.round(Number(price)*100)):"—"}</strong></div><div><small style={{display:"block"}}>Hospedagem</small><strong>{selectedRoom?.name??"—"}</strong></div></div>
   <form action={editingId?updateRateRule:createRateRule} className="adminFormGrid" style={{marginTop:16}}>
    <label className="span2">Editar preço existente ou criar novo<select value={editingId} onChange={e=>selectRule(e.target.value)}><option value="">Nova regra de preço</option>{editable.map(r=><option key={r.id} value={r.id}>{r.name} — {r.startsAt?.slice(0,10)??"sem início"} a {r.endsAt?.slice(0,10)??"sem fim"}</option>)}</select></label>
    {editingId&&<input type="hidden" name="id" value={editingId}/>}
@@ -85,7 +87,7 @@ export default function PricingCalendar({rooms,rules}:{rooms:Room[];rules:Rule[]
    <label className="span2">Adicional por hóspede (opcional)<span style={{display:"flex",gap:8,alignItems:"center"}}><input type="checkbox" checked={perGuest} onChange={e=>setPerGuest(e.target.checked)}/> Cobrar por hóspede extra em quarto privativo</span></label>
    {perGuest&&<label className="span2">Valor por hóspede extra / noite (R$)<input name="extraGuestAmount" type="number" step="0.01" min="0" required value={guestAmount} onChange={e=>setGuestAmount(e.target.value)} placeholder="Ex.: 30.00"/></label>}
    <label className="span2">Nome da regra<input name="name" required value={name} onChange={e=>setName(e.target.value)}/></label>
-   <button className="span2" disabled={!roomId||!start||!price||Number(price)<=0||weekdays.length===0}>{editingId?"Salvar alterações da regra":"Salvar preço nas datas selecionadas"}</button>
+   <button className="span2" disabled={!roomId||!start||!price||Number(price)<=0||selectedDays===0}>{editingId?"Salvar alterações da regra":"Salvar preço nas datas selecionadas"}</button>
   </form>
  </section>;
 }
