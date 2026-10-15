@@ -17,8 +17,13 @@ export default async function OccupancyPreviewPage() {
     orderBy: { name: "asc" },
     take: 100,
   });
-  const previews = await Promise.allSettled(rooms.map((room) =>
-    getAdminOccupancyPreview({ accommodationId: room.id, start: today, days: 14, asOf })));
+  // Bounded concurrency avoids flooding the database with per-room reads.
+  const previews: PromiseSettledResult<Awaited<ReturnType<typeof getAdminOccupancyPreview>>>[] = [];
+  for (let offset = 0; offset < rooms.length; offset += 5) {
+    const batch = rooms.slice(offset, offset + 5);
+    previews.push(...await Promise.allSettled(batch.map((room) =>
+      getAdminOccupancyPreview({ accommodationId: room.id, start: today, days: 14, asOf }))));
+  }
   const dates = Array.from({ length: 14 }, (_, index) => {
     const date = new Date(today + "T00:00:00Z");
     date.setUTCDate(date.getUTCDate() + index);
