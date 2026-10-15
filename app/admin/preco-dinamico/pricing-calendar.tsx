@@ -4,7 +4,8 @@ import {useMemo,useState} from "react";
 import {createRateRule,updateRateRule} from "../actions";
 
 type Room={id:string;name:string;priceCents:number|null};
-type Rule={id:string;accommodationId:string;name:string;adjustmentType:string;adjustmentValue:number;startsAt:string|null;endsAt:string|null;active:boolean;priority:number;extraGuestCents:number|null};
+type Rule={id:string;accommodationId:string;name:string;adjustmentType:string;adjustmentValue:number;startsAt:string|null;endsAt:string|null;active:boolean;priority:number;extraGuestCents:number|null;weekdaysMask:number|null};
+const weekDays=["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"];
 const iso=(d:Date)=>d.toISOString().slice(0,10);
 const money=(c:number)=> (c/100).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
 const dateFrom=(s:string)=>new Date(s+"T12:00:00Z");
@@ -20,8 +21,9 @@ export default function PricingCalendar({rooms,rules}:{rooms:Room[];rules:Rule[]
  const [editingId,setEditingId]=useState("");
  const [perGuest,setPerGuest]=useState(false);
  const [guestAmount,setGuestAmount]=useState("");
+ const [weekdays,setWeekdays]=useState<number[]>([0,1,2,3,4,5,6]);
  const editable=rules.filter(r=>r.accommodationId===roomId&&r.adjustmentType==="FIXED_PRICE");
- const selectRule=(id:string)=>{setEditingId(id);const r=rules.find(x=>x.id===id);if(r){setName(r.name);setPrice(String(r.adjustmentValue/100));setStart(r.startsAt?.slice(0,10)??null);setEnd(r.endsAt?.slice(0,10)??null);setPerGuest(r.extraGuestCents!=null);setGuestAmount(r.extraGuestCents!=null?String(r.extraGuestCents/100):"");}};
+ const selectRule=(id:string)=>{setEditingId(id);const r=rules.find(x=>x.id===id);if(r){setName(r.name);setPrice(String(r.adjustmentValue/100));setStart(r.startsAt?.slice(0,10)??null);setEnd(r.endsAt?.slice(0,10)??null);setPerGuest(r.extraGuestCents!=null);setGuestAmount(r.extraGuestCents!=null?String(r.extraGuestCents/100):"");setWeekdays(weekDays.map((_,i)=>i).filter(i=>r.weekdaysMask==null||(r.weekdaysMask&(1<<i))!==0));}};
  const selectedRoom=rooms.find(r=>r.id===roomId);
  const firstDay=new Date(Date.UTC(month.getUTCFullYear(),month.getUTCMonth(),1,12));
  const offset=firstDay.getUTCDay();
@@ -43,11 +45,11 @@ export default function PricingCalendar({rooms,rules}:{rooms:Room[];rules:Rule[]
    </div>
   </div>
   <div style={{display:"grid",gridTemplateColumns:"repeat(7,minmax(0,1fr))",gap:4}}>
-   {["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"].map(d=><strong key={d} style={{textAlign:"center",fontSize:12}}>{d}</strong>)}
+   {weekDays.map(d=><strong key={d} style={{textAlign:"center",fontSize:12}}>{d}</strong>)}
    {cells.map((date,i)=>{
     if(!date)return <div key={"empty"+i}/>;
-    const rule=rules.filter(r=>r.active&&r.accommodationId===roomId&&r.adjustmentType==="FIXED_PRICE"&&(!r.startsAt||r.startsAt.slice(0,10)<=date)&&(!r.endsAt||r.endsAt.slice(0,10)>=date)).sort((a,b)=>a.priority-b.priority)[0];
-    const selected=Boolean(start&&rangeEnd&&date>=start&&date<=rangeEnd);
+    const rule=rules.filter(r=>r.active&&r.accommodationId===roomId&&r.adjustmentType==="FIXED_PRICE"&&(!r.startsAt||r.startsAt.slice(0,10)<=date)&&(!r.endsAt||r.endsAt.slice(0,10)>=date)&&(r.weekdaysMask==null||(r.weekdaysMask&(1<<dateFrom(date).getUTCDay()))!==0)).sort((a,b)=>a.priority-b.priority)[0];
+    const selected=Boolean(start&&rangeEnd&&date>=start&&date<=rangeEnd&&weekdays.includes(dateFrom(date).getUTCDay()));
     return <button key={date} type="button" onClick={()=>choose(date)} aria-pressed={selected} title={rule?.name??"Tarifa base"} style={{minHeight:68,padding:"6px 2px",borderRadius:8,border:selected?"2px solid #bd8124":"1px solid #ddd",background:selected?"#fff0d5":rule?"#e6f4e8":"#fff",color:"#222",cursor:"pointer"}}>
      <span style={{display:"block",fontWeight:700}}>{Number(date.slice(-2))}</span>
      <span style={{display:"block",fontSize:11,overflowWrap:"anywhere"}}>{rule?money(rule.adjustmentValue):selectedRoom?.priceCents!=null?money(selectedRoom.priceCents):"—"}</span>
@@ -66,10 +68,11 @@ export default function PricingCalendar({rooms,rules}:{rooms:Room[];rules:Rule[]
    <input type="hidden" name="endsAt" value={rangeEnd??""}/>
    <label>Período escolhido<input readOnly value={start?dateLabel(start)+" até "+dateLabel(rangeEnd):"Selecione as datas no calendário"}/></label>
    <label>Diária final (R$)<input name="adjustmentValue" type="number" step="0.01" min="0.01" required value={price} onChange={e=>setPrice(e.target.value)} placeholder="Ex.: 180.00"/></label>
+   <fieldset className="span2" style={{border:"1px solid #ddd",borderRadius:8,padding:12}}><legend>Dias da semana que receberão o novo preço</legend><div style={{display:"flex",flexWrap:"wrap",gap:12}}>{weekDays.map((label,i)=><label key={i} style={{display:"flex",alignItems:"center",gap:5}}><input type="checkbox" name="weekdays" value={i} checked={weekdays.includes(i)} onChange={e=>setWeekdays(current=>e.target.checked?[...current,i]:current.filter(v=>v!==i))}/>{label}</label>)}</div><small>Selecione um ou mais dias. A regra se repetirá semanalmente somente no período escolhido.</small></fieldset>
    <label className="span2">Adicional por hóspede (opcional)<span style={{display:"flex",gap:8,alignItems:"center"}}><input type="checkbox" checked={perGuest} onChange={e=>setPerGuest(e.target.checked)}/> Cobrar por hóspede extra em quarto privativo</span></label>
    {perGuest&&<label className="span2">Valor por hóspede extra / noite (R$)<input name="extraGuestAmount" type="number" step="0.01" min="0" required value={guestAmount} onChange={e=>setGuestAmount(e.target.value)} placeholder="Ex.: 30.00"/></label>}
    <label className="span2">Nome da regra<input name="name" required value={name} onChange={e=>setName(e.target.value)}/></label>
-   <button className="span2" disabled={!roomId||!start||!price||Number(price)<=0}>{editingId?"Salvar alterações da regra":"Salvar preço nas datas selecionadas"}</button>
+   <button className="span2" disabled={!roomId||!start||!price||Number(price)<=0||weekdays.length===0}>{editingId?"Salvar alterações da regra":"Salvar preço nas datas selecionadas"}</button>
   </form>
  </section>;
 }
