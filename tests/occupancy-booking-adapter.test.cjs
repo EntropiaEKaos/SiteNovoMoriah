@@ -39,3 +39,14 @@ test("prototype properties and invalid policy values cannot verify inventory", (
   assert.equal(toVerifiedBookingIntervals([{ ...booking, status: "toString" }], {}, false).verified, false);
   assert.equal(toVerifiedBookingIntervals([booking], { CONFIRMED: "AVAILABLE" }, false).verified, false);
 });
+
+test("invalid JavaScript Date is flagged instead of crashing calendar", () => {
+  const result = toVerifiedBookingIntervals([{ ...booking, checkIn: new Date("invalid") }], policy, false);
+  assert.equal(result.verified, false);
+  assert.match(result.issues[0], /Invalid booking timestamp/);
+});
+test("checked-in state requires actual check-in timestamp", () => {
+  const result = toVerifiedBookingIntervals([booking], { CONFIRMED: "CHECKED_IN" }, false);
+  assert.equal(result.verified, false);
+  assert.equal(result.intervals.length, 0);
+});
