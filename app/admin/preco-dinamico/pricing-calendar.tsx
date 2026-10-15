@@ -14,6 +14,9 @@ export default function PricingCalendar({rooms,rules}:{rooms:Room[];rules:Rule[]
  const now=new Date();
  const [month,setMonth]=useState(new Date(Date.UTC(now.getFullYear(),now.getMonth(),1,12)));
  const [roomId,setRoomId]=useState(rooms[0]?.id??"");
+ const [view,setView]=useState<"month"|"week">("month");
+ const [weekIndex,setWeekIndex]=useState(0);
+ const [showBase,setShowBase]=useState(true);
  const [start,setStart]=useState<string|null>(null);
  const [end,setEnd]=useState<string|null>(null);
  const [price,setPrice]=useState("");
@@ -29,12 +32,14 @@ export default function PricingCalendar({rooms,rules}:{rooms:Room[];rules:Rule[]
  const offset=firstDay.getUTCDay();
  const daysInMonth=new Date(Date.UTC(month.getUTCFullYear(),month.getUTCMonth()+1,0,12)).getUTCDate();
  const cells=useMemo(()=>Array.from({length:Math.ceil((offset+daysInMonth)/7)*7},(_,index)=>{const day=index-offset+1;return day>=1&&day<=daysInMonth?iso(new Date(Date.UTC(month.getUTCFullYear(),month.getUTCMonth(),day,12))):null}),[month,offset,daysInMonth]);
- const changeMonth=(delta:number)=>setMonth(new Date(Date.UTC(month.getUTCFullYear(),month.getUTCMonth()+delta,1,12)));
+ const changeMonth=(delta:number)=>{setMonth(new Date(Date.UTC(month.getUTCFullYear(),month.getUTCMonth()+delta,1,12)));setWeekIndex(0)};
+ const weekCount=Math.ceil(cells.length/7);
+ const visibleCells=view==="week"?cells.slice(weekIndex*7,weekIndex*7+7):cells;
  const choose=(date:string)=>{if(!start||end||date<start){setStart(date);setEnd(null)}else{setEnd(date)}};
  const rangeEnd=end??start;
  const dateLabel=(d:string|null)=>d?dateFrom(d).toLocaleDateString("pt-BR",{timeZone:"UTC"}):"—";
  return <section className="adminSectionCard" style={{marginBottom:20}}>
-  <h2>Calendário de preços</h2>
+  <h2>Calendário de preços 2.0</h2>
   <p>Escolha a hospedagem, clique no primeiro e no último dia, informe a diária final e salve. Os valores no calendário são referências antes de promoções e condições especiais.</p>
   <div className="adminFormGrid" style={{marginBottom:16}}>
    <label>Hospedagem<select value={roomId} onChange={e=>{setRoomId(e.target.value);setStart(null);setEnd(null)}}>{rooms.map(r=><option key={r.id} value={r.id}>{r.name}</option>)}</select></label>
@@ -44,19 +49,21 @@ export default function PricingCalendar({rooms,rules}:{rooms:Room[];rules:Rule[]
     <button type="button" onClick={()=>changeMonth(1)} aria-label="Próximo mês">→</button>
    </div>
   </div>
-  <div style={{display:"grid",gridTemplateColumns:"repeat(7,minmax(0,1fr))",gap:4}}>
+  <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center",marginBottom:12}}><button type="button" aria-pressed={view==="month"} onClick={()=>setView("month")}>Mês</button><button type="button" aria-pressed={view==="week"} onClick={()=>setView("week")}>Semana</button><label style={{display:"flex",gap:6,alignItems:"center"}}><input type="checkbox" checked={showBase} onChange={e=>setShowBase(e.target.checked)}/> Exibir tarifa base</label></div>
+  {view==="week"&&<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}><button type="button" disabled={weekIndex===0} onClick={()=>setWeekIndex(i=>Math.max(0,i-1))}>← Semana anterior</button><strong>Semana {weekIndex+1} / {weekCount}</strong><button type="button" disabled={weekIndex===weekCount-1} onClick={()=>setWeekIndex(i=>Math.min(weekCount-1,i+1))}>Próxima semana →</button></div>}
+  <div style={{display:"grid",gridTemplateColumns:"repeat(7,minmax(0,1fr))",gap:6}}>
    {weekDays.map(d=><strong key={d} style={{textAlign:"center",fontSize:12}}>{d}</strong>)}
-   {cells.map((date,i)=>{
+   {visibleCells.map((date,i)=>{
     if(!date)return <div key={"empty"+i}/>;
     const rule=rules.filter(r=>r.active&&r.accommodationId===roomId&&r.adjustmentType==="FIXED_PRICE"&&(!r.startsAt||r.startsAt.slice(0,10)<=date)&&(!r.endsAt||r.endsAt.slice(0,10)>=date)&&(r.weekdaysMask==null||(r.weekdaysMask&(1<<dateFrom(date).getUTCDay()))!==0)).sort((a,b)=>a.priority-b.priority)[0];
     const selected=Boolean(start&&rangeEnd&&date>=start&&date<=rangeEnd&&weekdays.includes(dateFrom(date).getUTCDay()));
-    return <button key={date} type="button" onClick={()=>choose(date)} aria-pressed={selected} title={rule?.name??"Tarifa base"} style={{minHeight:68,padding:"6px 2px",borderRadius:8,border:selected?"2px solid #bd8124":"1px solid #ddd",background:selected?"#fff0d5":rule?"#e6f4e8":"#fff",color:"#222",cursor:"pointer"}}>
+    return <button key={date} type="button" onClick={()=>choose(date)} aria-pressed={selected} title={rule?.name??"Tarifa base"} style={{minHeight:view==="week"?108:86,padding:"9px 3px",borderRadius:12,border:selected?"2px solid #bd8124":"1px solid #ddd",background:selected?"#fff0d5":rule?"#e6f4e8":"#fff",color:"#222",cursor:"pointer"}}>
      <span style={{display:"block",fontWeight:700}}>{Number(date.slice(-2))}</span>
-     <span style={{display:"block",fontSize:11,overflowWrap:"anywhere"}}>{rule?money(rule.adjustmentValue):selectedRoom?.priceCents!=null?money(selectedRoom.priceCents):"—"}</span>
+     <span style={{display:"block",fontSize:12,fontWeight:700,overflowWrap:"anywhere"}}>{rule?money(rule.adjustmentValue):showBase&&selectedRoom?.priceCents!=null?money(selectedRoom.priceCents):"—"}</span>
     </button>;
    })}
   </div>
-  <p style={{fontSize:12,marginTop:10}}>Verde: diária final cadastrada. Branco: tarifa base de referência. Destaque: período selecionado. Outras regras e promoções podem alterar a cotação real.</p>
+  <p style={{fontSize:12,marginTop:10}}>🟢 Verde: diária definida · ⬜ Branco: tarifa base · 🟨 Amarelo: período selecionado. Outras regras e promoções podem alterar a cotação real.</p>
   <form action={editingId?updateRateRule:createRateRule} className="adminFormGrid" style={{marginTop:16}}>
    <label className="span2">Editar preço existente ou criar novo<select value={editingId} onChange={e=>selectRule(e.target.value)}><option value="">Nova regra de preço</option>{editable.map(r=><option key={r.id} value={r.id}>{r.name} — {r.startsAt?.slice(0,10)??"sem início"} a {r.endsAt?.slice(0,10)??"sem fim"}</option>)}</select></label>
    {editingId&&<input type="hidden" name="id" value={editingId}/>}
