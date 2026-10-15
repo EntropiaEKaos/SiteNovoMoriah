@@ -17,6 +17,7 @@ export default function PricingCalendar({rooms,rules}:{rooms:Room[];rules:Rule[]
  const [view,setView]=useState<"month"|"week">("month");
  const [weekIndex,setWeekIndex]=useState(0);
  const [showBase,setShowBase]=useState(true);
+ const [multiRoom,setMultiRoom]=useState(false);
  const dragAnchor=useRef<string|null>(null);
  const suppressClick=useRef(false);
  const [dragging,setDragging]=useState(false);
@@ -58,6 +59,14 @@ export default function PricingCalendar({rooms,rules}:{rooms:Room[];rules:Rule[]
   </div>
   <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center",marginBottom:12}}><button type="button" aria-pressed={view==="month"} onClick={()=>setView("month")}>Mês</button><button type="button" aria-pressed={view==="week"} onClick={()=>setView("week")}>Semana</button><label style={{display:"flex",gap:6,alignItems:"center"}}><input type="checkbox" checked={showBase} onChange={e=>setShowBase(e.target.checked)}/> Exibir tarifa base</label></div>
   {view==="week"&&<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}><button type="button" disabled={weekIndex===0} onClick={()=>setWeekIndex(i=>Math.max(0,i-1))}>← Semana anterior</button><strong>Semana {weekIndex+1} / {weekCount}</strong><button type="button" disabled={weekIndex===weekCount-1} onClick={()=>setWeekIndex(i=>Math.min(weekCount-1,i+1))}>Próxima semana →</button></div>}
+  <label style={{display:"flex",gap:8,alignItems:"center",marginBottom:12}}><input type="checkbox" checked={multiRoom} onChange={e=>setMultiRoom(e.target.checked)}/> Comparar todas as hospedagens (somente leitura)</label>
+  {multiRoom&&<div style={{overflowX:"auto",marginBottom:16,border:"1px solid #e5e5e5",borderRadius:12}}>
+   <table style={{borderCollapse:"separate",borderSpacing:0,minWidth:Math.max(760,visibleCells.length*95+190),width:"100%",fontSize:12}}>
+    <thead><tr><th scope="col" style={{position:"sticky",left:0,background:"#f5f3ed",zIndex:2,padding:12,textAlign:"left",minWidth:190}}>Hospedagem</th>{visibleCells.map((date,i)=><th key={date??"empty"+i} scope="col" style={{background:"#f5f3ed",padding:"12px 4px",minWidth:95}}>{date?dateFrom(date).toLocaleDateString("pt-BR",{day:"2-digit",month:"2-digit",timeZone:"UTC"}):"—"}</th>)}</tr></thead>
+    <tbody>{rooms.map(room=><tr key={room.id}><th scope="row" style={{position:"sticky",left:0,zIndex:1,background:"#fff",textAlign:"left",padding:12,borderBottom:"1px solid #eee"}}>{room.name}</th>{visibleCells.map((date,i)=>{if(!date)return <td key={"empty"+i} style={{background:"#fafafa"}}/>;const rule=rules.filter(r=>r.active&&r.accommodationId===room.id&&r.adjustmentType==="FIXED_PRICE"&&(!r.startsAt||r.startsAt.slice(0,10)<=date)&&(!r.endsAt||r.endsAt.slice(0,10)>=date)&&(r.weekdaysMask==null||(r.weekdaysMask&(1<<dateFrom(date).getUTCDay()))!==0)).sort((a,b)=>a.priority-b.priority)[0];return <td key={date} title={rule?.name??"Tarifa base"} style={{padding:"12px 5px",textAlign:"center",borderBottom:"1px solid #eee",background:rule?"#e6f4e8":"#fff",fontWeight:rule?700:400}}>{rule?money(rule.adjustmentValue):showBase&&room.priceCents!=null?money(room.priceCents):"—"}</td>})}</tr>)}</tbody>
+   </table>
+   <p style={{fontSize:12,padding:"8px 12px"}}>Comparação de tarifas de referência. Não representa ocupação nem preço final após promoções. Selecione uma hospedagem acima para editar.</p>
+  </div>}
   <div onPointerUp={finishDrag} onPointerCancel={finishDrag} onPointerLeave={finishDrag} style={{display:"grid",gridTemplateColumns:"repeat(7,minmax(0,1fr))",gap:6,userSelect:dragging?"none":"auto"}}>
    {weekDays.map(d=><strong key={d} style={{textAlign:"center",fontSize:12}}>{d}</strong>)}
    {visibleCells.map((date,i)=>{
