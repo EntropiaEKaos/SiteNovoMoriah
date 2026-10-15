@@ -1,4 +1,5 @@
 import Link from "next/link";
+import PricingCalendar from "./pricing-calendar";
 import {prisma} from "../../../lib/prisma";
 import {requireAdmin} from "../../../lib/admin-auth";
 import {createRateRule,deleteRateRule} from "../actions";
@@ -50,6 +51,8 @@ export default async function Page(){
       <div><small>Aumentos</small><strong>{increases}</strong></div>
       <div><small>Reduções</small><strong>{reductions}</strong></div>
     </section>
+
+    <PricingCalendar rooms={rooms.map(room=>({id:room.id,name:room.name,priceCents:room.priceCents}))} rules={rules.map(rule=>({id:rule.id,accommodationId:rule.accommodationId,name:rule.name,adjustmentType:rule.adjustmentType,adjustmentValue:rule.adjustmentValue,startsAt:rule.startsAt?.toISOString()??null,endsAt:rule.endsAt?.toISOString()??null,active:rule.active,priority:rule.priority}))}/>
 
     <section className="adminTwoCol" style={{marginBottom:20}}>
       <article className="adminSectionCard">
