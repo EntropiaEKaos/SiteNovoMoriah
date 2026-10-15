@@ -43,6 +43,7 @@ export default async function OccupancyPreviewPage() {
     <section className="adminSectionCard">
       <h2>Próximos 14 dias</h2>
       <p style={{fontSize:12}}>Exibindo até 100 hospedagens ativas nesta prévia administrativa. Consultas executadas em lotes de cinco.</p>
+      {rooms.length === 0 && <p role="status">Nenhuma hospedagem ativa encontrada.</p>}
       <p role="status" style={{fontWeight:700}}>
         ⚠ Dados não certificados: esta grade NÃO comprova disponibilidade para venda.
         A reconciliação com canais e o fuso horário da pousada ainda estão pendentes.
