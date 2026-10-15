@@ -6,6 +6,7 @@ import {createRateRule,deleteRateRule} from "../actions";
 export const dynamic="force-dynamic";
 
 function adjustment(rule:{adjustmentType:string;adjustmentValue:number}){
+  if(rule.adjustmentType==="FIXED_PRICE")return "Diária "+(rule.adjustmentValue/100).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
   if(rule.adjustmentType==="PERCENT"){
     return (rule.adjustmentValue>0?"+":"")+rule.adjustmentValue+"%";
   }
@@ -27,8 +28,8 @@ export default async function Page(){
   ]);
 
   const active=rules.filter(rule=>rule.active).length;
-  const increases=rules.filter(rule=>rule.adjustmentValue>0).length;
-  const reductions=rules.filter(rule=>rule.adjustmentValue<0).length;
+  const increases=rules.filter(rule=>rule.adjustmentType!=="FIXED_PRICE"&&rule.adjustmentValue>0).length;
+  const reductions=rules.filter(rule=>rule.adjustmentType!=="FIXED_PRICE"&&rule.adjustmentValue<0).length;
 
   return <main className="adminPage">
     <section className="adminPageHero">
@@ -53,7 +54,7 @@ export default async function Page(){
     <section className="adminTwoCol" style={{marginBottom:20}}>
       <article className="adminSectionCard">
         <h2>Nova regra de preço</h2>
-        <p>Escolha a hospedagem, as datas e o ajuste. O preço muda automaticamente na busca do site. Campos avançados são opcionais.</p>
+        <p>Escolha a hospedagem, as datas e o ajuste. A opção padrão define a diária final em reais para as noites selecionadas. O preço aparece automaticamente na busca do site, antes de eventuais promoções. Campos avançados são opcionais.</p>
         <form action={createRateRule} className="adminFormGrid cols3">
           <label className="span2">Hospedagem
             <select name="accommodationId" required>
@@ -67,14 +68,15 @@ export default async function Page(){
             <input name="name" required placeholder="Ex.: Feriado de novembro"/>
           </label>
           <label>Tipo de ajuste
-            <select name="adjustmentType" defaultValue="PERCENT">
+            <select name="adjustmentType" defaultValue="FIXED_PRICE">
+              <option value="FIXED_PRICE">Definir diária final em R$</option>
               <option value="PERCENT">Aumentar/reduzir em %</option>
               <option value="FIXED">Aumentar/reduzir em R$</option>
             </select>
           </label>
 
-          <label>Ajuste (+ aumenta / - reduz)
-            <input name="adjustmentValue" type="number" step="0.01" required placeholder="Ex.: 20 ou -10"/>
+          <label>Valor (R$ na diária final ou ajuste +/-)
+            <input name="adjustmentValue" type="number" step="0.01" required placeholder="Ex.: 180,00 ou 20"/>
           </label>
           <details className="span2" style={{padding:"12px 0"}}><summary style={{cursor:"pointer",fontWeight:700}}>Condições avançadas (opcional)</summary><div className="adminFormGrid cols3" style={{marginTop:12}}>
           <label>Ocupação mínima %
@@ -132,7 +134,7 @@ export default async function Page(){
 
         <div className="adminMetaRow">
           <span className={"adminChip "+(rule.active?"ok":"warn")}>{rule.active?"Ativa":"Inativa"}</span>
-          <span className="adminChip">{rule.adjustmentType==="PERCENT"?"Percentual":"Valor fixo"}</span>
+          <span className="adminChip">{rule.adjustmentType==="FIXED_PRICE"?"Diária definida":rule.adjustmentType==="PERCENT"?"Percentual":"Ajuste fixo"}</span>
           {(rule.startsAt||rule.endsAt)&&<span className="adminChip">
             {rule.startsAt?rule.startsAt.toLocaleDateString("pt-BR"):"Sempre"} → {rule.endsAt?rule.endsAt.toLocaleDateString("pt-BR"):"Sem fim"}
           </span>}
