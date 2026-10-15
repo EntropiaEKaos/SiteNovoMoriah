@@ -24,7 +24,7 @@ export async function stageSmoobuDailyRates(){
  });
  if(valid.length===0)throw new Error("Nenhuma tarifa positiva válida recebida.");
  await prisma.$transaction(async tx=>{
-  await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext('smoobu-daily-rates-staging'))`;
+  await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext('smoobu-daily-rates-staging'))::text AS lock_result`;
   const current=await tx.smoobuAccommodationMapping.findMany({select:{smoobuApartmentId:true,accommodationId:true}});
   if(current.length!==mappings.length||current.some(m=>mapping.get(m.smoobuApartmentId)!==m.accommodationId))throw new Error("Vínculos alterados durante a consulta. Tente novamente.");
   for(const rate of valid){
