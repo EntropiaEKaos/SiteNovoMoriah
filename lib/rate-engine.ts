@@ -151,7 +151,9 @@ export async function quoteAccommodation(
     const basePriceCents=plan?.basePriceCents??room.priceCents;
     if(basePriceCents==null)return null;
     let unitPriceCents=override?.priceCents??resolveSmoobuApprovedPrice(basePriceCents,approvedByDate.get(day.toISOString().slice(0,10)),nights,units);
-    for(const rule of applicable.filter(rule=>(!rule.startsAt||rule.startsAt<=day)&&(!rule.endsAt||rule.endsAt>=day))){
+    const dayOfWeek=day.getUTCDay();
+    const matchesDay=(rule:{weekdaysMask:number|null})=>rule.weekdaysMask==null||(rule.weekdaysMask&(1<<dayOfWeek))!==0;
+    for(const rule of applicable.filter(rule=>(!rule.startsAt||rule.startsAt<=day)&&(!rule.endsAt||rule.endsAt>=day)&&matchesDay(rule))){
       if(rule.adjustmentType==="PERCENT"){
         unitPriceCents=Math.max(0,Math.round(unitPriceCents*(100+rule.adjustmentValue)/100));
       }else if(rule.adjustmentType==="FIXED"){
@@ -162,7 +164,7 @@ export async function quoteAccommodation(
     // Explicit nightly price wins over percentage/fixed adjustments on the same date.
     // Deterministic priority: lowest numeric priority first, then creation order.
     const exactPriceRule=applicable.find(rule=>rule.adjustmentType==="FIXED_PRICE"&&
-      (!rule.startsAt||rule.startsAt<=day)&&(!rule.endsAt||rule.endsAt>=day));
+      (!rule.startsAt||rule.startsAt<=day)&&(!rule.endsAt||rule.endsAt>=day)&&matchesDay(rule));
     if(exactPriceRule)unitPriceCents=exactPriceRule.adjustmentValue;
 
     // Shared rooms are priced per bed already; do not charge the guest surcharge twice.
@@ -186,7 +188,7 @@ export async function quoteAccommodation(
     ratePlan:plan?.name??"Tarifa padrão",
     breakdown,
     occupancyPct:occupancy.occupancyPct,
-    appliedRules:applicable.filter(r=>breakdown.some(d=>(!r.startsAt||r.startsAt.toISOString().slice(0,10)<=d.date)&&(!r.endsAt||r.endsAt.toISOString().slice(0,10)>=d.date))).map(r=>r.name),
+    appliedRules:applicable.filter(r=>breakdown.some(d=>(!r.startsAt||r.startsAt.toISOString().slice(0,10)<=d.date)&&(!r.endsAt||r.endsAt.toISOString().slice(0,10)>=d.date)&&(r.weekdaysMask==null||(r.weekdaysMask&(1<<new Date(d.date+"T12:00:00Z").getUTCDay()))!==0))).map(r=>r.name),
     unitCount:multiplier,
     unitLabel:room.sharedRoom?"cama":"quarto"
   };
