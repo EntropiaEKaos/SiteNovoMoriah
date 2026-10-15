@@ -159,6 +159,12 @@ export async function quoteAccommodation(
       }
     }
 
+    // Explicit nightly price wins over percentage/fixed adjustments on the same date.
+    // Deterministic priority: lowest numeric priority first, then creation order.
+    const exactPriceRule=applicable.find(rule=>rule.adjustmentType==="FIXED_PRICE"&&
+      (!rule.startsAt||rule.startsAt<=day)&&(!rule.endsAt||rule.endsAt>=day));
+    if(exactPriceRule)unitPriceCents=exactPriceRule.adjustmentValue;
+
     const nightly=unitPriceCents*multiplier;
     subtotal+=nightly;
     breakdown.push({
