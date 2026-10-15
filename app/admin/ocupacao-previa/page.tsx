@@ -15,8 +15,9 @@ export default async function OccupancyPreviewPage() {
     select: { id: true, name: true, sharedRoom: true, bedCount: true },
     orderBy: { name: "asc" },
   });
+  const asOf = new Date();
   const previews = await Promise.allSettled(rooms.map((room) =>
-    getAdminOccupancyPreview({ accommodationId: room.id, start: today, days: 14 })));
+    getAdminOccupancyPreview({ accommodationId: room.id, start: today, days: 14, asOf })));
   const dates = Array.from({ length: 14 }, (_, index) => {
     const date = new Date(today + "T00:00:00Z");
     date.setUTCDate(date.getUTCDate() + index);
