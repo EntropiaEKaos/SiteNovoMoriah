@@ -13,7 +13,7 @@ export type CalendarBookingRecord = {
 /**
  * A conservative adapter: it never guesses which PMS statuses consume inventory.
  * Only callers with an explicitly audited status policy may mark output verified.
- * Date-only ISO strings are used to avoid local browser timezone drift.
+ * Dates must be normalized to property-local midnight by the caller before\n * conversion. UTC ISO extraction alone cannot determine a property timezone.
  */
 export function toVerifiedBookingIntervals(
   bookings: CalendarBookingRecord[],
@@ -35,7 +35,7 @@ export function toVerifiedBookingIntervals(
       issues.push(`Booking lifecycle requires review at index ${index}`);
       continue;
     }
-    const start = booking.checkIn?.toISOString().slice(0, 10);
+    if (statusKind === "CHECKED_IN" && !booking.checkedInAt) {\n      issues.push(`Missing check-in confirmation at index ${index}`);\n      continue;\n    }\n    if ((booking.checkIn && (!Number.isFinite(booking.checkIn.getTime()))) ||\n        (booking.checkOut && (!Number.isFinite(booking.checkOut.getTime())))) {\n      issues.push(`Invalid booking timestamp at index ${index}`);\n      continue;\n    }\n    const start = booking.checkIn?.toISOString().slice(0, 10);
     const end = booking.checkOut?.toISOString().slice(0, 10);
     if (!start || !end || end <= start || !Number.isSafeInteger(booking.guests) || booking.guests < 1) {
       issues.push(`Invalid booking dates or guest count at index ${index}`);
