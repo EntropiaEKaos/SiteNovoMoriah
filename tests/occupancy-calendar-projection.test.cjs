@@ -150,3 +150,12 @@ test("holds count toward overbooking conflict", () => {
   });
   assert.equal(result[0].state, "CONFLICT");
 });
+
+test("hard block is not counted as occupied bed capacity", () => {
+  const result = projectOccupancyDays({
+    dates: [dates[0]], capacity: 4, verified: true,
+    intervals: [{ start: dates[0], end: dates[1], units: 1, kind: "BLOCK" }],
+  });
+  assert.equal(result[0].state, "BLOCKED");
+  assert.equal(result[0].used, 0);
+});
