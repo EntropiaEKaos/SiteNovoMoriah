@@ -22,7 +22,7 @@ export async function saveSmoobuMapping(formData:FormData){
  const desired=[...current.filter(x=>x.smoobuApartmentId!==externalId),{smoobuApartmentId:externalId,accommodationId}];
  validateSmoobuMappings(desired,apartments.map(x=>x.id),rooms.map(x=>x.id));
  await prisma.$transaction(async tx=>{
-  await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext('smoobu-accommodation-mappings'))`;
+  await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext('smoobu-accommodation-mappings'))::text AS lock_result`;
   const latest=await tx.smoobuAccommodationMapping.findMany({select:{smoobuApartmentId:true,accommodationId:true}});
   validateSmoobuMappings([...latest.filter(x=>x.smoobuApartmentId!==externalId),{smoobuApartmentId:externalId,accommodationId}],apartments.map(x=>x.id),rooms.map(x=>x.id));
   await tx.smoobuAccommodationMapping.upsert({where:{smoobuApartmentId:externalId},create:{smoobuApartmentId:externalId,accommodationId},update:{accommodationId}});
