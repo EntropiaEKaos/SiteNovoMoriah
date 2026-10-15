@@ -59,9 +59,9 @@ export async function getAdminOccupancyPreview(args: {
   }, room.sharedRoom);
   const holdResult = toVerifiedHoldIntervals(holds, asOf);
   // Do not render partial counts when any source cannot be reconciled. 
-  const sourceRecordsValid = bookingResult.verified && holdResult.verified; 
-  const intervals: OccupancyInterval[] = sourceRecordsValid 
-    ? [...bookingResult.intervals, ...holdResult.intervals] : [];
+  const sourceRecordsValid = bookingResult.verified && holdResult.verified;
+  if (!sourceRecordsValid) throw new Error("Unreconciled booking or hold records");
+  const intervals: OccupancyInterval[] = [...bookingResult.intervals, ...holdResult.intervals];
   const hardBlockDates = new Set<string>(); 
   let blocksValid = true;
   for (const block of [...manual, ...channel]) {
@@ -73,10 +73,11 @@ export async function getAdminOccupancyPreview(args: {
       if (block.startsAt < nightEnd && block.endsAt > nightStart) hardBlockDates.add(date);
     }
   }
+  if (!blocksValid) throw new Error("Invalid manual or channel block interval");
   // Private rooms are a single bookable unit, irrespective of guest capacity.
   const capacity = room.sharedRoom ? Math.max(1, room.bedCount) : 1;
   return projectOccupancyDays({
-    dates, capacity, intervals: blocksValid ? intervals : [], hardBlockDates: blocksValid && sourceRecordsValid ? [...hardBlockDates] : [],
+    dates, capacity, intervals, hardBlockDates: [...hardBlockDates],
     verified: false, // Deliberately fail closed pending property-timezone and feed certification.
   });
 }
