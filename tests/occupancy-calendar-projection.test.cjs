@@ -54,7 +54,7 @@ test("shared room capacity three allows three occupied beds but not four", () =>
   assert.equal(mk(4), "CONFLICT");
 });
 
-test("manual block is visible and has priority over reservation display", () => {
+test("manual block overlapping a booking is a conflict", () => {
   const result = projectOccupancyDays({
     dates: [dates[0]], capacity: 2, verified: true,
     intervals: [
@@ -62,7 +62,7 @@ test("manual block is visible and has priority over reservation display", () => 
       { start: dates[0], end: dates[1], units: 1, kind: "RESERVATION" },
     ],
   });
-  assert.equal(result[0].state, "BLOCKED");
+  assert.equal(result[0].state, "CONFLICT");
   assert.equal(result[0].used, 2);
 });
 
