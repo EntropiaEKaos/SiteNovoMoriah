@@ -49,6 +49,7 @@ export default async function OccupancyPreviewPage() {
         A reconciliação com canais e o fuso horário da pousada ainda estão pendentes.
       </p>
       <p style={{fontSize:12}}>Legenda: amarelo = contagem preliminar não certificada; vermelho = falha de leitura. Nenhuma cor indica disponibilidade confirmada.</p>
+      <p style={{fontSize:12}}>Período consultado: {dates[0]} a {dates[dates.length - 1]} · Referência: {new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "short", timeStyle: "short" }).format(asOf)} (São Paulo).</p>
       <div style={{overflowX:"auto"}}>
         <table style={{borderCollapse:"collapse",minWidth:1100,width:"100%",fontSize:12}}>
           <thead><tr>
