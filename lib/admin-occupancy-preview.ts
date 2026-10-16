@@ -36,6 +36,7 @@ export async function getAdminOccupancyPreview(args: {
   });
   if (!room) throw new Error("Accommodation not found");
   if (!room.active) throw new Error("Inactive accommodation cannot be previewed");
+  // All four sources below are read-only; no hold creation, booking mutation, or OTA writes.
   const [bookings, holds, manual, channel] = await Promise.all([
     prisma.bookingLead.findMany({
       where: {
