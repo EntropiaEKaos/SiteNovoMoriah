@@ -41,7 +41,7 @@ export function projectOccupancyDays(args: {
       : (used > capacity || (hardBlocked && active.some((x) => x.kind !== "BLOCK"))) ? "CONFLICT"
       : hardBlocked ? "BLOCKED"
       : active.some((x) => x.kind === "CHECKED_IN") ? "OCCUPIED"
-      : active.length ? "RESERVED" : "AVAILABLE";
+      : active.some((x) => x.kind !== "BLOCK") ? "RESERVED" : "AVAILABLE";
     return { date, state, used, capacity };
   });
 }
