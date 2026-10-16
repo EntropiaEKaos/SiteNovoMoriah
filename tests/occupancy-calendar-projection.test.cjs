@@ -198,3 +198,13 @@ test("a hard block alone never consumes beds", () => {
   assert.equal(result[0].state, "UNVERIFIED");
   assert.equal(result[0].used, 0);
 });
+
+
+test("multiple hard blocks for the same night do not consume inventory", () => {
+  const result = projectOccupancyDays({
+    dates: [dates[0]], capacity: 3, verified: true, intervals: [],
+    hardBlockDates: [dates[0], dates[0]],
+  });
+  assert.equal(result[0].state, "BLOCKED");
+  assert.equal(result[0].used, 0);
+});
