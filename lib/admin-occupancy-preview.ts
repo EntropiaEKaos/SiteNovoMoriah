@@ -30,9 +30,10 @@ export async function getAdminOccupancyPreview(args: {
     new Date(start.getTime() + index * DAY).toISOString().slice(0, 10));
   const room = await prisma.accommodation.findUnique({
     where: { id: args.accommodationId },
-    select: { id: true, sharedRoom: true, bedCount: true },
+    select: { id: true, active: true, sharedRoom: true, bedCount: true },
   });
   if (!room) throw new Error("Accommodation not found");
+  if (!room.active) throw new Error("Inactive accommodation cannot be previewed");
   const [bookings, holds, manual, channel] = await Promise.all([
     prisma.bookingLead.findMany({
       where: {
