@@ -27,6 +27,7 @@ export function projectOccupancyDays(args: {
   const hardBlockSet = new Set(hardBlockDates);
   if (!Number.isSafeInteger(capacity) || capacity < 1) throw new Error("Invalid capacity");
   if (dates.some((d) => !isDay(d)) || hardBlockDates.some((d) => !isDay(d))) throw new Error("Invalid calendar date");
+  if (new Set(dates).size !== dates.length) throw new Error("Duplicate calendar date");
   if (intervals.some((x) => !isDay(x.start) || !isDay(x.end) || x.end <= x.start || !Number.isSafeInteger(x.units) || x.units < 1 || !["RESERVATION", "CHECKED_IN", "HOLD", "BLOCK"].includes(x.kind))) {
     throw new Error("Invalid inventory interval");
   }
