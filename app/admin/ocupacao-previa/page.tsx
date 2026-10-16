@@ -26,6 +26,7 @@ export default async function OccupancyPreviewPage() {
   }
   const failedRooms = previews.filter((result) => result.status === "rejected").length;
   const successfulRooms = previews.length - failedRooms;
+  const readStatus = failedRooms === 0 ? "Consultas concluídas sem falhas de leitura" : `${failedRooms} hospedagem(ns) exigem revisão`;
   const dates = Array.from({ length: 14 }, (_, index) => {
     const date = new Date(today + "T00:00:00Z");
     date.setUTCDate(date.getUTCDate() + index);
@@ -46,7 +47,7 @@ export default async function OccupancyPreviewPage() {
       <h2>Próximos 14 dias</h2>
       <p style={{fontSize:12}}>Exibindo até 100 hospedagens ativas nesta prévia administrativa. Consultas executadas em lotes de cinco.</p>
       {rooms.length === 0 && <p role="status">Nenhuma hospedagem ativa encontrada.</p>}
-      {rooms.length > 0 && <p style={{fontSize:12}}>Leituras concluídas: {successfulRooms} de {rooms.length} hospedagens. {failedRooms === 0 ? "Nenhuma falha de consulta detectada (dados ainda não certificados)." : "Há falhas que exigem revisão."}</p>}
+      {rooms.length > 0 && <p style={{fontSize:12}}>Leituras concluídas: {successfulRooms} de {rooms.length} hospedagens. {readStatus}. Dados ainda não certificados.</p>}
       {failedRooms > 0 && <p role="alert" style={{fontWeight:700,color:"#991b1b"}}>Atenção: {failedRooms} hospedagem(ns) com falha de leitura. Confira as células vermelhas; nenhuma delas deve ser interpretada como vaga livre.</p>}
       <p role="status" style={{fontWeight:700}}>
         ⚠ Dados não certificados: esta grade NÃO comprova disponibilidade para venda.
