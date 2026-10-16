@@ -63,7 +63,7 @@ export default async function OccupancyPreviewPage() {
           </tr></thead>
           <tbody>{rooms.map((room,index)=>{
             const result = previews[index];
-            const days = result.status === "fulfilled" ? result.value : null;
+            const days = result.status === "fulfilled" && result.value.length === dates.length ? result.value : null;
             return <tr key={room.id}>
               <th scope="row" style={{position:"sticky",left:0,background:"#fff",padding:12,textAlign:"left",borderBottom:"1px solid #ddd"}}>
                 {room.name}<small style={{display:"block",fontWeight:400}}>{room.sharedRoom ? room.bedCount+" camas" : "Quarto privativo"}</small>
