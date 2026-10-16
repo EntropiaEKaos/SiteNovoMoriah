@@ -159,3 +159,22 @@ test("hard block is not counted as occupied bed capacity", () => {
   assert.equal(result[0].state, "BLOCKED");
   assert.equal(result[0].used, 0);
 });
+
+
+test("duplicate and out-of-order dates fail closed", () => {
+  for (const invalidDates of [[dates[0], dates[0]], [dates[1], dates[0]]]) {
+    assert.throws(() => projectOccupancyDays({
+      dates: invalidDates, capacity: 1, verified: false, intervals: [],
+    }));
+  }
+});
+
+test("unsafe sum of individually safe occupancy units fails closed", () => {
+  assert.throws(() => projectOccupancyDays({
+    dates: [dates[0]], capacity: 1, verified: false,
+    intervals: [
+      { start: dates[0], end: dates[1], units: Number.MAX_SAFE_INTEGER, kind: "RESERVATION" },
+      { start: dates[0], end: dates[1], units: 1, kind: "HOLD" },
+    ],
+  }), /overflow/);
+});
