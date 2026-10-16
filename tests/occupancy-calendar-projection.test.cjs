@@ -178,3 +178,23 @@ test("unsafe sum of individually safe occupancy units fails closed", () => {
     ],
   }), /overflow/);
 });
+
+
+test("shared-room hard block conflicts with a hold even when beds remain", () => {
+  const result = projectOccupancyDays({
+    dates: [dates[0]], capacity: 5, verified: true,
+    intervals: [{ start: dates[0], end: dates[1], units: 1, kind: "HOLD" }],
+    hardBlockDates: [dates[0]],
+  });
+  assert.equal(result[0].state, "CONFLICT");
+  assert.equal(result[0].used, 1);
+});
+
+test("a hard block alone never consumes beds", () => {
+  const result = projectOccupancyDays({
+    dates: [dates[0]], capacity: 5, verified: false, intervals: [],
+    hardBlockDates: [dates[0]],
+  });
+  assert.equal(result[0].state, "UNVERIFIED");
+  assert.equal(result[0].used, 0);
+});
