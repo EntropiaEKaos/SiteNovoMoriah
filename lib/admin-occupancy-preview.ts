@@ -19,7 +19,7 @@ export async function getAdminOccupancyPreview(args: {
   days: number;
   asOf?: Date;
 }): Promise<OccupancyDay[]> {
-  if (!isDay(args.start) || !Number.isSafeInteger(args.days) || args.days < 1 || args.days > 62) {
+  if (!args.accommodationId?.trim() || !isDay(args.start) || !Number.isSafeInteger(args.days) || args.days < 1 || args.days > 62) {
     throw new Error("Invalid occupancy preview window");
   }
   const asOf = args.asOf ?? new Date();
