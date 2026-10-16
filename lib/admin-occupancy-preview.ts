@@ -26,6 +26,8 @@ export async function getAdminOccupancyPreview(args: {
   if (!Number.isFinite(asOf.getTime())) throw new Error("Invalid reference clock");
   const start = new Date(args.start + "T00:00:00Z");
   const end = new Date(start.getTime() + args.days * DAY);
+  // One immutable reference instant is shared by hold filtering and projection.
+  // Do not substitute a second Date() inside the query: holds can expire mid-read.
   const dates = Array.from({ length: args.days }, (_, index) =>
     new Date(start.getTime() + index * DAY).toISOString().slice(0, 10));
   const room = await prisma.accommodation.findUnique({
