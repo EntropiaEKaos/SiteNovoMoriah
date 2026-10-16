@@ -33,6 +33,7 @@ export function projectOccupancyDays(args: {
   return dates.map((date) => {
     const active = intervals.filter((x) => x.start <= date && date < x.end);
     const used = active.filter((x) => x.kind !== "BLOCK").reduce((sum, x) => sum + x.units, 0);
+    if (!Number.isSafeInteger(used)) throw new Error("Inventory count overflow");
     const hardBlocked = hardBlockSet.has(date) || active.some((x) => x.kind === "BLOCK");
     const state: OccupancyState = !verified ? "UNVERIFIED"
       : (used > capacity || (hardBlocked && active.some((x) => x.kind !== "BLOCK"))) ? "CONFLICT"
