@@ -75,7 +75,10 @@ export async function getAdminOccupancyPreview(args: {
   }
   if (!blocksValid) throw new Error("Invalid manual or channel block interval");
   // Private rooms are a single bookable unit, irrespective of guest capacity.
-  const capacity = room.sharedRoom ? Math.max(1, room.bedCount) : 1;
+  if (room.sharedRoom && (!Number.isSafeInteger(room.bedCount) || room.bedCount < 1)) {
+    throw new Error("Invalid shared-room bed capacity");
+  }
+  const capacity = room.sharedRoom ? room.bedCount : 1;
   return projectOccupancyDays({
     dates, capacity, intervals, hardBlockDates: [...hardBlockDates],
     verified: false, // Deliberately fail closed pending property-timezone and feed certification.
